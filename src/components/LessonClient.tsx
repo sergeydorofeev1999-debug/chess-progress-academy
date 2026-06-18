@@ -85,22 +85,23 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
   return true;
 }
 
-function getValidRookSquares(from: string, squares: Record<string, any>): string[] {
+function getValidRookSquares(from: string, squares: Record<string, any>, starSquares: string[]): string[] {
   if (squares[from]?.color !== 'w') return [];
   const ff = FILES.indexOf(from[0]);
   const fr = RANKS.indexOf(from[1]);
   const valid: string[] = [];
-  // Directions: up, down, left, right
   const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
   for (const [df, dr] of dirs) {
     let f = ff + df, r = fr + dr;
     while (f >= 0 && f < 8 && r >= 0 && r < 8) {
       const sq = `${FILES[f]}${RANKS[r]}`;
       const p = squares[sq];
-      if (p) {
-        if (p.color === 'w') break; // blocked by own piece
-        // cannot capture (we only move to empty or star squares, stars have no piece)
-        break;
+      // Blocked by own piece
+      if (p && p.color === 'w') break;
+      // Uncollected star blocks further moves (like an obstacle)
+      if (starSquares.includes(sq)) {
+        valid.push(sq); // star is a valid destination
+        break; // but blocks beyond it
       }
       valid.push(sq);
       f += df; r += dr;
@@ -366,7 +367,7 @@ function InlineChessBoard({
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   // Valid move indicators (green dots like Lichess)
-  const validMoves = selectedSquare ? getValidRookSquares(selectedSquare, squares) : [];
+  const validMoves = selectedSquare ? getValidRookSquares(selectedSquare, squares, stars) : [];
 
   return (
     <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
@@ -387,9 +388,11 @@ function InlineChessBoard({
                 data-square={sq}
                 className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${sel ? 'outline outline-2 outline-blue-500 outline-offset-[-2px]' : ''} ${isHover && dragPiece ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''} ${isSource ? 'opacity-50' : ''}`}
+                } ${sel ? 'outline outline-2 outline-blue-500 outline-offset-[-2px]' : ''} ${isHover && dragPiece ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''} ${isHover && !dragPiece ? 'outline outline-2 outline-green-600 outline-offset-[-2px]' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
+                onPointerEnter={() => setHoverSquare(sq)}
+                onPointerLeave={() => setHoverSquare(null)}
                 onDragStart={preventDrag}
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
