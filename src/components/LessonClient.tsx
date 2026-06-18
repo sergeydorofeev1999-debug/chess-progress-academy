@@ -169,22 +169,22 @@ const SQ = 44;
 function InlineChessBoard({
   fen,
   stars: starsProp = [],
+  collectedStars: collectedProp = new Set<string>(),
   onMove,
 }: {
   fen: string;
   stars?: string[];
-  onMove?: (from: string, to: string) => boolean;
+  collectedStars?: Set<string>;
+  onMove?: (from: string, to: string) => void;
 }) {
-  const [position, setPosition] = useState(fen);
-  const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
-  const [msg, setMsg] = useState('');
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverSquare, setHoverSquare] = useState<string | null>(null);
+  const [msg, setMsg] = useState('');
   const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
 
-  const parsed = parseFen(position);
+  const parsed = parseFen(fen);
   const squares = parsed.squares;
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
@@ -195,26 +195,18 @@ function InlineChessBoard({
     return cell?.dataset.square || null;
   };
 
-  // Click-to-move logic (tap friendly)
+  // Tap-to-move: just notify parent, don't mutate state
   const onCellClick = useCallback(
     (square: string) => {
       const piece = squares[square];
       if (selectedSquare) {
-        // trying to move selected piece to this square
-        if (isValidRookMove(selectedSquare, square, squares)) {
-          const newSquares = { ...squares };
-          delete newSquares[selectedSquare];
-          newSquares[square] = { type: 'r', color: 'w' };
-          const newFen = squaresToFen(newSquares, 'w');
-          setPosition(newFen);
-          if (starsProp.includes(square)) {
-            setCollectedStars((prev) => new Set([...prev, square]));
-          }
+        if (selectedSquare === square) {
+          setSelectedSquare(null);
+        } else if (isValidRookMove(selectedSquare, square, squares)) {
+          onMove?.(selectedSquare, square);
           setSelectedSquare(null);
           setMsg('');
-          onMove?.(selectedSquare, square);
         } else {
-          // invalid move — if clicked on our piece, re-select
           if (piece && piece.color === 'w') {
             setSelectedSquare(square);
             setMsg('');
@@ -229,13 +221,12 @@ function InlineChessBoard({
         }
       }
     },
-    [selectedSquare, squares, starsProp, onMove]
+    [selectedSquare, squares, onMove]
   );
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
       const piece = squares[square];
-      // Only capture pointer if clicking on a piece (for drag), but always handle tap
       if (piece && piece.color === 'w') {
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
       }
@@ -268,23 +259,13 @@ function InlineChessBoard({
       const start = pointerStartRef.current;
       if (!start) return;
       if (!start.moved) {
-        // Tap — use click-to-move logic
         onCellClick(start.square);
       } else {
-        // Drag release — drop piece
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
           if (isValidRookMove(start.square, targetSquare, squares)) {
-            const newSquares = { ...squares };
-            delete newSquares[start.square];
-            newSquares[targetSquare] = { type: 'r', color: 'w' };
-            const newFen = squaresToFen(newSquares, 'w');
-            setPosition(newFen);
-            if (starsProp.includes(targetSquare)) {
-              setCollectedStars((prev) => new Set([...prev, targetSquare]));
-            }
-            setMsg('');
             onMove?.(start.square, targetSquare);
+            setMsg('');
           } else {
             setMsg('Недопустимый ход. Ладья ходит только прямо!');
           }
@@ -300,7 +281,7 @@ function InlineChessBoard({
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
     };
-  }, [squares, starsProp, onMove, onCellClick]);
+  }, [squares, onMove, onCellClick]);
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
   const boardSize = SQ * 8;
@@ -317,7 +298,7 @@ function InlineChessBoard({
               const sel = selectedSquare === sq;
               const isHover = hoverSquare === sq;
               const isSource = dragPiece?.square === sq;
-              const hasStar = starsProp.includes(sq) && !collectedStars.has(sq);
+              const hasStar = starsProp.includes(sq) && !collectedProp.has(sq);
               return (
                 <div
                   key={sq}
@@ -329,7 +310,6 @@ function InlineChessBoard({
                   onPointerDown={(e) => handlePointerDown(e, sq)}
                   onDragStart={preventDrag}
                 >
-                  {/* Inline coordinates */}
                   {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                   {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
                   {hasStar && (
@@ -499,7 +479,7 @@ function MultiLevelStarBoard({
       {level.instructions && <p className="text-blue-800 font-medium">{level.instructions}</p>}
       {level.hint && <p className="text-sm text-blue-600">💡 {level.hint}</p>}
 
-      <InlineChessBoard fen={position} stars={stars} onMove={handleMove} />
+      <InlineChessBoard fen={position} stars={stars} collectedStars={collected} onMove={handleMove} />
 
       {msg && (
         <p className={`text-center text-sm font-medium ${msg.includes('Все') || msg.includes('пройдены') ? 'text-green-600' : msg.includes('Недопустимый') ? 'text-red-500' : 'text-amber-600'}`}>
