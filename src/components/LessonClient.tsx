@@ -221,18 +221,17 @@ function InlineChessBoard({
     (square: string) => {
       const piece = squares[square];
       if (selectedSquare) {
-        if (isValidRookMove(selectedSquare, square, squares)) {
-          const newSquares = { ...squares };
-          delete newSquares[selectedSquare];
-          newSquares[square] = { type: 'r', color: 'w' };
-          const newFen = squaresToFen(newSquares, 'w');
-          setPosition(newFen);
-          if (stars.includes(square)) {
-            setCollectedStars((prev) => new Set([...prev, square]));
-          }
+        if (selectedSquare === square) {
           setSelectedSquare(null);
-          setMsg('');
-          onMove?.(selectedSquare, square);
+          return;
+        }
+        if (isValidRookMove(selectedSquare, square, squares)) {
+          // Delegate move to parent — parent owns position state
+          const accepted = onMove?.(selectedSquare, square);
+          if (accepted !== false) {
+            setSelectedSquare(null);
+            setMsg('');
+          }
         } else {
           if (piece && piece.color === 'w') {
             setSelectedSquare(square);
@@ -248,7 +247,7 @@ function InlineChessBoard({
         }
       }
     },
-    [selectedSquare, squares, stars, onMove]
+    [selectedSquare, squares, onMove]
   );
 
   // Sync refs after click is defined
@@ -317,15 +316,6 @@ function InlineChessBoard({
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
           if (isValidRookMove(start.square, targetSquare, squaresRef.current)) {
-            const newSquares = { ...squaresRef.current };
-            delete newSquares[start.square];
-            newSquares[targetSquare] = { type: 'r', color: 'w' };
-            const newFen = squaresToFen(newSquares, 'w');
-            setPosition(newFen);
-            if (starsRef.current.includes(targetSquare)) {
-              setCollectedStars((prev) => new Set([...prev, targetSquare]));
-            }
-            setMsg('');
             onMoveRef.current?.(start.square, targetSquare);
           } else {
             setMsg('Недопустимый ход. Ладья ходит только прямо!');
