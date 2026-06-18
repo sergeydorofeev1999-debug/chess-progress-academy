@@ -85,10 +85,97 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
   return true;
 }
 
-const PIECE_SYMBOLS: Record<string, string> = {
-  wP: '♙', wN: '♘', wB: '♗', wR: '♖', wQ: '♕', wK: '♔',
-  bP: '♟', bN: '♞', bB: '♝', bR: '♜', bQ: '♛', bK: '♚',
-};
+// ─── SVG Chess Pieces (Lichess-style) ───────────────────────────
+function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
+  const fill = color === 'w' ? '#fff' : '#333';
+  const stroke = '#1a1a1a';
+  const sw = 1.2;
+
+  const svgs: Record<string, React.ReactNode> = {
+    K: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22.5 11.63V6M20 8h5" fill="none" strokeLinejoin="miter"/>
+          <path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill={fill}/>
+          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-5.5 2.5-9 3.5C29 25.5 23 25.5 18 26c-3.5-1-5-4.5-9-3.5-3 6 6 10.5 6 10.5v7z" fill={fill}/>
+          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-3c-5.5 3.5-15.5 3.5-21 0v3z" fill="none" strokeWidth={1}/>
+        </g>
+      </svg>
+    ),
+    Q: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M8 12l5.5 3L12 18l-7-2zM37 12l-5.5 3L33 18l7-2zM16 8.5l6.5 2 6.5-2-3-4.5h-7z" fill={fill}/>
+          <path d="M9 26c8.5-1.5 18.5-1.5 27 0l2.5-12.5L34 19l-3-3-3.5 2.7L24 14l-3.5 4.7L17 16l-3 3-4.5-5.5L6.5 13.5 9 26z" fill={fill}/>
+          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-5.5 2.5-9 3.5C23 25.5 17 25.5 13 26c-3.5-1-5-4.5-9-3.5-3 6 6 10.5 6 10.5v7z" fill={fill}/>
+          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-3c-5.5 3.5-15.5 3.5-21 0v3z" fill="none" strokeWidth={1}/>
+        </g>
+      </svg>
+    ),
+    R: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 39h27v-3H9v3zM12.5 36v-4h20v4h-20zM11 14V9h4v2h5V9h5v2h5V9h4v5" fill={fill}/>
+          <path d="M34 14l-3 3H14l-3-3" fill={fill}/>
+          <path d="M31 17v12.5H14V17" fill={fill}/>
+          <path d="M31 29.5l1.5 2.5h-20l1.5-2.5" fill={fill}/>
+          <path d="M11 14h23" fill="none"/>
+        </g>
+      </svg>
+    ),
+    B: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.43-13.5 2-3.39-2.43-10.11-1.03-13.5-2-1.35.49-2.32.47-3-.5 1.35-1.46 3-2 3-2z" fill={fill}/>
+          <path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z" fill={fill}/>
+          <path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z" fill={fill}/>
+        </g>
+      </svg>
+    ),
+    N: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill={fill}/>
+          <path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0-5 1.99-5 1.99l3.5-7c2.91-1.96 7.56-4.47 14.5-4.95z" fill={fill}/>
+          <path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0z" fill={stroke} stroke="none"/>
+          <path d="M15 15.5a.5 1.5 0 1 1-1 0 .5 1.5 0 1 1 1 0z" fill={stroke} transform="matrix(.866.5-.5.866 9.693-5.173)" stroke="none"/>
+        </g>
+      </svg>
+    ),
+    P: (
+      <svg viewBox="0 0 45 45" className="w-full h-full">
+        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill={fill}/>
+        </g>
+      </svg>
+    ),
+  };
+
+  const svg = svgs[type.toUpperCase()];
+  if (!svg) return null;
+  return svg;
+}
+
+// ─── SVG Star (Lichess-style) ─────────────────────────────────
+function StarSvg() {
+  return (
+    <svg viewBox="0 0 45 45" className="w-7 h-7 drop-shadow-lg">
+      <defs>
+        <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fcd34d"/>
+          <stop offset="100%" stopColor="#f59e0b"/>
+        </linearGradient>
+      </defs>
+      <path
+        d="M22.5 2l5.5 14.5L43 18l-11.5 9 4 15-13-9.5-13 9.5 4-15L2 18l15-1.5z"
+        fill="url(#starGrad)"
+        stroke="#b45309"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 function InlineChessBoard({
   fen,
@@ -106,12 +193,6 @@ function InlineChessBoard({
 
   const parsed = parseFen(position);
   const squares = parsed.squares;
-
-  const getPiece = (sq: string) => {
-    const p = squares[sq];
-    if (!p) return null;
-    return PIECE_SYMBOLS[`${p.color}${p.type.toUpperCase()}`] || null;
-  };
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
@@ -152,11 +233,11 @@ function InlineChessBoard({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="grid border-2 border-amber-800 rounded" style={{ gridTemplateColumns: 'repeat(8, 44px)', gridTemplateRows: 'repeat(8, 44px)' }}>
+      <div className="grid border-2 border-slate-700 rounded" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}>
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
-            const piece = getPiece(sq);
+            const pieceObj = squares[sq];
             const light = isLight(fi, ri);
             const sel = selectedSquare === sq;
             const hasStar = stars.includes(sq) && !collectedStars.has(sq);
@@ -164,19 +245,23 @@ function InlineChessBoard({
               <div
                 key={sq}
                 onClick={() => click(sq)}
-                className={`flex items-center justify-center relative cursor-pointer select-none text-2xl ${
-                  light ? 'bg-amber-100' : 'bg-amber-700'
+                className={`flex items-center justify-center relative cursor-pointer select-none ${
+                  light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
                 } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} hover:opacity-90 transition`}
-                style={{ width: 44, height: 44 }}
+                style={{ width: 52, height: 52 }}
               >
-                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[9px] font-bold ${light ? 'text-amber-800' : 'text-amber-100'}`}>{rank}</span>}
-                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[9px] font-bold ${light ? 'text-amber-800' : 'text-amber-100'}`}>{file}</span>}
+                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
+                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
                 {hasStar && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-pulse"><span className="text-yellow-800 text-xs">★</span></div>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                    <div className="animate-pulse"><StarSvg /></div>
                   </div>
                 )}
-                {piece && <span className={`relative z-10 ${'wR wQ wK wB wN wP'.includes(piece) ? 'text-white drop-shadow' : 'text-slate-900 drop-shadow'}`}>{piece}</span>}
+                {pieceObj && (
+                  <div className="w-[42px] h-[42px] relative z-0">
+                    <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
+                  </div>
+                )}
               </div>
             );
           })
