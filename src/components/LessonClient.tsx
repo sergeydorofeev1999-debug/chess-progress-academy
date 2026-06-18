@@ -89,7 +89,7 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
 function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const fill = color === 'w' ? '#fff' : '#333';
   const stroke = '#1a1a1a';
-  const sw = 1.2;
+  const sw = color === 'w' ? 2 : 1.2; // толще обводка для белых
 
   const svgs: Record<string, React.ReactNode> = {
     K: (
@@ -153,7 +153,7 @@ function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
 
   const svg = svgs[type.toUpperCase()];
   if (!svg) return null;
-  return svg;
+  return <div style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>{svg}</div>;
 }
 
 // ─── SVG Star (Lichess-style) ─────────────────────────────────
@@ -258,7 +258,7 @@ function InlineChessBoard({
                   </div>
                 )}
                 {pieceObj && (
-                  <div className="w-[42px] h-[42px] relative z-0">
+                  <div className="w-[42px] h-[42px] relative">
                     <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
                   </div>
                 )}
