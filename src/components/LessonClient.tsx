@@ -247,13 +247,28 @@ function InlineChessBoard({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
-      const piece = squares[square];
-      if (!piece || piece.color !== 'w') return;
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
       setMsg('');
     },
-    [squares]
+    []
+  );
+
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      // If a drag started (threshold exceeded), leave it to the global window handler
+      if (start.moved) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (Math.abs(dx) <= 20 && Math.abs(dy) <= 20) {
+        // Tap: execute click on the original square
+        click(start.square);
+      }
+      // Mark as handled so global handler skips it
+      pointerStartRef.current = null;
+    },
+    [click]
   );
 
   useEffect(() => {
@@ -335,6 +350,7 @@ function InlineChessBoard({
                 } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
+                onPointerUp={handlePointerUp}
                 onDragStart={preventDrag}
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
