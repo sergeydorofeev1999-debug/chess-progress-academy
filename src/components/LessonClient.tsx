@@ -560,10 +560,6 @@ function MultiLevelStarBoard({
             </button>
           ))}
         </div>
-        <div className="text-xs font-medium text-gray-500">
-          Позиция {currentLevel + 1} / {totalLevels}
-        </div>
-        {allDone && <span className="text-green-600 text-xs font-medium">✓ Все пройдены!</span>}
 
         {/* Piece menu — Lichess style */}
         <div className="border border-gray-200 rounded overflow-hidden">
@@ -607,80 +603,29 @@ function MultiLevelStarBoard({
 
       {/* RIGHT COLUMN: Exercise info */}
       <div className="w-[180px] flex-shrink-0 space-y-3">
-        {/* Figure name header */}
-        <div className="bg-blue-500 text-white rounded-t-lg p-2">
+        {/* Figure name header — Lichess style */}
+        <div className="bg-blue-500 text-white rounded-t-lg p-2.5">
           <div className="flex items-center gap-2">
             <img src="/pieces/cburnett/wR.svg" className="w-6 h-6" draggable={false} alt="" />
-            <div className="text-sm font-bold">Ладья</div>
-          </div>
-          <div className="text-xs opacity-90 mt-0.5">Движется по прямой</div>
-        </div>
-
-        {/* Dynamic star rating */}
-        {(() => {
-          const max = level.maxMoves || stars.length + 1;
-          let earned = 3;
-          if (allCollected) {
-            if (moves <= max) earned = 3;
-            else if (moves <= max + 1) earned = 2;
-            else earned = 1;
-          } else {
-            earned = 0;
-          }
-          return (
-            <div className="bg-blue-600 text-white px-2 py-1 flex justify-center gap-1">
-              {[1,2,3].map((s) => (
-                <img
-                  key={s}
-                  src="/images/learn/star.png"
-                  className={`w-5 h-5 ${s <= earned ? 'opacity-100' : 'opacity-30 grayscale'}`}
-                  draggable={false}
-                  alt=""
-                />
-              ))}
+            <div className="text-sm font-bold leading-tight">
+              <div>Ладья</div>
+              <div className="text-[11px] font-normal opacity-90">Движется по прямой</div>
             </div>
-          );
-        })()}
-
-        {/* Instructions */}
-        {level.instructions && (
-          <div className="bg-white rounded-b-lg p-3 text-sm font-medium text-gray-800">
-            {level.instructions}
           </div>
-        )}
-        {level.hint && (
-          <div className="bg-amber-50 rounded-lg p-2.5">
-            <p className="text-xs text-amber-800">💡 {level.hint}</p>
-          </div>
-        )}
-
-        {/* Stars collected progress — compact */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>Звёзды {collectedCount} / {stars.length}</span>
         </div>
-        <div className="flex gap-0.5">
-          {stars.map((s: string, i: number) => (
-            <img
-              key={i}
-              src="/images/learn/star.png"
-              className={`w-5 h-5 transition-opacity ${collected.includes(s) ? 'opacity-100' : 'opacity-20 grayscale'}`}
-              draggable={false}
-              alt=""
-            />
-          ))}
+
+        {/* Instructions — single clean block */}
+        <div className="bg-white rounded-b-lg p-3 text-sm text-gray-800 leading-relaxed">
+          {level.instructions}
+          {level.hint && (
+            <p className="mt-2 text-xs text-amber-700">💡 {level.hint}</p>
+          )}
         </div>
 
         {/* Message */}
         {msg && (
           <div className={`text-center py-1.5 px-2 rounded text-xs font-medium ${msg.includes('Все позиции') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
             {msg}
-          </div>
-        )}
-
-        {/* Auto-advance */}
-        {allCollected && currentLevel + 1 < totalLevels && (
-          <div className="flex items-center justify-center gap-1 text-blue-600 text-xs animate-pulse">
-            <ChevronRight size={14} /> Следующая позиция...
           </div>
         )}
 
@@ -735,7 +680,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-2 py-4">
       <Link href={`/courses/${courseId}`} className="text-sm text-slate-500 hover:text-slate-800 mb-4 inline-block">
         ← Назад к курсу
       </Link>
@@ -745,7 +690,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
       {/* Interactive Lesson */}
       {interactiveConfig ? (
-        <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6">
+        <div className="mb-8">
           <MultiLevelStarBoard
             config={interactiveConfig}
             onAllComplete={handleInteractiveComplete}
