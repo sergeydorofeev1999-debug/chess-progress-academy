@@ -302,6 +302,12 @@ function InlineChessBoard({
       e.preventDefault();
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
       setMsg('');
+      // Show valid moves immediately when picking up a piece (no drag delay)
+      const piece = squaresRef.current[square];
+      if (piece && piece.color === 'w') {
+        setSelectedSquare(square);
+        setHoverSquare(square);
+      }
     },
     []
   );
@@ -318,7 +324,7 @@ function InlineChessBoard({
         const piece = squaresRef.current[start.square];
         if (piece && piece.color === 'w') {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
-          setSelectedSquare(null);
+          setSelectedSquare(null); // remove click-selection outline during drag
         }
       }
       if (start.moved) {
