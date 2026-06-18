@@ -307,7 +307,7 @@ function InlineChessBoard({
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="grid border-2 border-slate-700 rounded relative" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}>
+      <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)', touchAction: 'none' }}>
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
@@ -324,7 +324,7 @@ function InlineChessBoard({
                 className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
                 } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
-                style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default' }}
+                style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
                 onDragStart={preventDrag}
               >
