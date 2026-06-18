@@ -266,21 +266,6 @@ function InlineChessBoard({
     []
   );
 
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      const start = pointerStartRef.current;
-      if (!start) return;
-      if (start.moved) return;
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      if (Math.abs(dx) <= 20 && Math.abs(dy) <= 20) {
-        clickRef.current(start.square);
-      }
-      pointerStartRef.current = null;
-    },
-    []
-  );
-
   useEffect(() => {
     const handleGlobalMove = (e: PointerEvent) => {
       const start = pointerStartRef.current;
@@ -351,7 +336,6 @@ function InlineChessBoard({
                 } ${sel ? 'outline outline-2 outline-blue-500 outline-offset-[-2px]' : ''} ${isHover && dragPiece ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
-                onPointerUp={handlePointerUp}
                 onDragStart={preventDrag}
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
