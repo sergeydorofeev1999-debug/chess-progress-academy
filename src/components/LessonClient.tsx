@@ -649,29 +649,12 @@ function MultiLevelStarBoard({
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
-  const [completing, setCompleting] = useState(false);
 
   const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
   const prevLesson = lessonIndex > 0 ? allLessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex < allLessons.length - 1 ? allLessons[lessonIndex + 1] : null;
 
   const interactiveConfig = parseInteractiveConfig(lesson.video_url);
-
-  const handleComplete = async () => {
-    if (!userId) {
-      alert('Войдите, чтобы сохранить прогресс');
-      return;
-    }
-    setCompleting(true);
-    try {
-      await markLessonComplete(userId, lesson.id);
-      setIsCompleted(true);
-    } catch (e) {
-      alert('Ошибка сохранения прогресса');
-    } finally {
-      setCompleting(false);
-    }
-  };
 
   const handleInteractiveComplete = async () => {
     if (userId) {
@@ -721,22 +704,6 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
             <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
           </div>
-        </div>
-      )}
-
-      {!isCompleted && (
-        <button
-          onClick={handleComplete}
-          disabled={completing}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-lg transition mb-6 disabled:opacity-50"
-        >
-          {completing ? 'Сохранение...' : 'Отметить урок пройденным ✓'}
-        </button>
-      )}
-
-      {isCompleted && (
-        <div className="flex items-center gap-2 text-green-600 font-medium mb-6">
-          <CheckCircle size={20} /> Урок пройден!
         </div>
       )}
 
