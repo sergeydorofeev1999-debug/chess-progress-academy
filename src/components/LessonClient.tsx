@@ -525,34 +525,6 @@ function MultiLevelStarBoard({
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Figure menu + level progress */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        {/* Level progress — horizontal on mobile, vertical on desktop */}
-        <div className="flex flex-row lg:flex-col gap-0.5">
-          {levels.map((_l: any, i: number) => (
-            <button
-              key={i}
-              onClick={() => {
-                if (i > currentLevel && !allDone) return;
-                setCurrentLevel(i);
-                setPosition(levels[i].initialFen);
-                setCollected([]);
-                setMoves(0);
-                setMsg('');
-                if (i !== currentLevel) setAllDone(false);
-              }}
-              disabled={i > currentLevel && !allDone}
-              className={`w-full flex items-center gap-1.5 px-2 py-1 text-xs rounded-sm transition ${
-                i === currentLevel
-                  ? 'bg-blue-500 text-white'
-                  : i < currentLevel
-                    ? 'bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer'
-                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <span className="font-bold">{i + 1}</span>
-            </button>
-          ))}
-        </div>
-
         {/* Piece menu — Lichess style (hidden on mobile) */}
         <div className="hidden lg:block border border-gray-200 rounded overflow-hidden">
           <div className="bg-blue-500 text-white text-[11px] font-bold px-2 py-1">
@@ -628,7 +600,7 @@ function MultiLevelStarBoard({
           </button>
         )}
 
-        {/* Level progress stars — Lichess style blocks */}
+        {/* Level progress stars — Lichess style clickable blocks */}
         <div className="flex rounded overflow-hidden border border-gray-200">
           {levels.map((_l: any, i: number) => {
             const earned = levelStars[i];
@@ -636,11 +608,21 @@ function MultiLevelStarBoard({
             const isDone = earned != null;
             const isFuture = i > currentLevel && !allDone;
             return (
-              <div
+              <button
                 key={i}
-                className={`flex-1 py-1.5 flex justify-center gap-0.5 ${
+                onClick={() => {
+                  if (isFuture) return;
+                  setCurrentLevel(i);
+                  setPosition(levels[i].initialFen);
+                  setCollected([]);
+                  setMoves(0);
+                  setMsg('');
+                  if (i !== currentLevel) setAllDone(false);
+                }}
+                disabled={isFuture}
+                className={`flex-1 py-1.5 flex justify-center gap-0.5 transition ${
                   isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
-                }`}
+                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
                 {[1, 2, 3].map((s) => (
                   <img
@@ -653,7 +635,7 @@ function MultiLevelStarBoard({
                     alt=""
                   />
                 ))}
-              </div>
+              </button>
             );
           })}
         </div>
