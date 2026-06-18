@@ -449,6 +449,7 @@ function MultiLevelStarBoard({
       delete newSquares[from];
       newSquares[to] = { type: 'r', color: 'w' };
       const newFen = squaresToFen(newSquares, 'w');
+      positionRef.current = newFen;
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
