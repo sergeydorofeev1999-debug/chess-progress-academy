@@ -339,7 +339,7 @@ function InlineChessBoard({
                 key={sq}
                 data-square={sq}
                 className={`flex items-center justify-center relative select-none ${
-                  light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
+                  light ? 'bg-[#e8c99b]' : 'bg-[#7b5f3c]'
                 } ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
@@ -349,8 +349,8 @@ function InlineChessBoard({
                 {sel && !hasStar && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                 )}
-                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
-                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
+                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#7b5f3c]' : 'text-[#e8c99b]'}`}>{rank}</span>}
+                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#7b5f3c]' : 'text-[#e8c99b]'}`}>{file}</span>}
                 {/* Green move indicator dots (like Lichess) — only on empty squares (no star) */}
                 {isValidMove && !hasStar && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
