@@ -1,8 +1,7 @@
 'use client';
 
-import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js';
 import { useState, useCallback, useEffect } from 'react';
+import { Chess } from 'chess.js';
 
 interface Props {
   fen?: string;
@@ -14,20 +13,24 @@ export default function ChessBoardComponent({
   interactive = true,
 }: Props) {
   const [isClient, setIsClient] = useState(false);
-  
+  const [Chessboard, setChessboard] = useState<any>(null);
+  const [game] = useState(new Chess(fen));
+  const [boardFen, setBoardFen] = useState(fen);
+
   useEffect(() => {
     setIsClient(true);
+    import('react-chessboard').then((mod) => {
+      setChessboard(() => mod.Chessboard);
+    });
   }, []);
 
-  if (!isClient) {
+  if (!isClient || !Chessboard) {
     return (
       <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
       </div>
     );
   }
-  const [game] = useState(new Chess(fen));
-  const [boardFen, setBoardFen] = useState(fen);
 
   const onDrop = useCallback(
     ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {

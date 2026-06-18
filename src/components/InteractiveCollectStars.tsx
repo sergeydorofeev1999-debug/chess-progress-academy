@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { Star, CheckCircle, RotateCcw } from 'lucide-react';
 
@@ -27,12 +26,16 @@ interface Props {
 
 export default function InteractiveCollectStars({ config, onComplete }: Props) {
   const [isClient, setIsClient] = useState(false);
+  const [Chessboard, setChessboard] = useState<any>(null);
   
   useEffect(() => {
     setIsClient(true);
+    import('react-chessboard').then((mod) => {
+      setChessboard(() => mod.Chessboard);
+    });
   }, []);
   
-  if (!isClient) {
+  if (!isClient || !Chessboard) {
     return (
       <div className="text-center py-12 bg-slate-50 rounded-lg">
         <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
@@ -41,10 +44,10 @@ export default function InteractiveCollectStars({ config, onComplete }: Props) {
     );
   }
 
-  return <InteractiveBoard config={config} onComplete={onComplete} />;
+  return <InteractiveBoard Chessboard={Chessboard} config={config} onComplete={onComplete} />;
 }
 
-function InteractiveBoard({ config, onComplete }: Props) {
+function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboard: any }) {
   const [game, setGame] = useState(() => new Chess(config.initialFen));
   const [stars, setStars] = useState<StarData[]>(
     config.stars.map(s => ({ ...s, collected: false }))
