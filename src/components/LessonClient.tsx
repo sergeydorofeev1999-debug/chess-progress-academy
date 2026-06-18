@@ -254,15 +254,15 @@ function InlineChessBoard({
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
-      if (!start.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         start.moved = true;
         const piece = squares[start.square];
-        if (piece) {
+        if (piece && piece.color === 'w') {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
           setSelectedSquare(null);
         }
       }
-      if (start.moved) {
+      if (start.moved && dragPiece) {
         setDragPos({ x: e.clientX, y: e.clientY });
         setHoverSquare(getSquareFromPoint(e.clientX, e.clientY));
       }
