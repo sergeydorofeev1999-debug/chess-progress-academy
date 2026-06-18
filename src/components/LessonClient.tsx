@@ -475,8 +475,9 @@ function MultiLevelStarBoard({
         return false;
       }
       const newSquares = { ...parsed.squares };
+      const movedPiece = parsed.squares[from];
       delete newSquares[from];
-      newSquares[to] = { type: 'r', color: 'w' };
+      newSquares[to] = { type: movedPiece?.type || 'r', color: 'w' };
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
