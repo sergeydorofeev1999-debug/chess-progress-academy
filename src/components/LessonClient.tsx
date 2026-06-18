@@ -421,9 +421,15 @@ function InlineChessBoard({
                     />
                   </div>
                 )}
-                {/* Star icon (collected/uncollected) */}
+                {/* Star icon (collected/uncollected) with green background */}
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+                    style={{ opacity: hasStar ? 1 : 0 }}
+                  >
+                    <div className="bg-[#5d9040] rounded-[5px]" style={{ width: Math.round(sqSize * 0.7), height: Math.round(sqSize * 0.7) }} />
+                  </div>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
                     style={{ opacity: hasStar ? 1 : 0 }}
                   >
                     <StarSvg />
