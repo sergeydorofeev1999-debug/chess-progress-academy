@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
@@ -51,14 +51,25 @@ function InlineChessBoard({
   stars?: string[];
   onMove?: (from: string, to: string) => boolean;
 }) {
-  const [game] = useState(() => new Chess(fen));
+  const [ready, setReady] = useState(false);
+  const gameRef = useRef<Chess | null>(null);
   const [position, setPosition] = useState(fen);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
 
+  useEffect(() => {
+    gameRef.current = new Chess(fen);
+    setPosition(fen);
+    setSelectedSquare(null);
+    setCollectedStars(new Set());
+    setMsg('');
+    setReady(true);
+  }, [fen]);
+
   const getPiece = (sq: string) => {
-    const p = game.get(sq as any);
+    if (!gameRef.current) return null;
+    const p = gameRef.current.get(sq as any);
     if (!p) return null;
     return PIECE_SYMBOLS[`${p.color === 'w' ? 'w' : 'b'}${p.type.toUpperCase()}`] || null;
   };
@@ -67,6 +78,8 @@ function InlineChessBoard({
 
   const click = useCallback(
     (square: string) => {
+      const game = gameRef.current;
+      if (!game || !ready) return;
       const piece = game.get(square as any);
       if (selectedSquare) {
         try {
@@ -94,8 +107,21 @@ function InlineChessBoard({
         }
       }
     },
-    [selectedSquare, game, stars, onMove]
+    [selectedSquare, ready, stars, onMove]
   );
+
+  // SSR + hydration first render: MUST match server HTML
+  if (!ready || !gameRef.current) {
+    return (
+      <div className="flex flex-col items-center gap-2">
+        <div className="w-full" style={{ width: 352, height: 352 }}>
+          <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+            <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -141,7 +167,8 @@ function InlineStarBoard({
   config: any;
   onComplete?: () => void;
 }) {
-  const [game] = useState(() => new Chess(config.initialFen));
+  const [ready, setReady] = useState(false);
+  const gameRef = useRef<Chess | null>(null);
   const [position, setPosition] = useState(config.initialFen);
   const [collected, setCollected] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
@@ -150,11 +177,21 @@ function InlineStarBoard({
 
   const stars = config.stars?.map((s: any) => s.square) || [];
   const allowed = config.allowedPieces || [];
-  const remaining = stars.filter((s: string) => !collected.has(s)).length;
+
+  useEffect(() => {
+    gameRef.current = new Chess(config.initialFen);
+    setPosition(config.initialFen);
+    setCollected(new Set());
+    setMoves(0);
+    setComplete(false);
+    setMsg('');
+    setReady(true);
+  }, [config.initialFen]);
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      if (complete) return false;
+      const game = gameRef.current;
+      if (!game || !ready || complete) return false;
       const piece = game.get(from as any);
       if (!piece) return false;
       if (allowed.length > 0 && !allowed.includes(piece.type)) {
@@ -184,17 +221,35 @@ function InlineStarBoard({
       setMsg('Недопустимый ход');
       return false;
     },
-    [game, stars, collected, allowed, complete, onComplete]
+    [ready, stars, collected, allowed, complete, onComplete]
   );
 
   const reset = () => {
-    game.load(config.initialFen);
+    if (!gameRef.current) return;
+    gameRef.current.load(config.initialFen);
     setPosition(config.initialFen);
     setCollected(new Set());
     setMoves(0);
     setComplete(false);
     setMsg('');
   };
+
+  if (!ready) {
+    return (
+      <div className="space-y-3 w-full">
+        <div className="flex items-center gap-3">
+          <div className="h-2 flex-1 bg-gray-200 rounded-full" />
+        </div>
+        <div className="w-full" style={{ width: 352, height: 352 }}>
+          <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+            <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const remaining = stars.filter((s: string) => !collected.has(s)).length;
 
   return (
     <div className="space-y-3 w-full">
