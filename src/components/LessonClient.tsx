@@ -405,9 +405,9 @@ function MultiLevelStarBoard({
   nextLessonUrl?: string;
 }) {
   const router = useRouter();
-  const levels = useMemo(() => config.levels || [
+  const [levels] = useState(() => config.levels || [
     { initialFen: config.initialFen, stars: config.stars, instructions: config.instructions, hint: config.hint }
-  ], [JSON.stringify(config)]);
+  ]);
 
   const [currentLevel, setCurrentLevel] = useState(0);
   const [position, setPosition] = useState(levels[0].initialFen);
@@ -431,11 +431,11 @@ function MultiLevelStarBoard({
   }, [level]);
 
   useEffect(() => {
-    setPosition(level.initialFen);
+    setPosition(levels[currentLevel].initialFen);
     setCollected(new Set());
     setMoves(0);
     setMsg('');
-  }, [currentLevel, level]);
+  }, [currentLevel, levels]);
 
   const handleMove = useCallback(
     (from: string, to: string) => {
