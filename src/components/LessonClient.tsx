@@ -426,7 +426,12 @@ function InlineChessBoard({
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                     style={{ opacity: hasStar ? 1 : 0 }}
                   >
-                    <div className="bg-[#5d9040] rounded-[5px]" style={{ width: Math.round(sqSize * 0.7), height: Math.round(sqSize * 0.7) }} />
+                    <div className="relative flex items-center justify-center" style={{ width: Math.round(sqSize * 0.72), height: Math.round(sqSize * 0.72) }}>
+                      {/* Green circle behind */}
+                      <div className="absolute inset-0 bg-[#5d9040] rounded-full" />
+                      {/* Cell-colored square on top — shows green corners */}
+                      <div className={`absolute inset-[2px] ${light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'} rounded-[3px]`} />
+                    </div>
                   </div>
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
