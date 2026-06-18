@@ -394,8 +394,8 @@ function InlineChessBoard({
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
-                {/* Green move indicator dots (like Lichess) */}
-                {isValidMove && (
+                {/* Green move indicator dots (like Lichess) — only on empty squares (no star) */}
+                {isValidMove && !hasStar && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                     <div
                       style={{
