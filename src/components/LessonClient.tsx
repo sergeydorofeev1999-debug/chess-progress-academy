@@ -396,15 +396,31 @@ function InlineChessBoard({
               <div
                 key={sq}
                 data-square={sq}
-                className={`flex items-center justify-center relative select-none ${
+                className={`flex items-center justify-center relative select-none overflow-hidden ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${sel ? 'outline outline-2 outline-blue-500 outline-offset-[-2px]' : ''} ${isHover && dragPiece ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''} ${isHover && !dragPiece ? 'outline outline-2 outline-green-600 outline-offset-[-2px]' : ''} ${isSource ? 'opacity-50' : ''}`}
+                } ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
                 onPointerEnter={() => setHoverSquare(sq)}
                 onPointerLeave={() => setHoverSquare(null)}
                 onDragStart={preventDrag}
               >
+                {/* Hover highlight — Lichess rounded style (empty squares) */}
+                {isHover && !dragPiece && !sel && !hasStar && !isValidMove && (
+                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.35)] pointer-events-none z-10" />
+                )}
+                {/* Hover highlight — valid move square */}
+                {isHover && isValidMove && !hasStar && (
+                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.5)] pointer-events-none z-10" />
+                )}
+                {/* Selected square highlight */}
+                {sel && !hasStar && (
+                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                )}
+                {/* Valid move on star square */}
+                {isValidMove && hasStar && (
+                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.4)] pointer-events-none z-10" />
+                )}
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
                 {/* Green move indicator dots (like Lichess) — only on empty squares (no star) */}
