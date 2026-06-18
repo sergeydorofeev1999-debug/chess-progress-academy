@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ChessBoard from '@/components/ChessBoard';
+import InteractiveCollectStars from '@/components/InteractiveCollectStars';
 import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
 
@@ -12,6 +13,7 @@ interface Lesson {
   content: string;
   duration_minutes: number;
   chess_board_fen: string | null;
+  video_url: string | null;
   course_id: string;
 }
 
@@ -23,6 +25,16 @@ interface Props {
   userId: string | null;
 }
 
+function parseInteractiveConfig(videoUrl: string | null) {
+  if (!videoUrl) return null;
+  if (!videoUrl.startsWith('{')) return null;
+  try {
+    return JSON.parse(videoUrl);
+  } catch {
+    return null;
+  }
+}
+
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
   const [completing, setCompleting] = useState(false);
@@ -30,6 +42,8 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
   const prevLesson = lessonIndex > 0 ? allLessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex < allLessons.length - 1 ? allLessons[lessonIndex + 1] : null;
+
+  const interactiveConfig = parseInteractiveConfig(lesson.video_url);
 
   const handleComplete = async () => {
     if (!userId) {
@@ -47,6 +61,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
     }
   };
 
+  const handleInteractiveComplete = async () => {
+    if (userId) {
+      await markLessonComplete(userId, lesson.id);
+      setIsCompleted(true);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link href={`/courses/${courseId}`} className="text-sm text-slate-500 hover:text-slate-800 mb-4 inline-block">
@@ -56,18 +77,32 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       <h1 className="text-2xl font-bold mb-2">{lesson.title}</h1>
       <p className="text-sm text-slate-500 mb-6">{lesson.duration_minutes} мин</p>
 
-      <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center mb-6">
-        <div className="text-center text-white">
-          <div className="text-5xl mb-2">▶️</div>
-          <p className="text-sm text-slate-300">Видео будет здесь</p>
+      {/* Interactive Lesson */}
+      {interactiveConfig ? (
+        <div className="mb-8">
+          <InteractiveCollectStars
+            config={interactiveConfig}
+            onComplete={handleInteractiveComplete}
+          />
         </div>
-      </div>
+      ) : (
+        /* Regular video placeholder */
+        <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center mb-6">
+          <div className="text-center text-white">
+            <div className="text-5xl mb-2">▶️</div>
+            <p className="text-sm text-slate-300">Видео будет здесь</p>
+          </div>
+        </div>
+      )}
 
-      <div className="prose max-w-none mb-8">
-        <p className="text-slate-700 leading-relaxed whitespace-pre-line">{lesson.content}</p>
-      </div>
+      {/* Regular text content */}
+      {lesson.content && !interactiveConfig && (
+        <div className="prose max-w-none mb-8">
+          <p className="text-slate-700 leading-relaxed whitespace-pre-line">{lesson.content}</p>
+        </div>
+      )}
 
-      {lesson.chess_board_fen && (
+      {lesson.chess_board_fen && !interactiveConfig && (
         <div className="mb-8">
           <h3 className="font-semibold mb-4">Позиция на доске</h3>
           <ChessBoard fen={lesson.chess_board_fen} interactive={true} />
