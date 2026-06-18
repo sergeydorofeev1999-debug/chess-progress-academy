@@ -405,9 +405,9 @@ function MultiLevelStarBoard({
   nextLessonUrl?: string;
 }) {
   const router = useRouter();
-  const levels = config.levels || [
+  const levels = useMemo(() => config.levels || [
     { initialFen: config.initialFen, stars: config.stars, instructions: config.instructions, hint: config.hint }
-  ];
+  ], [JSON.stringify(config)]);
 
   const [currentLevel, setCurrentLevel] = useState(0);
   const [position, setPosition] = useState(levels[0].initialFen);
