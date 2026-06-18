@@ -1,19 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import dynamic from 'next/dynamic';
 import Link from 'next/link';
-const ChessBoardDynamic = dynamic(
-  () => import('@/components/ChessBoard'),
-  { ssr: false }
-);
+import ChessBoard from '@/components/ChessBoard';
+import InteractiveCollectStars from '@/components/InteractiveCollectStars';
 import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
-
-const InteractiveCollectStars = dynamic(
-  () => import('@/components/InteractiveCollectStars'),
-  { ssr: false, loading: () => <div className="text-center py-8">Загрузка интерактивной доски...</div> }
-);
 
 interface Lesson {
   id: string;
@@ -113,7 +105,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       {lesson.chess_board_fen && !interactiveConfig && (
         <div className="mb-8">
           <h3 className="font-semibold mb-4">Позиция на доске</h3>
-          <ChessBoardDynamic fen={lesson.chess_board_fen} interactive={true} />
+          <ChessBoard fen={lesson.chess_board_fen} interactive={true} />
         </div>
       )}
 
