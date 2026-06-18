@@ -85,6 +85,30 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
   return true;
 }
 
+function getValidRookSquares(from: string, squares: Record<string, any>): string[] {
+  if (squares[from]?.color !== 'w') return [];
+  const ff = FILES.indexOf(from[0]);
+  const fr = RANKS.indexOf(from[1]);
+  const valid: string[] = [];
+  // Directions: up, down, left, right
+  const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  for (const [df, dr] of dirs) {
+    let f = ff + df, r = fr + dr;
+    while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+      const sq = `${FILES[f]}${RANKS[r]}`;
+      const p = squares[sq];
+      if (p) {
+        if (p.color === 'w') break; // blocked by own piece
+        // cannot capture (we only move to empty or star squares, stars have no piece)
+        break;
+      }
+      valid.push(sq);
+      f += df; r += dr;
+    }
+  }
+  return valid;
+}
+
 // ─── SVG Chess Pieces ───────────────────────────
 function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const fill = color === 'w' ? '#fff' : '#333';
@@ -341,6 +365,9 @@ function InlineChessBoard({
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
+  // Valid move indicators (green dots like Lichess)
+  const validMoves = selectedSquare ? getValidRookSquares(selectedSquare, squares) : [];
+
   return (
     <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
       <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: `repeat(8, ${sqSize}px)`, gridTemplateRows: `repeat(8, ${sqSize}px)`, touchAction: 'none' }}>
@@ -353,6 +380,7 @@ function InlineChessBoard({
             const isHover = hoverSquare === sq;
             const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq);
+            const isValidMove = validMoves.includes(sq);
             return (
               <div
                 key={sq}
@@ -366,6 +394,20 @@ function InlineChessBoard({
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
+                {/* Green move indicator dots (like Lichess) */}
+                {isValidMove && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                    <div
+                      style={{
+                        width: Math.round(sqSize * 0.3),
+                        height: Math.round(sqSize * 0.3),
+                        backgroundColor: '#5d9040',
+                        borderRadius: '50%',
+                        opacity: 0.85,
+                      }}
+                    />
+                  </div>
+                )}
                 {(
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
