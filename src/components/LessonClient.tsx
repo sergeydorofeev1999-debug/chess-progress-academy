@@ -111,74 +111,14 @@ function getValidRookSquares(from: string, squares: Record<string, any>, starSqu
 }
 
 // ─── SVG Chess Pieces ───────────────────────────
-function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
-  const fill = color === 'w' ? '#fff' : '#333';
-  const stroke = '#1a1a1a';
-  const sw = color === 'w' ? 2 : 1.2;
-
-  const svgs: Record<string, React.ReactNode> = {
-    K: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22.5 11.63V6M20 8h5" fill="none" strokeLinejoin="miter"/>
-          <path d="M22.5 25s4.5-7.5 3-10.5c0 0-1-2.5-3-2.5s-3 2.5-3 2.5c-1.5 3 3 10.5 3 10.5" fill={fill}/>
-          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-5.5 2.5-9 3.5C29 25.5 23 25.5 18 26c-3.5-1-5-4.5-9-3.5-3 6 6 10.5 6 10.5v7z" fill={fill}/>
-          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-3c-5.5 3.5-15.5 3.5-21 0v3z" fill="none" strokeWidth={1}/>
-        </g>
-      </svg>
-    ),
-    Q: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M8 12l5.5 3L12 18l-7-2zM37 12l-5.5 3L33 18l7-2zM16 8.5l6.5 2 6.5-2-3-4.5h-7z" fill={fill}/>
-          <path d="M9 26c8.5-1.5 18.5-1.5 27 0l2.5-12.5L34 19l-3-3-3.5 2.7L24 14l-3.5 4.7L17 16l-3 3-4.5-5.5L6.5 13.5 9 26z" fill={fill}/>
-          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-7s9-4.5 6-10.5c-4-1-5.5 2.5-9 3.5C23 25.5 17 25.5 13 26c-3.5-1-5-4.5-9-3.5-3 6 6 10.5 6 10.5v7z" fill={fill}/>
-          <path d="M11.5 37c5.5 3.5 15.5 3.5 21 0v-3c-5.5 3.5-15.5 3.5-21 0v3z" fill="none" strokeWidth={1}/>
-        </g>
-      </svg>
-    ),
-    R: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 39h27v-3H9v3zM12.5 36v-4h20v4h-20zM11 14V9h4v2h5V9h5v2h5V9h4v5" fill={fill}/>
-          <path d="M34 14l-3 3H14l-3-3" fill={fill}/>
-          <path d="M31 17v12.5H14V17" fill={fill}/>
-          <path d="M31 29.5l1.5 2.5h-20l1.5-2.5" fill={fill}/>
-          <path d="M11 14h23" fill="none"/>
-        </g>
-      </svg>
-    ),
-    B: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 36c3.39-.97 10.11.43 13.5-2 3.39 2.43 10.11 1.03 13.5 2 0 0 1.65.54 3 2-.68.97-1.65.99-3 .5-3.39-.97-10.11.43-13.5 2-3.39-2.43-10.11-1.03-13.5-2-1.35.49-2.32.47-3-.5 1.35-1.46 3-2 3-2z" fill={fill}/>
-          <path d="M15 32c2.5 2.5 12.5 2.5 15 0 .5-1.5 0-2 0-2 0-2.5-2.5-4-2.5-4 5.5-1.5 6-11.5-5-15.5-11 4-10.5 14-5 15.5 0 0-2.5 1.5-2.5 4 0 0-.5.5 0 2z" fill={fill}/>
-          <path d="M25 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 1 1 5 0z" fill={fill}/>
-        </g>
-      </svg>
-    ),
-    N: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 10c10.5 1 16.5 8 16 29H15c0-9 10-6.5 8-21" fill={fill}/>
-          <path d="M24 18c.38 2.91-5.55 7.37-8 9-3 2-2.82 4.34-5 4-1.042-.94 1.41-3.04 0-3-1 0-5 1.99-5 1.99l3.5-7c2.91-1.96 7.56-4.47 14.5-4.95z" fill={fill}/>
-          <path d="M9.5 25.5a.5.5 0 1 1-1 0 .5.5 0 1 1 1 0z" fill={stroke} stroke="none"/>
-          <path d="M15 15.5a.5 1.5 0 1 1-1 0 .5 1.5 0 1 1 1 0z" fill={stroke} transform="matrix(.866.5-.5.866 9.693-5.173)" stroke="none"/>
-        </g>
-      </svg>
-    ),
-    P: (
-      <svg viewBox="0 0 45 45" className="w-full h-full">
-        <g fill={fill} stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill={fill}/>
-        </g>
-      </svg>
-    ),
-  };
-
-  const svg = svgs[type.toUpperCase()];
-  if (!svg) return null;
-  return <div style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>{svg}</div>;
+function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
+  const pieceKey = `${color}${type.toUpperCase()}`;
+  const src = `/pieces/cburnett/${pieceKey}.svg`;
+  return (
+    <div className="w-full h-full" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.4))" }}>
+      <img src={src} alt="" className="w-full h-full" draggable={false} />
+    </div>
+  );
 }
 
 function StarSvg() {
@@ -427,7 +367,7 @@ function InlineChessBoard({
                 </div>
                 {pieceObj && !isSource && (
                   <div className="relative pointer-events-none" style={{ width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
-                    <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
+                    <PieceImg type={pieceObj.type} color={pieceObj.color as 'w' | 'b'} />
                   </div>
                 )}
               </div>
@@ -437,7 +377,7 @@ function InlineChessBoard({
       </div>
       {dragPiece && (
         <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - Math.round(sqSize/2), top: dragPos.y - Math.round(sqSize/2), width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
-          <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} />
+          <PieceImg type={dragPiece.type} color={dragPiece.color as 'w' | 'b'} />
         </div>
       )}
       {msg && <p className="text-red-500 text-xs">{msg}</p>}
@@ -567,50 +507,70 @@ function MultiLevelStarBoard({
   return (
     <div className="flex gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Figure menu + level progress */}
-      <div className="w-[140px] flex-shrink-0 space-y-3">
-        {/* Level progress bar */}
-        <div className="space-y-1.5">
+      <div className="w-[140px] flex-shrink-0 space-y-2">
+        {/* Level progress — Lichess style colored blocks */}
+        <div className="space-y-0.5">
           {levels.map((_l: any, i: number) => (
             <div
               key={i}
-              className={`h-2 rounded-full transition-all ${
-                i < currentLevel ? 'bg-green-500' : i === currentLevel ? 'bg-blue-500' : 'bg-gray-200'
+              className={`flex items-center gap-1.5 px-2 py-1 text-xs rounded-sm ${
+                i === currentLevel
+                  ? 'bg-blue-500 text-white'
+                  : i < currentLevel
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-400'
               }`}
-            />
+            >
+              <span className="font-bold w-4">{i + 1}</span>
+              <span className="flex gap-0.5">
+                {[1, 2, 3].map((s) => (
+                  <img
+                    key={s}
+                    src="/images/learn/star.png"
+                    className={`w-3 h-3 ${i < currentLevel ? '' : 'opacity-40 grayscale'}`}
+                    draggable={false}
+                    alt=""
+                  />
+                ))}
+              </span>
+            </div>
           ))}
         </div>
-        <div className="text-sm font-medium text-gray-700">
+        <div className="text-xs font-medium text-gray-500">
           Позиция {currentLevel + 1} / {totalLevels}
         </div>
-        {allDone && <span className="text-green-600 text-sm font-medium">✓ Все пройдены!</span>}
+        {allDone && <span className="text-green-600 text-xs font-medium">✓ Все пройдены!</span>}
 
-        {/* Figure pieces menu (mock - will be populated from course data) */}
-        <div className="border rounded-lg overflow-hidden">
-          <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1.5">Шахматные фигуры</div>
+        {/* Piece menu — Lichess style */}
+        <div className="border border-gray-200 rounded overflow-hidden">
+          <div className="bg-blue-500 text-white text-[11px] font-bold px-2 py-1">
+            Шахматные фигуры
+          </div>
           {[
-            { name: 'Ладья', active: true },
-            { name: 'Слон', active: false },
-            { name: 'Ферзь', active: false },
-            { name: 'Король', active: false },
-            { name: 'Конь', active: false },
-            { name: 'Пешка', active: false },
+            { name: 'Ладья', code: 'wR', active: true },
+            { name: 'Слон', code: 'wB', active: false },
+            { name: 'Ферзь', code: 'wQ', active: false },
+            { name: 'Король', code: 'wK', active: false },
+            { name: 'Конь', code: 'wN', active: false },
+            { name: 'Пешка', code: 'wP', active: false },
           ].map((p, i) => (
             <div
               key={i}
-              className={`px-2 py-1.5 text-xs cursor-default ${
+              className={`flex items-center gap-2 px-2 py-1.5 text-xs cursor-default ${
                 p.active
-                  ? 'bg-blue-100 text-blue-800 font-medium'
+                  ? 'bg-blue-50 text-blue-900 font-semibold'
                   : i % 2 === 0
-                    ? 'bg-emerald-50 text-gray-600'
-                    : 'bg-cyan-50 text-gray-600'
+                    ? 'bg-white text-gray-600'
+                    : 'bg-gray-50 text-gray-600'
               }`}
             >
-              {p.name}
+              <img src={`/pieces/cburnett/${p.code}.svg`} className="w-5 h-5" draggable={false} alt="" />
+              <span>{p.name}</span>
             </div>
           ))}
         </div>
 
-        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
+        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
           <RotateCcw size={14} /> Заново
         </button>
       </div>
