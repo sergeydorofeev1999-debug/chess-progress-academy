@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import StarBoard from '@/components/StarBoard';
 import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
 
@@ -79,12 +80,17 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       {interactiveConfig ? (
         <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <p className="text-blue-800 font-medium mb-2">{interactiveConfig.instructions || 'Интерактивный урок'}</p>
-          <p className="text-sm text-blue-600">🎯 Соберите звёзды на доске, двигая фигурами!</p>
+          {interactiveConfig.hint && (
+            <p className="text-sm text-blue-600 mb-2">💡 {interactiveConfig.hint}</p>
+          )}
           {lesson.chess_board_fen && (
-            <div className="mt-4">
-              <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-                <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
-              </div>
+            <div className="mt-4 flex justify-center">
+              <StarBoard
+                fen={lesson.chess_board_fen}
+                stars={interactiveConfig.stars?.map((s: any) => s.square) || []}
+                allowedPieces={interactiveConfig.allowedPieces || []}
+                onComplete={handleInteractiveComplete}
+              />
             </div>
           )}
         </div>
