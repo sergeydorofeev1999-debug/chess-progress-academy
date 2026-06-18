@@ -162,7 +162,7 @@ function InlineChessBoard({
   const selectedSquareRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const update = () => setSqSize(Math.min(44, Math.max(36, Math.floor((window.innerWidth - 32) / 8))));
+    const update = () => setSqSize(Math.min(64, Math.max(48, Math.floor((window.innerWidth - 340) / 8))));
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -317,7 +317,7 @@ function InlineChessBoard({
 
   return (
     <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
-      <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: `repeat(8, ${sqSize}px)`, gridTemplateRows: `repeat(8, ${sqSize}px)`, touchAction: 'none' }}>
+      <div className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none" style={{ gridTemplateColumns: `repeat(8, ${sqSize}px)`, gridTemplateRows: `repeat(8, ${sqSize}px)`, touchAction: 'none' }}>
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
@@ -581,60 +581,43 @@ function MultiLevelStarBoard({
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
       </div>
 
-      {/* RIGHT COLUMN: Exercise info + star rating */}
+      {/* RIGHT COLUMN: Exercise info */}
       <div className="w-[180px] flex-shrink-0 space-y-3">
-        {/* Star rating for current level */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-          <div className="text-xs font-bold text-blue-800 uppercase tracking-wide">Оценка</div>
-          <div className="flex justify-center gap-1">
-            {[1, 2, 3].map((star) => (
-              <div key={star} className="w-8 h-8 flex items-center justify-center">
-                <img
-                  src="/images/learn/star.png"
-                  alt=""
-                  className="w-7 h-7"
-                  draggable={false}
-                />
-              </div>
-            ))}
+        {/* Figure name header */}
+        <div className="bg-blue-500 text-white rounded-t-lg p-2">
+          <div className="flex items-center gap-2">
+            <img src="/pieces/cburnett/wR.svg" className="w-6 h-6" draggable={false} alt="" />
+            <div className="text-sm font-bold">Ладья</div>
           </div>
-          <div className="text-[10px] text-blue-700 space-y-0.5 leading-tight">
-            <div>⭐⭐⭐ = {stars.length + 1} ходов</div>
-            <div>⭐⭐ = {stars.length + 2} ходов</div>
-            <div>⭐ = {stars.length + 3}+ ходов</div>
-          </div>
+          <div className="text-xs opacity-90 mt-0.5">Движется по прямой</div>
         </div>
 
         {/* Instructions */}
         {level.instructions && (
-          <div className="bg-white border rounded-lg p-3">
-            <p className="text-sm font-medium text-gray-800">{level.instructions}</p>
+          <div className="bg-white rounded-b-lg p-3 text-sm font-medium text-gray-800">
+            {level.instructions}
           </div>
         )}
         {level.hint && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+          <div className="bg-amber-50 rounded-lg p-2.5">
             <p className="text-xs text-amber-800">💡 {level.hint}</p>
           </div>
         )}
 
-        {/* Stars collected progress */}
-        <div className="bg-white border rounded-lg p-2.5">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-medium text-gray-600">Звёзды</span>
-            <span className="text-xs text-gray-500">{collectedCount} / {stars.length}</span>
-          </div>
-          <div className="flex gap-1">
-            {stars.map((s: string, i: number) => (
-              <div key={i} className="w-6 h-6">
-                <img
-                  src="/images/learn/star.png"
-                  alt=""
-                  className={`w-full h-full transition-opacity ${collected.includes(s) ? 'opacity-100' : 'opacity-20 grayscale'}`}
-                  draggable={false}
-                />
-              </div>
-            ))}
-          </div>
+        {/* Stars collected progress — compact */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>Звёзды {collectedCount} / {stars.length}</span>
+        </div>
+        <div className="flex gap-0.5">
+          {stars.map((s: string, i: number) => (
+            <img
+              key={i}
+              src="/images/learn/star.png"
+              className={`w-5 h-5 transition-opacity ${collected.includes(s) ? 'opacity-100' : 'opacity-20 grayscale'}`}
+              draggable={false}
+              alt=""
+            />
+          ))}
         </div>
 
         {/* Message */}
@@ -712,7 +695,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
       {/* Interactive Lesson */}
       {interactiveConfig ? (
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6">
           <MultiLevelStarBoard
             config={interactiveConfig}
             onAllComplete={handleInteractiveComplete}
