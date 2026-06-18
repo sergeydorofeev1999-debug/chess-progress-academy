@@ -434,6 +434,9 @@ function MultiLevelStarBoard({
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
+  const [levelStars, setLevelStars] = useState<Record<number, number>>({});
+  const movesRef = useRef(moves);
+  useEffect(() => { movesRef.current = moves; }, [moves]);
 
   const level = levels[currentLevel];
   const stars = useMemo(() => level.stars?.map((s: any) => typeof s === 'string' ? s : s?.square).filter(Boolean) || [], [level.stars]);
@@ -480,6 +483,13 @@ function MultiLevelStarBoard({
           const next = [...prev, to];
           const allCollected = stars.every((s: string) => next.includes(s));
           if (allCollected) {
+            const max = level.maxMoves || stars.length + 1;
+            const m = movesRef.current + 1;
+            let earned = 3;
+            if (m <= max) earned = 3;
+            else if (m <= max + 2) earned = 2;
+            else earned = 1;
+            setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
             setTimeout(() => {
               if (currentLevel + 1 < totalLevels) {
                 setCurrentLevel((l) => l + 1);
@@ -537,7 +547,11 @@ function MultiLevelStarBoard({
                   <img
                     key={s}
                     src="/images/learn/star.png"
-                    className={`w-3 h-3 ${i < currentLevel ? '' : 'opacity-40 grayscale'}`}
+                    className={`w-3 h-3 ${(() => {
+                      const earned = levelStars[i];
+                      if (earned == null) return 'opacity-40 grayscale';
+                      return s <= earned ? '' : 'opacity-40 grayscale';
+                    })()}`}
                     draggable={false}
                     alt=""
                   />
