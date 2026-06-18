@@ -58,8 +58,7 @@ function parseFen(fen: string) {
   return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
 }
 
-function isValidRookMove(from: string, to: string, squares: Record<string, any>) {
-  // Must have a white piece on 'from'
+function isValidRookMove(from: string, to: string, squares: Record<string, any>, starSquares: string[] = []) {
   if (squares[from]?.color !== 'w') return false;
   const ff = FILES.indexOf(from[0]);
   const tf = FILES.indexOf(to[0]);
@@ -73,13 +72,17 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
     const min = Math.min(fr, tr);
     const max = Math.max(fr, tr);
     for (let r = min + 1; r < max; r++) {
-      if (squares[`${FILES[ff]}${RANKS[r]}`]) return false;
+      const sq = `${FILES[ff]}${RANKS[r]}`;
+      if (squares[sq]) return false;
+      if (starSquares.includes(sq)) return false; // star blocks path
     }
   } else {
     const min = Math.min(ff, tf);
     const max = Math.max(ff, tf);
     for (let f = min + 1; f < max; f++) {
-      if (squares[`${FILES[f]}${RANKS[fr]}`]) return false;
+      const sq = `${FILES[f]}${RANKS[fr]}`;
+      if (squares[sq]) return false;
+      if (starSquares.includes(sq)) return false; // star blocks path
     }
   }
   return true;
@@ -160,6 +163,7 @@ function InlineChessBoard({
   const clickRef = useRef<(square: string) => void>(() => {});
   const onMoveRef = useRef<((from: string, to: string) => boolean) | undefined>(undefined);
   const selectedSquareRef = useRef<string | null>(null);
+  const starsRef = useRef<string[]>([]);
 
   useEffect(() => {
     const update = () => {
@@ -197,7 +201,7 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        if (isValidRookMove(sel, square, sqs)) {
+        if (isValidRookMove(sel, square, sqs, starsRef.current)) {
           const accepted = onMoveRef.current?.(sel, square);
           if (accepted !== false) {
             selectedSquareRef.current = null;
@@ -229,6 +233,9 @@ function InlineChessBoard({
   useEffect(() => {
     squaresRef.current = squares;
   }, [squares]);
+  useEffect(() => {
+    starsRef.current = stars;
+  }, [stars]);
   useEffect(() => {
     clickRef.current = click;
   }, [click]);
@@ -285,7 +292,7 @@ function InlineChessBoard({
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          if (isValidRookMove(start.square, targetSquare, squaresRef.current)) {
+          if (isValidRookMove(start.square, targetSquare, squaresRef.current, starsRef.current)) {
             onMoveRef.current?.(start.square, targetSquare);
           } else {
             setMsg('Недопустимый ход. Ладья ходит только прямо!');
@@ -471,7 +478,7 @@ function MultiLevelStarBoard({
       if (parsed.squares[from]?.color !== 'w') {
         return false;
       }
-      if (!isValidRookMove(from, to, parsed.squares)) {
+      if (!isValidRookMove(from, to, parsed.squares, visibleStars)) {
         setMsg('Недопустимый ход');
         return false;
       }
