@@ -239,10 +239,13 @@ function InlineChessBoard({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
+      const piece = squares[square];
+      if (!piece || piece.color !== 'w') return;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
       setMsg('');
     },
-    []
+    [squares]
   );
 
   useEffect(() => {
@@ -251,15 +254,15 @@ function InlineChessBoard({
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
-      if (!start.moved && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+      if (!start.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
         start.moved = true;
         const piece = squares[start.square];
-        if (piece && piece.color === 'w') {
+        if (piece) {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
           setSelectedSquare(null);
         }
       }
-      if (start.moved && dragPiece) {
+      if (start.moved) {
         setDragPos({ x: e.clientX, y: e.clientY });
         setHoverSquare(getSquareFromPoint(e.clientX, e.clientY));
       }
@@ -268,30 +271,28 @@ function InlineChessBoard({
       const start = pointerStartRef.current;
       if (!start) return;
       if (!start.moved) {
-        // Tap — let onClick handle it
-        pointerStartRef.current = null;
-        return;
-      }
-      // Drag drop
-      const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
-      if (targetSquare && targetSquare !== start.square && dragPiece) {
-        if (isValidRookMove(start.square, targetSquare, squares)) {
-          const newSquares = { ...squares };
-          delete newSquares[start.square];
-          newSquares[targetSquare] = { type: 'r', color: 'w' };
-          const newFen = squaresToFen(newSquares, 'w');
-          setPosition(newFen);
-          if (stars.includes(targetSquare)) {
-            setCollectedStars((prev) => new Set([...prev, targetSquare]));
+        click(start.square);
+      } else {
+        const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
+        if (targetSquare && targetSquare !== start.square) {
+          if (isValidRookMove(start.square, targetSquare, squares)) {
+            const newSquares = { ...squares };
+            delete newSquares[start.square];
+            newSquares[targetSquare] = { type: 'r', color: 'w' };
+            const newFen = squaresToFen(newSquares, 'w');
+            setPosition(newFen);
+            if (stars.includes(targetSquare)) {
+              setCollectedStars((prev) => new Set([...prev, targetSquare]));
+            }
+            setMsg('');
+            onMove?.(start.square, targetSquare);
+          } else {
+            setMsg('Недопустимый ход. Ладья ходит только прямо!');
           }
-          setMsg('');
-          onMove?.(start.square, targetSquare);
-        } else {
-          setMsg('Недопустимый ход. Ладья ходит только прямо!');
         }
+        setDragPiece(null);
+        setHoverSquare(null);
       }
-      setDragPiece(null);
-      setHoverSquare(null);
       pointerStartRef.current = null;
     };
     window.addEventListener('pointermove', handleGlobalMove);
@@ -300,7 +301,7 @@ function InlineChessBoard({
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
     };
-  }, [squares, stars, onMove, dragPiece]);
+  }, [squares, stars, onMove, click]);
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
