@@ -442,6 +442,7 @@ function MultiLevelStarBoard({
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
   const [levelStars, setLevelStars] = useState<Record<number, number>>({});
+  const [levelStates, setLevelStates] = useState<Record<number, { position: string; collected: string[]; moves: number }>>({});
   const movesRef = useRef(moves);
   useEffect(() => { movesRef.current = moves; }, [moves]);
 
@@ -455,12 +456,24 @@ function MultiLevelStarBoard({
     setCollected([]);
     setMoves(0);
     setMsg('');
-  }, [level]);
+    setLevelStates(prev => {
+      const next = { ...prev };
+      delete next[currentLevel];
+      return next;
+    });
+  }, [level, currentLevel]);
 
   useEffect(() => {
-    setPosition(levels[currentLevel].initialFen);
-    setCollected([]);
-    setMoves(0);
+    const saved = levelStates[currentLevel];
+    if (saved) {
+      setPosition(saved.position);
+      setCollected(saved.collected);
+      setMoves(saved.moves);
+    } else {
+      setPosition(levels[currentLevel].initialFen);
+      setCollected([]);
+      setMoves(0);
+    }
     setMsg('');
   }, [currentLevel, levels]);
 
@@ -517,6 +530,14 @@ function MultiLevelStarBoard({
     },
     [stars, collected, currentLevel, totalLevels, onAllComplete]
   );
+
+  // Auto-save level state so navigating back doesn't lose progress
+  useEffect(() => {
+    setLevelStates(prev => ({
+      ...prev,
+      [currentLevel]: { position, collected, moves },
+    }));
+  }, [position, collected, moves, currentLevel]);
 
   const collectedCount = stars.filter((s: string) => collected.includes(s)).length;
   const allCollected = stars.every((s: string) => collected.includes(s));
@@ -612,12 +633,10 @@ function MultiLevelStarBoard({
                 key={i}
                 onClick={() => {
                   if (isFuture) return;
-                  setCurrentLevel(i);
-                  setPosition(levels[i].initialFen);
-                  setCollected([]);
-                  setMoves(0);
-                  setMsg('');
-                  if (i !== currentLevel) setAllDone(false);
+                  if (i !== currentLevel) {
+                    setCurrentLevel(i);
+                    setAllDone(false);
+                  }
                 }}
                 disabled={isFuture}
                 className={`flex-1 py-1.5 flex justify-center gap-0.5 transition ${
