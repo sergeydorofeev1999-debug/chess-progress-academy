@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
 
 interface Lesson {
@@ -37,7 +38,6 @@ function parseInteractiveConfig(videoUrl: string | null) {
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
-// Простой FEN парсер: возвращает { squares: Record<square, {type, color}> }
 function parseFen(fen: string) {
   const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
   const [placement] = fen.split(' ');
@@ -58,17 +58,15 @@ function parseFen(fen: string) {
   return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
 }
 
-// Валидация хода ладьи (для Урока 1)
 function isValidRookMove(from: string, to: string, squares: Record<string, any>) {
   const ff = FILES.indexOf(from[0]);
   const tf = FILES.indexOf(to[0]);
   const fr = RANKS.indexOf(from[1]);
   const tr = RANKS.indexOf(to[1]);
 
-  if (ff !== tf && fr !== tr) return false; // не прямо
-  if (squares[to]?.color === 'w') return false; // своя фигура
+  if (ff !== tf && fr !== tr) return false;
+  if (squares[to]?.color === 'w') return false;
 
-  // Проверка пути
   if (ff === tf) {
     const min = Math.min(fr, tr);
     const max = Math.max(fr, tr);
@@ -85,11 +83,11 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
   return true;
 }
 
-// ─── SVG Chess Pieces (Lichess-style) ───────────────────────────
+// ─── SVG Chess Pieces ───────────────────────────
 function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const fill = color === 'w' ? '#fff' : '#333';
   const stroke = '#1a1a1a';
-  const sw = color === 'w' ? 2 : 1.2; // толще обводка для белых
+  const sw = color === 'w' ? 2 : 1.2;
 
   const svgs: Record<string, React.ReactNode> = {
     K: (
@@ -156,7 +154,6 @@ function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
   return <div style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>{svg}</div>;
 }
 
-// ─── SVG Star (Lichess-style) ─────────────────────────────────
 function StarSvg() {
   return (
     <svg viewBox="0 0 45 45" className="w-7 h-7 drop-shadow-lg">
@@ -189,27 +186,16 @@ function InlineChessBoard({
   const [position, setPosition] = useState(fen);
   const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
-
-  // Click mode
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-
-  // Drag mode
-  const [dragPiece, setDragPiece] = useState<{
-    square: string;
-    type: string;
-    color: string;
-  } | null>(null);
+  const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverSquare, setHoverSquare] = useState<string | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
 
   const parsed = parseFen(position);
   const squares = parsed.squares;
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  // Track pointer start for click vs drag
-  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
-
-  // Helper: find square under cursor
   const getSquareFromPoint = (clientX: number, clientY: number): string | null => {
     const el = document.elementFromPoint(clientX, clientY);
     if (!el) return null;
@@ -217,7 +203,6 @@ function InlineChessBoard({
     return cell?.dataset.square || null;
   };
 
-  // Click handler (old logic)
   const click = useCallback(
     (square: string) => {
       const piece = squares[square];
@@ -252,31 +237,21 @@ function InlineChessBoard({
     [selectedSquare, squares, stars, onMove]
   );
 
-  // Pointer handlers for drag
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
       const piece = squares[square];
       if (!piece || piece.color !== 'w') return;
-
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
-
-      pointerStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        square,
-        moved: false,
-      };
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
       setMsg('');
     },
     [squares]
   );
 
-  // Global pointer events
   useEffect(() => {
     const handleGlobalMove = (e: PointerEvent) => {
       const start = pointerStartRef.current;
       if (!start) return;
-
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
       if (!start.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
@@ -284,26 +259,20 @@ function InlineChessBoard({
         const piece = squares[start.square];
         if (piece) {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
-          setSelectedSquare(null); // clear click selection when drag starts
+          setSelectedSquare(null);
         }
       }
-
       if (start.moved) {
         setDragPos({ x: e.clientX, y: e.clientY });
-        const sq = getSquareFromPoint(e.clientX, e.clientY);
-        setHoverSquare(sq);
+        setHoverSquare(getSquareFromPoint(e.clientX, e.clientY));
       }
     };
-
     const handleGlobalUp = (e: PointerEvent) => {
       const start = pointerStartRef.current;
       if (!start) return;
-
       if (!start.moved) {
-        // It was a click, not a drag
         click(start.square);
       } else {
-        // It was a drag
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
           if (isValidRookMove(start.square, targetSquare, squares)) {
@@ -324,10 +293,8 @@ function InlineChessBoard({
         setDragPiece(null);
         setHoverSquare(null);
       }
-
       pointerStartRef.current = null;
     };
-
     window.addEventListener('pointermove', handleGlobalMove);
     window.addEventListener('pointerup', handleGlobalUp);
     return () => {
@@ -336,7 +303,6 @@ function InlineChessBoard({
     };
   }, [squares, stars, onMove, click]);
 
-  // Prevent default drag behavior
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   return (
@@ -351,7 +317,6 @@ function InlineChessBoard({
             const isHover = hoverSquare === sq;
             const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq) && !collectedStars.has(sq);
-
             return (
               <div
                 key={sq}
@@ -380,29 +345,16 @@ function InlineChessBoard({
           })
         )}
       </div>
-
-      {/* Dragged piece overlay */}
       {dragPiece && (
-        <div
-          className="fixed pointer-events-none z-50"
-          style={{
-            left: dragPos.x - 26,
-            top: dragPos.y - 26,
-            width: 52,
-            height: 52,
-          }}
-        >
-          <div className="w-full h-full">
-            <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} />
-          </div>
+        <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - 26, top: dragPos.y - 26, width: 52, height: 52 }}>
+          <div className="w-full h-full"><PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} /></div>
         </div>
       )}
-
       {msg && <p className="text-red-500 text-xs">{msg}</p>}
     </div>
   );
 }
-// FEN из squares
+
 function squaresToFen(squares: Record<string, any>, turn: string) {
   let rows = [];
   for (let ri = 0; ri < 8; ri++) {
@@ -425,24 +377,52 @@ function squaresToFen(squares: Record<string, any>, turn: string) {
   return `${rows.join('/')} ${turn} - - 0 1`;
 }
 
-function InlineStarBoard({
+// ═══════════════════════════════════════════════════════════════════════════════
+// Multi-level interactive star board (like Lichess learn)
+// ═══════════════════════════════════════════════════════════════════════════════
+function MultiLevelStarBoard({
   config,
   onComplete,
+  onAllComplete,
+  nextLessonUrl,
 }: {
   config: any;
   onComplete?: () => void;
+  onAllComplete?: () => void;
+  nextLessonUrl?: string;
 }) {
-  const [position, setPosition] = useState(config.initialFen);
+  const router = useRouter();
+  const levels = config.levels || [
+    { initialFen: config.initialFen, stars: config.stars, instructions: config.instructions, hint: config.hint }
+  ];
+
+  const [currentLevel, setCurrentLevel] = useState(0);
+  const [position, setPosition] = useState(levels[0].initialFen);
   const [collected, setCollected] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
-  const [complete, setComplete] = useState(false);
   const [msg, setMsg] = useState('');
+  const [allDone, setAllDone] = useState(false);
 
-  const stars = config.stars?.map((s: any) => s.square) || [];
+  const level = levels[currentLevel];
+  const stars = level.stars?.map((s: any) => s.square) || [];
+  const totalLevels = levels.length;
+
+  const reset = useCallback(() => {
+    setPosition(level.initialFen);
+    setCollected(new Set());
+    setMoves(0);
+    setMsg('');
+  }, [level]);
+
+  useEffect(() => {
+    setPosition(level.initialFen);
+    setCollected(new Set());
+    setMoves(0);
+    setMsg('');
+  }, [currentLevel, level]);
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      if (complete) return false;
       const parsed = parseFen(position);
       if (!isValidRookMove(from, to, parsed.squares)) {
         setMsg('Недопустимый ход');
@@ -457,56 +437,112 @@ function InlineStarBoard({
       setMsg('');
 
       if (stars.includes(to) && !collected.has(to)) {
-        setCollected((prev) => new Set([...prev, to]));
-        const still = stars.length - (collected.size + 1);
-        if (still <= 0) {
-          setComplete(true);
-          setMsg('🎉 Все звёзды собраны! Урок пройден!');
-          onComplete?.();
-        } else {
-          setMsg(`⭐ Осталось ${still} звёзд`);
-        }
+        setCollected((prev) => {
+          const next = new Set([...prev, to]);
+          const allCollected = stars.every((s: string) => next.has(s));
+          if (allCollected) {
+            setTimeout(() => {
+              if (currentLevel + 1 < totalLevels) {
+                setCurrentLevel((l) => l + 1);
+                setMsg('');
+              } else {
+                setAllDone(true);
+                setMsg('🎉 Все позиции пройдены! Урок завершён!');
+                onAllComplete?.();
+              }
+            }, 600);
+          } else {
+            setMsg(`⭐ ${next.size} / ${stars.length} звёзд`);
+          }
+          return next;
+        });
       }
       return true;
     },
-    [position, stars, collected, complete, onComplete]
+    [position, stars, collected, currentLevel, totalLevels, onAllComplete]
   );
 
-  const reset = () => {
-    setPosition(config.initialFen);
-    setCollected(new Set());
-    setMoves(0);
-    setComplete(false);
-    setMsg('');
-  };
+  const collectedCount = stars.filter((s: string) => collected.has(s)).length;
+  const allCollected = stars.every((s: string) => collected.has(s));
 
   return (
     <div className="space-y-3 w-full">
-      <div className="flex items-center gap-3 flex-wrap">
+      {/* Level progress bar */}
+      <div className="flex items-center gap-2">
+        {levels.map((_l: any, i: number) => (
+          <div
+            key={i}
+            className={`flex-1 h-2 rounded-full transition-all ${
+              i < currentLevel ? 'bg-green-500' : i === currentLevel ? 'bg-blue-500' : 'bg-gray-200'
+            }`}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <Star size={16} fill="#fbbf24" color="#f59e0b" />
-          <span className="text-sm font-medium">{collected.size} / {stars.length} звёзд</span>
+          <span className="text-sm font-medium">
+            Позиция {currentLevel + 1} / {totalLevels}
+          </span>
         </div>
-        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full bg-yellow-400 transition-all" style={{ width: `${(collected.size / stars.length) * 100}%` }} />
-        </div>
-        {complete && <span className="text-green-600 text-sm font-medium">✓ Готово!</span>}
+        {allDone && <span className="text-green-600 text-sm font-medium">✓ Все позиции пройдены!</span>}
       </div>
-      {msg && <div className={`text-center py-1.5 px-3 rounded text-sm font-medium ${complete ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{msg}</div>}
+
+      {/* Stars progress for current level */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-full bg-yellow-400 transition-all" style={{ width: `${stars.length > 0 ? (collectedCount / stars.length) * 100 : 0}%` }} />
+        </div>
+        <span className="text-xs text-gray-500">⭐ {collectedCount} / {stars.length}</span>
+      </div>
+
+      {/* Instructions */}
+      {level.instructions && <p className="text-blue-800 font-medium">{level.instructions}</p>}
+      {level.hint && <p className="text-sm text-blue-600">💡 {level.hint}</p>}
+
+      {/* Message */}
+      {msg && (
+        <div className={`text-center py-1.5 px-3 rounded text-sm font-medium ${msg.includes('Все позиции') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+          {msg}
+        </div>
+      )}
+
+      {/* Auto-advance message */}
+      {allCollected && currentLevel + 1 < totalLevels && (
+        <div className="flex items-center justify-center gap-2 text-blue-600 text-sm animate-pulse">
+          <ChevronRight size={16} /> Переход к следующей позиции...
+        </div>
+      )}
+
       <div className="flex justify-center">
         <InlineChessBoard fen={position} stars={stars.filter((s: string) => !collected.has(s))} onMove={handleMove} />
       </div>
+
       <div className="flex items-center justify-between">
         <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition">
           <RotateCcw size={14} /> Начать заново
         </button>
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
       </div>
+
+      {/* Next lesson button when all done */}
+      {allDone && nextLessonUrl && (
+        <div className="pt-4">
+          <button
+            onClick={() => router.push(nextLessonUrl)}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
+          >
+            Следующий урок <ArrowRight size={18} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
-/* ====== /ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА ====== */
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LessonClient — main component
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
   const [completing, setCompleting] = useState(false);
@@ -552,18 +588,11 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       {/* Interactive Lesson */}
       {interactiveConfig ? (
         <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <p className="text-blue-800 font-medium mb-2">{interactiveConfig.instructions || 'Интерактивный урок'}</p>
-          {interactiveConfig.hint && (
-            <p className="text-sm text-blue-600 mb-2">💡 {interactiveConfig.hint}</p>
-          )}
-          {lesson.chess_board_fen && (
-            <div className="mt-4 flex justify-center">
-              <InlineStarBoard
-                config={interactiveConfig}
-                onComplete={handleInteractiveComplete}
-              />
-            </div>
-          )}
+          <MultiLevelStarBoard
+            config={interactiveConfig}
+            onAllComplete={handleInteractiveComplete}
+            nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
+          />
         </div>
       ) : (
         /* Regular video placeholder */
