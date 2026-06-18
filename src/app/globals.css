@@ -11,7 +11,7 @@
 
 @keyframes star-hue {
   50% {
-    filter: hue-rotate(-12deg) saturate(1.15);
+    filter: hue-rotate(-3deg) saturate(1.05);
   }
 }
 
