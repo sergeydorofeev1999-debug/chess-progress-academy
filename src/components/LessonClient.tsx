@@ -186,9 +186,14 @@ function StarSvg() {
     <img
       src="/images/learn/star.png"
       alt="Star"
-      className="w-11 h-11 star-animate"
+      className="star-animate"
       draggable={false}
-      style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
+      style={{
+        width: '85%',
+        height: '85%',
+        objectFit: 'contain',
+        filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))',
+      }}
     />
   );
 }
@@ -386,7 +391,7 @@ function InlineChessBoard({
               <div
                 key={sq}
                 data-square={sq}
-                className={`flex items-center justify-center relative select-none overflow-hidden ${
+                className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
                 } ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
