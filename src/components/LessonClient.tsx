@@ -34,7 +34,7 @@ function parseInteractiveConfig(videoUrl: string | null) {
   }
 }
 
-/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (Lichess-style) ====== */
+/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (Lichess-style, mobile-ready) ====== */
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 
@@ -63,10 +63,8 @@ function isValidRookMove(from: string, to: string, squares: Record<string,any>) 
   const tf = FILES.indexOf(to[0]);
   const fr = RANKS.indexOf(from[1]);
   const tr = RANKS.indexOf(to[1]);
-
   if (ff !== tf && fr !== tr) return false;
   if (squares[to]?.color === 'w') return false;
-
   if (ff === tf) {
     const min = Math.min(fr, tr);
     const max = Math.max(fr, tr);
@@ -83,12 +81,11 @@ function isValidRookMove(from: string, to: string, squares: Record<string,any>) 
   return true;
 }
 
-// ─── SVG Chess Pieces ───────────────────────────
+// ─── SVG Pieces ───────────────────────────
 function PieceSvg({ type, color }: { type: string; color: 'w'|'b' }) {
   const fill = color === 'w' ? '#fff' : '#333';
   const stroke = '#1a1a1a';
   const sw = color === 'w' ? 2 : 1.2;
-
   const svgs: Record<string, React.ReactNode> = {
     K: (
       <svg viewBox="0 0 45 45" className="w-full h-full">
@@ -148,7 +145,6 @@ function PieceSvg({ type, color }: { type: string; color: 'w'|'b' }) {
       </svg>
     ),
   };
-
   const svg = svgs[type.toUpperCase()];
   if (!svg) return null;
   return <div style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}>{svg}</div>;
@@ -163,22 +159,16 @@ function StarSvg() {
           <stop offset="100%" stopColor="#f59e0b"/>
         </linearGradient>
       </defs>
-      <path
-        d="M22.5 2l5.5 14.5L43 18l-11.5 9 4 15-13-9.5-13 9.5 4-15L2 18l15-1.5z"
-        fill="url(#starGrad)"
-        stroke="#b45309"
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-      />
+      <path d="M22.5 2l5.5 14.5L43 18l-11.5 9 4 15-13-9.5-13 9.5 4-15L2 18l15-1.5z" fill="url(#starGrad)" stroke="#b45309" strokeWidth={1.5} strokeLinejoin="round" />
     </svg>
   );
 }
 
-const SQ = 44; // square size px
+const SQ = 44;
 
 function InlineChessBoard({
   fen,
-  stars = [],
+  stars: starsProp = [],
   onMove,
 }: {
   fen: string;
@@ -205,23 +195,26 @@ function InlineChessBoard({
     return cell?.dataset.square || null;
   };
 
-  const click = useCallback(
+  // Click-to-move logic (tap friendly)
+  const onCellClick = useCallback(
     (square: string) => {
       const piece = squares[square];
       if (selectedSquare) {
+        // trying to move selected piece to this square
         if (isValidRookMove(selectedSquare, square, squares)) {
           const newSquares = { ...squares };
           delete newSquares[selectedSquare];
           newSquares[square] = { type: 'r', color: 'w' };
           const newFen = squaresToFen(newSquares, 'w');
           setPosition(newFen);
-          if (stars.includes(square)) {
+          if (starsProp.includes(square)) {
             setCollectedStars((prev) => new Set([...prev, square]));
           }
           setSelectedSquare(null);
           setMsg('');
           onMove?.(selectedSquare, square);
         } else {
+          // invalid move — if clicked on our piece, re-select
           if (piece && piece.color === 'w') {
             setSelectedSquare(square);
             setMsg('');
@@ -236,14 +229,16 @@ function InlineChessBoard({
         }
       }
     },
-    [selectedSquare, squares, stars, onMove]
+    [selectedSquare, squares, starsProp, onMove]
   );
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
       const piece = squares[square];
-      if (!piece || piece.color !== 'w') return;
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      // Only capture pointer if clicking on a piece (for drag), but always handle tap
+      if (piece && piece.color === 'w') {
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      }
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
       setMsg('');
     },
@@ -259,7 +254,7 @@ function InlineChessBoard({
       if (!start.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
         start.moved = true;
         const piece = squares[start.square];
-        if (piece) {
+        if (piece && piece.color === 'w') {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
           setSelectedSquare(null);
         }
@@ -273,8 +268,10 @@ function InlineChessBoard({
       const start = pointerStartRef.current;
       if (!start) return;
       if (!start.moved) {
-        click(start.square);
+        // Tap — use click-to-move logic
+        onCellClick(start.square);
       } else {
+        // Drag release — drop piece
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
           if (isValidRookMove(start.square, targetSquare, squares)) {
@@ -283,7 +280,7 @@ function InlineChessBoard({
             newSquares[targetSquare] = { type: 'r', color: 'w' };
             const newFen = squaresToFen(newSquares, 'w');
             setPosition(newFen);
-            if (stars.includes(targetSquare)) {
+            if (starsProp.includes(targetSquare)) {
               setCollectedStars((prev) => new Set([...prev, targetSquare]));
             }
             setMsg('');
@@ -303,71 +300,54 @@ function InlineChessBoard({
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
     };
-  }, [squares, stars, onMove, click]);
+  }, [squares, starsProp, onMove, onCellClick]);
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
   const boardSize = SQ * 8;
 
   return (
     <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none', userSelect: 'none' }}>
-      {/* Board container with frame labels */}
-      <div className="flex">
-        {/* Rank labels (8..1) on left */}
-        <div className="flex flex-col justify-around mr-1" style={{ height: boardSize }}>
-          {RANKS.map((rank) => (
-            <span key={rank} className="text-[11px] font-bold text-slate-400 w-4 text-right leading-none">{rank}</span>
-          ))}
-        </div>
-
-        {/* The board */}
-        <div className="border border-slate-700 rounded overflow-hidden relative" style={{ width: boardSize, height: boardSize }}>
-          <div className="grid" style={{ gridTemplateColumns: `repeat(8, ${SQ}px)`, gridTemplateRows: `repeat(8, ${SQ}px)`, touchAction: 'none' }}>
-            {RANKS.map((rank, ri) =>
-              FILES.map((file, fi) => {
-                const sq = `${file}${rank}`;
-                const pieceObj = squares[sq];
-                const light = isLight(fi, ri);
-                const sel = selectedSquare === sq;
-                const isHover = hoverSquare === sq;
-                const isSource = dragPiece?.square === sq;
-                const hasStar = stars.includes(sq) && !collectedStars.has(sq);
-                return (
-                  <div
-                    key={sq}
-                    data-square={sq}
-                    className={`flex items-center justify-center relative ${
-                      light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                    } ${sel ? 'ring-2 ring-blue-500 ring-inset z-10' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset z-10' : ''} ${isSource ? 'opacity-50' : ''}`}
-                    style={{ width: SQ, height: SQ, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
-                    onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
-                    onDragStart={preventDrag}
-                  >
-                    {hasStar && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                        <div className="animate-pulse"><StarSvg /></div>
-                      </div>
-                    )}
-                    {pieceObj && !isSource && (
-                      <div className="relative pointer-events-none" style={{ width: Math.round(SQ*0.85), height: Math.round(SQ*0.85) }}>
-                        <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w'|'b'} />
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
+      <div className="border border-slate-700 rounded overflow-hidden relative" style={{ width: boardSize, height: boardSize }}>
+        <div className="grid" style={{ gridTemplateColumns: `repeat(8, ${SQ}px)`, gridTemplateRows: `repeat(8, ${SQ}px)`, touchAction: 'none' }}>
+          {RANKS.map((rank, ri) =>
+            FILES.map((file, fi) => {
+              const sq = `${file}${rank}`;
+              const pieceObj = squares[sq];
+              const light = isLight(fi, ri);
+              const sel = selectedSquare === sq;
+              const isHover = hoverSquare === sq;
+              const isSource = dragPiece?.square === sq;
+              const hasStar = starsProp.includes(sq) && !collectedStars.has(sq);
+              return (
+                <div
+                  key={sq}
+                  data-square={sq}
+                  className={`flex items-center justify-center relative ${
+                    light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
+                  } ${sel ? 'ring-2 ring-blue-500 ring-inset z-10' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset z-10' : ''} ${isSource ? 'opacity-50' : ''}`}
+                  style={{ width: SQ, height: SQ, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
+                  onPointerDown={(e) => handlePointerDown(e, sq)}
+                  onDragStart={preventDrag}
+                >
+                  {/* Inline coordinates */}
+                  {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
+                  {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
+                  {hasStar && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                      <div className="animate-pulse"><StarSvg /></div>
+                    </div>
+                  )}
+                  {pieceObj && !isSource && (
+                    <div className="relative pointer-events-none" style={{ width: Math.round(SQ*0.85), height: Math.round(SQ*0.85) }}>
+                      <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w'|'b'} />
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
-
-      {/* File labels (a..h) below */}
-      <div className="flex ml-5" style={{ width: boardSize }}>
-        {FILES.map((file) => (
-          <span key={file} className="text-[11px] font-bold text-slate-400 text-center leading-none" style={{ width: SQ }}>{file}</span>
-        ))}
-      </div>
-
-      {/* Drag ghost */}
       {dragPiece && (
         <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - Math.round(SQ/2), top: dragPos.y - Math.round(SQ/2), width: Math.round(SQ*0.85), height: Math.round(SQ*0.85) }}>
           <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w'|'b'} />
@@ -377,7 +357,6 @@ function InlineChessBoard({
     </div>
   );
 }
-
 function squaresToFen(squares: Record<string,any>, turn: string) {
   let rows = [];
   for (let ri = 0; ri < 8; ri++) {
@@ -427,7 +406,7 @@ function MultiLevelStarBoard({
   const [allDone, setAllDone] = useState(false);
 
   const level = levels[currentLevel];
-  const stars = level.stars?.map((s: any) => s.square) || [];
+  const stars = (level.stars || []).map((s: any) => typeof s === 'string' ? s : s?.square).filter(Boolean);
   const totalLevels = levels.length;
 
   const reset = useCallback(() => {
