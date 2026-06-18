@@ -367,7 +367,11 @@ function InlineChessBoard({
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   // Valid move indicators (green dots like Lichess)
-  const validMoves = selectedSquare ? getValidRookSquares(selectedSquare, squares, stars) : [];
+  const validMoves = selectedSquare
+    ? getValidRookSquares(selectedSquare, squares, stars)
+    : dragPiece
+      ? getValidRookSquares(dragPiece.square, squares, stars)
+      : [];
 
   return (
     <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
