@@ -214,7 +214,6 @@ function InlineChessBoard({
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
-  const [hoverSquare, setHoverSquare] = useState<string | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean; pointerId: number } | null>(null);
   const processLockRef = useRef(false);
   const [sqSize, setSqSize] = useState(44);
@@ -306,7 +305,7 @@ function InlineChessBoard({
       const piece = squaresRef.current[square];
       if (piece && piece.color === 'w') {
         setSelectedSquare(square);
-        setHoverSquare(square);
+
       }
     },
     []
@@ -329,7 +328,7 @@ function InlineChessBoard({
       }
       if (start.moved) {
         setDragPos({ x: e.clientX, y: e.clientY });
-        setHoverSquare(getSquareFromPoint(e.clientX, e.clientY));
+
       }
     };
     const handleGlobalUp = (e: PointerEvent) => {
@@ -349,14 +348,14 @@ function InlineChessBoard({
           }
         }
         setDragPiece(null);
-        setHoverSquare(null);
+
       }
       pointerStartRef.current = null;
     };
     const handleGlobalCancel = (e: PointerEvent) => {
       if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
         setDragPiece(null);
-        setHoverSquare(null);
+
         pointerStartRef.current = null;
       }
     };
@@ -388,7 +387,6 @@ function InlineChessBoard({
             const pieceObj = squares[sq];
             const light = isLight(fi, ri);
             const sel = selectedSquare === sq;
-            const isHover = hoverSquare === sq;
             const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq);
             const isValidMove = validMoves.includes(sq);
@@ -401,18 +399,8 @@ function InlineChessBoard({
                 } ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
-                onPointerEnter={() => setHoverSquare(sq)}
-                onPointerLeave={() => setHoverSquare(null)}
                 onDragStart={preventDrag}
               >
-                {/* Hover highlight — Lichess rounded style (empty squares) */}
-                {isHover && !dragPiece && !sel && !hasStar && !isValidMove && (
-                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.35)] pointer-events-none z-10" />
-                )}
-                {/* Hover highlight — valid move square */}
-                {isHover && isValidMove && !hasStar && (
-                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.5)] pointer-events-none z-10" />
-                )}
                 {/* Selected square highlight */}
                 {sel && !hasStar && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
