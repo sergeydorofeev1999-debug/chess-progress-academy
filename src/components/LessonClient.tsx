@@ -187,68 +187,126 @@ function InlineChessBoard({
   onMove?: (from: string, to: string) => boolean;
 }) {
   const [position, setPosition] = useState(fen);
-  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
 
+  // Drag state
+  const [dragPiece, setDragPiece] = useState<{
+    square: string;
+    type: string;
+    color: string;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const [hoverSquare, setHoverSquare] = useState<string | null>(null);
+
   const parsed = parseFen(position);
   const squares = parsed.squares;
-
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  const click = useCallback(
-    (square: string) => {
-      const piece = squares[square];
-      if (selectedSquare) {
-        // Попытка хода
-        if (isValidRookMove(selectedSquare, square, squares)) {
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // Global pointer events for drag that works outside board bounds
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      if (!dragPiece) return;
+      setDragPos({ x: e.clientX, y: e.clientY });
+      const sq = getSquareFromPoint(e.clientX, e.clientY);
+      setHoverSquare(sq);
+    };
+    const handleGlobalUp = (e: PointerEvent) => {
+      if (!dragPiece) return;
+
+      const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
+
+      if (targetSquare && targetSquare !== dragPiece.square) {
+        if (isValidRookMove(dragPiece.square, targetSquare, squares)) {
           const newSquares = { ...squares };
-          delete newSquares[selectedSquare];
-          newSquares[square] = { type: 'r', color: 'w' };
+          delete newSquares[dragPiece.square];
+          newSquares[targetSquare] = { type: 'r', color: 'w' };
           const newFen = squaresToFen(newSquares, 'w');
           setPosition(newFen);
-          if (stars.includes(square)) {
-            setCollectedStars((prev) => new Set([...prev, square]));
+          if (stars.includes(targetSquare)) {
+            setCollectedStars((prev) => new Set([...prev, targetSquare]));
           }
-          setSelectedSquare(null);
           setMsg('');
-          onMove?.(selectedSquare, square);
+          onMove?.(dragPiece.square, targetSquare);
         } else {
-          if (piece && piece.color === 'w') {
-            setSelectedSquare(square);
-            setMsg('');
-          } else {
-            setSelectedSquare(null);
-            setMsg('Недопустимый ход. Ладья ходит только прямо!');
-          }
-        }
-      } else {
-        if (piece && piece.color === 'w') {
-          setSelectedSquare(square);
+          setMsg('Недопустимый ход. Ладья ходит только прямо!');
         }
       }
+
+      setDragPiece(null);
+      setHoverSquare(null);
+    };
+
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+    };
+  }, [dragPiece, squares, stars, onMove]);
+
+  // Helper: find square under cursor
+  const getSquareFromPoint = (clientX: number, clientY: number): string | null => {
+    const el = document.elementFromPoint(clientX, clientY);
+    if (!el) return null;
+    const cell = el.closest('[data-square]') as HTMLElement | null;
+    return cell?.dataset.square || null;
+  };
+
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent, square: string) => {
+      const piece = squares[square];
+      if (!piece || piece.color !== 'w') return;
+
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+
+      setDragPiece({
+        square,
+        type: piece.type,
+        color: piece.color,
+        offsetX: e.clientX,
+        offsetY: e.clientY,
+      });
+      setDragPos({ x: e.clientX, y: e.clientY });
+      setHoverSquare(square);
+      setMsg('');
     },
-    [selectedSquare, squares, stars, onMove]
+    [squares]
   );
+
+  // Prevent default drag behavior
+  const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="grid border-2 border-slate-700 rounded" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}>
+      <div
+        ref={boardRef}
+        className="grid border-2 border-slate-700 rounded relative"
+        style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}
+      >
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
             const pieceObj = squares[sq];
             const light = isLight(fi, ri);
-            const sel = selectedSquare === sq;
+            const isHover = hoverSquare === sq;
+            const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq) && !collectedStars.has(sq);
+
             return (
               <div
                 key={sq}
-                onClick={() => click(sq)}
-                className={`flex items-center justify-center relative cursor-pointer select-none ${
+                data-square={sq}
+                className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} hover:opacity-90 transition`}
-                style={{ width: 52, height: 52 }}
+                } ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
+                style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default' }}
+                onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
+                onDragStart={preventDrag}
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
@@ -257,8 +315,8 @@ function InlineChessBoard({
                     <div className="animate-pulse"><StarSvg /></div>
                   </div>
                 )}
-                {pieceObj && (
-                  <div className="w-[42px] h-[42px] relative">
+                {pieceObj && !isSource && (
+                  <div className="w-[42px] h-[42px] relative pointer-events-none">
                     <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
                   </div>
                 )}
@@ -267,11 +325,28 @@ function InlineChessBoard({
           })
         )}
       </div>
+
+      {/* Dragged piece overlay */}
+      {dragPiece && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: dragPos.x - 26,
+            top: dragPos.y - 26,
+            width: 52,
+            height: 52,
+          }}
+        >
+          <div className="w-full h-full">
+            <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} />
+          </div>
+        </div>
+      )}
+
       {msg && <p className="text-red-500 text-xs">{msg}</p>}
     </div>
   );
 }
-
 // FEN из squares
 function squaresToFen(squares: Record<string, any>, turn: string) {
   let rows = [];
