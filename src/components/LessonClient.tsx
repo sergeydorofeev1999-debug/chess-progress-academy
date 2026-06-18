@@ -565,76 +565,142 @@ function MultiLevelStarBoard({
   const allCollected = stars.every((s: string) => collected.includes(s));
 
   return (
-    <div className="space-y-3 w-full">
-      {/* Level progress bar */}
-      <div className="flex items-center gap-2">
-        {levels.map((_l: any, i: number) => (
-          <div
-            key={i}
-            className={`flex-1 h-2 rounded-full transition-all ${
-              i < currentLevel ? 'bg-green-500' : i === currentLevel ? 'bg-blue-500' : 'bg-gray-200'
-            }`}
-          />
-        ))}
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <Star size={16} fill="#fbbf24" color="#f59e0b" />
-          <span className="text-sm font-medium">
-            Позиция {currentLevel + 1} / {totalLevels}
-          </span>
+    <div className="flex gap-4 w-full min-h-[500px]">
+      {/* LEFT COLUMN: Figure menu + level progress */}
+      <div className="w-[140px] flex-shrink-0 space-y-3">
+        {/* Level progress bar */}
+        <div className="space-y-1.5">
+          {levels.map((_l: any, i: number) => (
+            <div
+              key={i}
+              className={`h-2 rounded-full transition-all ${
+                i < currentLevel ? 'bg-green-500' : i === currentLevel ? 'bg-blue-500' : 'bg-gray-200'
+              }`}
+            />
+          ))}
         </div>
-        {allDone && <span className="text-green-600 text-sm font-medium">✓ Все позиции пройдены!</span>}
-      </div>
-
-      {/* Stars progress for current level */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div className="h-full bg-yellow-400 transition-all" style={{ width: `${stars.length > 0 ? (collectedCount / stars.length) * 100 : 0}%` }} />
+        <div className="text-sm font-medium text-gray-700">
+          Позиция {currentLevel + 1} / {totalLevels}
         </div>
-        <span className="text-xs text-gray-500">⭐ {collectedCount} / {stars.length}</span>
-      </div>
+        {allDone && <span className="text-green-600 text-sm font-medium">✓ Все пройдены!</span>}
 
-      {/* Instructions */}
-      {level.instructions && <p className="text-blue-800 font-medium">{level.instructions}</p>}
-      {level.hint && <p className="text-sm text-blue-600">💡 {level.hint}</p>}
-
-      {/* Message */}
-      {msg && (
-        <div className={`text-center py-1.5 px-3 rounded text-sm font-medium ${msg.includes('Все позиции') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-          {msg}
+        {/* Figure pieces menu (mock - will be populated from course data) */}
+        <div className="border rounded-lg overflow-hidden">
+          <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1.5">Шахматные фигуры</div>
+          {[
+            { name: 'Ладья', active: true },
+            { name: 'Слон', active: false },
+            { name: 'Ферзь', active: false },
+            { name: 'Король', active: false },
+            { name: 'Конь', active: false },
+            { name: 'Пешка', active: false },
+          ].map((p, i) => (
+            <div
+              key={i}
+              className={`px-2 py-1.5 text-xs cursor-default ${
+                p.active
+                  ? 'bg-blue-100 text-blue-800 font-medium'
+                  : i % 2 === 0
+                    ? 'bg-emerald-50 text-gray-600'
+                    : 'bg-cyan-50 text-gray-600'
+              }`}
+            >
+              {p.name}
+            </div>
+          ))}
         </div>
-      )}
 
-      {/* Auto-advance message */}
-      {allCollected && currentLevel + 1 < totalLevels && (
-        <div className="flex items-center justify-center gap-2 text-blue-600 text-sm animate-pulse">
-          <ChevronRight size={16} /> Переход к следующей позиции...
-        </div>
-      )}
-
-      <div className="flex justify-center">
-        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition">
-          <RotateCcw size={14} /> Начать заново
+        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
+          <RotateCcw size={14} /> Заново
         </button>
+      </div>
+
+      {/* CENTER COLUMN: Chess board */}
+      <div className="flex-1 flex flex-col items-center gap-3">
+        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} />
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
       </div>
 
-      {/* Next lesson button when all done */}
-      {allDone && nextLessonUrl && (
-        <div className="pt-4">
+      {/* RIGHT COLUMN: Exercise info + star rating */}
+      <div className="w-[180px] flex-shrink-0 space-y-3">
+        {/* Star rating for current level */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+          <div className="text-xs font-bold text-blue-800 uppercase tracking-wide">Оценка</div>
+          <div className="flex justify-center gap-1">
+            {[1, 2, 3].map((star) => (
+              <div key={star} className="w-8 h-8 flex items-center justify-center">
+                <img
+                  src="/images/learn/star.png"
+                  alt=""
+                  className="w-7 h-7"
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="text-[10px] text-blue-700 space-y-0.5 leading-tight">
+            <div>⭐⭐⭐ = {stars.length + 1} ходов</div>
+            <div>⭐⭐ = {stars.length + 2} ходов</div>
+            <div>⭐ = {stars.length + 3}+ ходов</div>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        {level.instructions && (
+          <div className="bg-white border rounded-lg p-3">
+            <p className="text-sm font-medium text-gray-800">{level.instructions}</p>
+          </div>
+        )}
+        {level.hint && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+            <p className="text-xs text-amber-800">💡 {level.hint}</p>
+          </div>
+        )}
+
+        {/* Stars collected progress */}
+        <div className="bg-white border rounded-lg p-2.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-gray-600">Звёзды</span>
+            <span className="text-xs text-gray-500">{collectedCount} / {stars.length}</span>
+          </div>
+          <div className="flex gap-1">
+            {stars.map((s: string, i: number) => (
+              <div key={i} className="w-6 h-6">
+                <img
+                  src="/images/learn/star.png"
+                  alt=""
+                  className={`w-full h-full transition-opacity ${collected.includes(s) ? 'opacity-100' : 'opacity-20 grayscale'}`}
+                  draggable={false}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Message */}
+        {msg && (
+          <div className={`text-center py-1.5 px-2 rounded text-xs font-medium ${msg.includes('Все позиции') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+            {msg}
+          </div>
+        )}
+
+        {/* Auto-advance */}
+        {allCollected && currentLevel + 1 < totalLevels && (
+          <div className="flex items-center justify-center gap-1 text-blue-600 text-xs animate-pulse">
+            <ChevronRight size={14} /> Следующая позиция...
+          </div>
+        )}
+
+        {/* Next lesson button */}
+        {allDone && nextLessonUrl && (
           <button
             onClick={() => router.push(nextLessonUrl)}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
+            className="w-full flex items-center justify-center gap-1 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-800 transition"
           >
-            Следующий урок <ArrowRight size={18} />
+            Дальше <ArrowRight size={16} />
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
