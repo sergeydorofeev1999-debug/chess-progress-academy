@@ -548,22 +548,7 @@ function MultiLevelStarBoard({
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
-              <span className="font-bold w-4">{i + 1}</span>
-              <span className="hidden lg:flex gap-0.5">
-                {[1, 2, 3].map((s) => (
-                  <img
-                    key={s}
-                    src="/images/learn/star.png"
-                    className={`w-3 h-3 ${(() => {
-                      const earned = levelStars[i];
-                      if (earned == null) return 'opacity-40 grayscale';
-                      return s <= earned ? '' : 'opacity-40 grayscale';
-                    })()}`}
-                    draggable={false}
-                    alt=""
-                  />
-                ))}
-              </span>
+              <span className="font-bold">{i + 1}</span>
             </button>
           ))}
         </div>
@@ -642,6 +627,36 @@ function MultiLevelStarBoard({
             Дальше <ArrowRight size={16} />
           </button>
         )}
+
+        {/* Level progress stars — Lichess style blocks */}
+        <div className="flex rounded overflow-hidden border border-gray-200">
+          {levels.map((_l: any, i: number) => {
+            const earned = levelStars[i];
+            const isCurrent = i === currentLevel;
+            const isDone = earned != null;
+            const isFuture = i > currentLevel && !allDone;
+            return (
+              <div
+                key={i}
+                className={`flex-1 py-1.5 flex justify-center gap-0.5 ${
+                  isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
+                }`}
+              >
+                {[1, 2, 3].map((s) => (
+                  <img
+                    key={s}
+                    src="/images/learn/star.png"
+                    className={`w-3.5 h-3.5 ${
+                      isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                    }`}
+                    draggable={false}
+                    alt=""
+                  />
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
