@@ -33,9 +33,58 @@ function parseInteractiveConfig(videoUrl: string | null) {
   }
 }
 
-/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (избегаем tree-shaking) ====== */
+/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (без chess.js — pure JS) ====== */
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+
+// Простой FEN парсер: возвращает { squares: Record<square, {type, color}> }
+function parseFen(fen: string) {
+  const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
+  const [placement] = fen.split(' ');
+  const rows = placement.split('/');
+  for (let ri = 0; ri < 8; ri++) {
+    let fi = 0;
+    for (const ch of rows[ri]) {
+      if (ch >= '1' && ch <= '8') {
+        fi += parseInt(ch);
+      } else {
+        const color = ch === ch.toUpperCase() ? 'w' : 'b';
+        const type = ch.toLowerCase();
+        squares[`${FILES[fi]}${RANKS[ri]}`] = { type, color };
+        fi++;
+      }
+    }
+  }
+  return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
+}
+
+// Валидация хода ладьи (для Урока 1)
+function isValidRookMove(from: string, to: string, squares: Record<string, any>) {
+  const ff = FILES.indexOf(from[0]);
+  const tf = FILES.indexOf(to[0]);
+  const fr = RANKS.indexOf(from[1]);
+  const tr = RANKS.indexOf(to[1]);
+
+  if (ff !== tf && fr !== tr) return false; // не прямо
+  if (squares[to]?.color === 'w') return false; // своя фигура
+
+  // Проверка пути
+  if (ff === tf) {
+    const min = Math.min(fr, tr);
+    const max = Math.max(fr, tr);
+    for (let r = min + 1; r < max; r++) {
+      if (squares[`${FILES[ff]}${RANKS[r]}`]) return false;
+    }
+  } else {
+    const min = Math.min(ff, tf);
+    const max = Math.max(ff, tf);
+    for (let f = min + 1; f < max; f++) {
+      if (squares[`${FILES[f]}${RANKS[fr]}`]) return false;
+    }
+  }
+  return true;
+}
+
 const PIECE_SYMBOLS: Record<string, string> = {
   wP: '♙', wN: '♘', wB: '♗', wR: '♖', wQ: '♕', wK: '♔',
   bP: '♟', bN: '♞', bB: '♝', bR: '♜', bQ: '♛', bK: '♚',
@@ -50,82 +99,56 @@ function InlineChessBoard({
   stars?: string[];
   onMove?: (from: string, to: string) => boolean;
 }) {
-  const [ready, setReady] = useState(false);
-  const gameRef = useRef<any>(null);
   const [position, setPosition] = useState(fen);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
 
-  useEffect(() => {
-    let cancelled = false;
-    import('chess.js').then((mod) => {
-      if (cancelled) return;
-      const Chess = mod.Chess;
-      gameRef.current = new Chess(fen);
-      setPosition(fen);
-      setSelectedSquare(null);
-      setCollectedStars(new Set());
-      setMsg('');
-      setReady(true);
-    });
-    return () => { cancelled = true; };
-  }, [fen]);
+  const parsed = parseFen(position);
+  const squares = parsed.squares;
 
   const getPiece = (sq: string) => {
-    if (!gameRef.current) return null;
-    const p = gameRef.current.get(sq);
+    const p = squares[sq];
     if (!p) return null;
-    return PIECE_SYMBOLS[`${p.color === 'w' ? 'w' : 'b'}${p.type.toUpperCase()}`] || null;
+    return PIECE_SYMBOLS[`${p.color}${p.type.toUpperCase()}`] || null;
   };
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
   const click = useCallback(
     (square: string) => {
-      const game = gameRef.current;
-      if (!game || !ready) return;
-      const piece = game.get(square);
+      const piece = squares[square];
       if (selectedSquare) {
-        try {
-          const move = game.move({ from: selectedSquare, to: square });
-          if (move && onMove?.(selectedSquare, square)) {
-            setPosition(game.fen());
-            if (stars.includes(square)) {
-              setCollectedStars((prev) => new Set([...prev, square]));
-            }
-            setSelectedSquare(null);
-            setMsg('');
-            return;
+        // Попытка хода
+        if (isValidRookMove(selectedSquare, square, squares)) {
+          const newSquares = { ...squares };
+          delete newSquares[selectedSquare];
+          newSquares[square] = { type: 'r', color: 'w' };
+          const newFen = squaresToFen(newSquares, 'w');
+          setPosition(newFen);
+          if (stars.includes(square)) {
+            setCollectedStars((prev) => new Set([...prev, square]));
           }
-        } catch {}
-        if (piece && piece.color === game.turn()) {
-          setSelectedSquare(square);
-          setMsg('');
-        } else {
           setSelectedSquare(null);
-          setMsg('Недопустимый ход');
+          setMsg('');
+          onMove?.(selectedSquare, square);
+        } else {
+          if (piece && piece.color === 'w') {
+            setSelectedSquare(square);
+            setMsg('');
+          } else {
+            setSelectedSquare(null);
+            setMsg('Недопустимый ход. Ладья ходит только прямо!');
+          }
         }
       } else {
-        if (piece && piece.color === game.turn()) {
+        if (piece && piece.color === 'w') {
           setSelectedSquare(square);
         }
       }
     },
-    [selectedSquare, ready, stars, onMove]
+    [selectedSquare, squares, stars, onMove]
   );
-
-  if (!ready || !gameRef.current) {
-    return (
-      <div className="flex flex-col items-center gap-2">
-        <div style={{ width: 352, height: 352 }}>
-          <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-            <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -164,6 +187,29 @@ function InlineChessBoard({
   );
 }
 
+// FEN из squares
+function squaresToFen(squares: Record<string, any>, turn: string) {
+  let rows = [];
+  for (let ri = 0; ri < 8; ri++) {
+    let row = '';
+    let empty = 0;
+    for (let fi = 0; fi < 8; fi++) {
+      const sq = `${FILES[fi]}${RANKS[ri]}`;
+      const p = squares[sq];
+      if (p) {
+        if (empty > 0) { row += empty; empty = 0; }
+        const ch = p.type === p.type.toUpperCase() ? p.type : p.type.toUpperCase();
+        row += p.color === 'w' ? ch.toUpperCase() : ch.toLowerCase();
+      } else {
+        empty++;
+      }
+    }
+    if (empty > 0) row += empty;
+    rows.push(row);
+  }
+  return `${rows.join('/')} ${turn} - - 0 1`;
+}
+
 function InlineStarBoard({
   config,
   onComplete,
@@ -171,8 +217,6 @@ function InlineStarBoard({
   config: any;
   onComplete?: () => void;
 }) {
-  const [ready, setReady] = useState(false);
-  const gameRef = useRef<any>(null);
   const [position, setPosition] = useState(config.initialFen);
   const [collected, setCollected] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
@@ -180,86 +224,46 @@ function InlineStarBoard({
   const [msg, setMsg] = useState('');
 
   const stars = config.stars?.map((s: any) => s.square) || [];
-  const allowed = config.allowedPieces || [];
-
-  useEffect(() => {
-    let cancelled = false;
-    import('chess.js').then((mod) => {
-      if (cancelled) return;
-      const Chess = mod.Chess;
-      gameRef.current = new Chess(config.initialFen);
-      setPosition(config.initialFen);
-      setCollected(new Set());
-      setMoves(0);
-      setComplete(false);
-      setMsg('');
-      setReady(true);
-    });
-    return () => { cancelled = true; };
-  }, [config.initialFen]);
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      const game = gameRef.current;
-      if (!game || !ready || complete) return false;
-      const piece = game.get(from);
-      if (!piece) return false;
-      if (allowed.length > 0 && !allowed.includes(piece.type)) {
-        setMsg(`Используйте ${pieceName(allowed[0])}!`);
+      if (complete) return false;
+      const parsed = parseFen(position);
+      if (!isValidRookMove(from, to, parsed.squares)) {
+        setMsg('Недопустимый ход');
         return false;
       }
-      try {
-        const move = game.move({ from, to });
-        if (move) {
-          setPosition(game.fen());
-          setMoves((c) => c + 1);
-          setMsg('');
-          if (stars.includes(to) && !collected.has(to)) {
-            setCollected((prev) => new Set([...prev, to]));
-            const still = stars.length - (collected.size + 1);
-            if (still <= 0) {
-              setComplete(true);
-              setMsg('🎉 Все звёзды собраны! Урок пройден!');
-              onComplete?.();
-            } else {
-              setMsg(`⭐ Осталось ${still} звёзд`);
-            }
-          }
-          return true;
+      const newSquares = { ...parsed.squares };
+      delete newSquares[from];
+      newSquares[to] = { type: 'r', color: 'w' };
+      const newFen = squaresToFen(newSquares, 'w');
+      setPosition(newFen);
+      setMoves((c) => c + 1);
+      setMsg('');
+
+      if (stars.includes(to) && !collected.has(to)) {
+        setCollected((prev) => new Set([...prev, to]));
+        const still = stars.length - (collected.size + 1);
+        if (still <= 0) {
+          setComplete(true);
+          setMsg('🎉 Все звёзды собраны! Урок пройден!');
+          onComplete?.();
+        } else {
+          setMsg(`⭐ Осталось ${still} звёзд`);
         }
-      } catch {}
-      setMsg('Недопустимый ход');
-      return false;
+      }
+      return true;
     },
-    [ready, stars, collected, allowed, complete, onComplete]
+    [position, stars, collected, complete, onComplete]
   );
 
   const reset = () => {
-    if (!gameRef.current) return;
-    gameRef.current.load(config.initialFen);
     setPosition(config.initialFen);
     setCollected(new Set());
     setMoves(0);
     setComplete(false);
     setMsg('');
   };
-
-  if (!ready) {
-    return (
-      <div className="space-y-3 w-full">
-        <div className="flex items-center gap-3">
-          <div className="h-2 flex-1 bg-gray-200 rounded-full" />
-        </div>
-        <div style={{ width: 352, height: 352 }}>
-          <div className="w-full h-full bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-            <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const remaining = stars.filter((s: string) => !collected.has(s)).length;
 
   return (
     <div className="space-y-3 w-full">
@@ -285,11 +289,6 @@ function InlineStarBoard({
       </div>
     </div>
   );
-}
-
-function pieceName(p: string) {
-  const n: Record<string, string> = { r: 'ладью', n: 'коня', b: 'слона', q: 'ферзя', k: 'короля', p: 'пешку' };
-  return n[p] || p;
 }
 /* ====== /ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА ====== */
 
