@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+@keyframes star-pulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.08) rotate(3deg);
+  }
+}
+
+@keyframes star-hue {
+  50% {
+    filter: hue-rotate(-12deg) saturate(1.15);
+  }
+}
+
+.star-animate {
+  animation:
+    1.7s ease-in-out 0s infinite none star-pulse,
+    0.7s ease-in-out 0s infinite none star-hue;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

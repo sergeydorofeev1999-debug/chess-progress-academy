@@ -186,7 +186,7 @@ function StarSvg() {
     <img
       src="/images/learn/star.png"
       alt="Star"
-      className="w-11 h-11"
+      className="w-11 h-11 star-animate"
       draggable={false}
       style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
     />
