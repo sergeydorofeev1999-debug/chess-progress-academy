@@ -487,7 +487,7 @@ function MultiLevelStarBoard({
             const m = movesRef.current + 1;
             let earned = 3;
             if (m <= max) earned = 3;
-            else if (m <= max + 2) earned = 2;
+            else if (m <= max + 1) earned = 2;
             else earned = 1;
             setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
             setTimeout(() => {
@@ -622,7 +622,7 @@ function MultiLevelStarBoard({
           let earned = 3;
           if (allCollected) {
             if (moves <= max) earned = 3;
-            else if (moves <= max + 2) earned = 2;
+            else if (moves <= max + 1) earned = 2;
             else earned = 1;
           } else {
             earned = 0;
