@@ -183,8 +183,6 @@ function InlineChessBoard({
   stars?: string[];
   onMove?: (from: string, to: string) => boolean;
 }) {
-  const [position, setPosition] = useState(fen);
-  const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
@@ -196,7 +194,6 @@ function InlineChessBoard({
   // Stable refs to avoid re-subscribing window events on every state change
   const squaresRef = useRef<Record<string, any>>({});
   const clickRef = useRef<(square: string) => void>(() => {});
-  const starsRef = useRef<string[]>([]);
   const onMoveRef = useRef<((from: string, to: string) => boolean) | undefined>(undefined);
 
   useEffect(() => {
@@ -206,7 +203,7 @@ function InlineChessBoard({
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  const parsed = parseFen(position);
+  const parsed = parseFen(fen);
   const squares = parsed.squares;
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
@@ -257,9 +254,6 @@ function InlineChessBoard({
   useEffect(() => {
     clickRef.current = click;
   }, [click]);
-  useEffect(() => {
-    starsRef.current = stars;
-  }, [stars]);
   useEffect(() => {
     onMoveRef.current = onMove;
   }, [onMove]);
@@ -347,7 +341,7 @@ function InlineChessBoard({
             const sel = selectedSquare === sq;
             const isHover = hoverSquare === sq;
             const isSource = dragPiece?.square === sq;
-            const hasStar = stars.includes(sq) && !collectedStars.has(sq);
+            const hasStar = stars.includes(sq);
             return (
               <div
                 key={sq}
