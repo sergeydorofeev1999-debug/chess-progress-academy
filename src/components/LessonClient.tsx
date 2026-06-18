@@ -355,8 +355,11 @@ function InlineChessBoard({
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
-                {hasStar && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                {(
+                  <div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-opacity duration-300"
+                    style={{ opacity: hasStar ? 1 : 0 }}
+                  >
                     <StarSvg />
                   </div>
                 )}
