@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
@@ -374,7 +374,7 @@ function InlineChessBoard({
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
                 {(
                   <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 transition-opacity duration-300"
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                     style={{ opacity: hasStar ? 1 : 0 }}
                   >
                     <StarSvg />
@@ -443,13 +443,16 @@ function MultiLevelStarBoard({
 
   const [currentLevel, setCurrentLevel] = useState(0);
   const [position, setPosition] = useState(levels[0].initialFen);
+  const positionRef = useRef(position);
+  useEffect(() => { positionRef.current = position; }, [position]);
   const [collected, setCollected] = useState<Set<string>>(new Set());
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
 
   const level = levels[currentLevel];
-  const stars = level.stars?.map((s: any) => s.square) || [];
+  const stars = useMemo(() => level.stars?.map((s: any) => typeof s === 'string' ? s : s?.square).filter(Boolean) || [], [level.stars]);
+  const visibleStars = useMemo(() => stars.filter((s: string) => !collected.has(s)), [stars, collected]);
   const totalLevels = levels.length;
 
   const reset = useCallback(() => {
@@ -468,7 +471,8 @@ function MultiLevelStarBoard({
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      const parsed = parseFen(position);
+      // Read current position from ref to avoid dependency churn
+      const parsed = parseFen(positionRef.current);
       if (!isValidRookMove(from, to, parsed.squares)) {
         setMsg('Недопустимый ход');
         return false;
@@ -504,7 +508,7 @@ function MultiLevelStarBoard({
       }
       return true;
     },
-    [position, stars, collected, currentLevel, totalLevels, onAllComplete]
+    [stars, collected, currentLevel, totalLevels, onAllComplete]
   );
 
   const collectedCount = stars.filter((s: string) => collected.has(s)).length;
@@ -560,7 +564,7 @@ function MultiLevelStarBoard({
       )}
 
       <div className="flex justify-center">
-        <InlineChessBoard fen={position} stars={stars.filter((s: string) => !collected.has(s))} onMove={handleMove} />
+        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} />
       </div>
 
       <div className="flex items-center justify-between">
