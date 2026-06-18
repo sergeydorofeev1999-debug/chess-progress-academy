@@ -272,7 +272,8 @@ function InlineChessBoard({
       if (!start) return;
       if (!start.moved) {
         click(start.square);
-      } else {
+      } else if (dragPiece) {
+        // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
           if (isValidRookMove(start.square, targetSquare, squares)) {
@@ -325,7 +326,7 @@ function InlineChessBoard({
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
                 } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default' }}
-                onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
+                onPointerDown={(e) => handlePointerDown(e, sq)}
                 onDragStart={preventDrag}
               >
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
