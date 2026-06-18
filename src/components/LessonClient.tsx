@@ -183,17 +183,13 @@ function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
 
 function StarSvg() {
   return (
-    <svg viewBox="0 0 55 55" className="w-11 h-11"
+    <img
+      src="/images/learn/star.png"
+      alt="Star"
+      className="w-11 h-11"
+      draggable={false}
       style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
-    >
-      <path
-        d="M27.5 5l6.5 16.5L52 21l-13 9.5 4.5 16-14.5-10.5L14.5 46.5 19 30.5 6 21l17.5-1z"
-        fill="#FFD700"
-        stroke="#E6AC00"
-        strokeWidth="1.8"
-        strokeLinejoin="round"
-      />
-    </svg>
+    />
   );
 }
 
@@ -419,8 +415,8 @@ function InlineChessBoard({
                 )}
                 {/* Star icon (collected/uncollected) */}
                   <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
-                    style={{ opacity: hasStar ? 1 : 0 }}
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    style={{ zIndex: 25, display: hasStar ? 'flex' : 'none' }}
                   >
                     <StarSvg />
                   </div>
