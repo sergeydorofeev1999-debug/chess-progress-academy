@@ -421,6 +421,14 @@ function InlineChessBoard({
                     />
                   </div>
                 )}
+                {isValidMove && hasStar && (
+                  <div className="absolute inset-0 pointer-events-none z-20">
+                    <div className="absolute top-0 left-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
+                    <div className="absolute top-0 right-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
+                    <div className="absolute bottom-0 left-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
+                    <div className="absolute bottom-0 right-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
+                  </div>
+                )}
                 {(
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
