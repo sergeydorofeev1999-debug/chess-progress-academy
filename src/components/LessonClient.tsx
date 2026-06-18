@@ -405,7 +405,16 @@ function InlineChessBoard({
                 onPointerLeave={() => setHoverSquare(null)}
                 onDragStart={preventDrag}
               >
-                {/* Hover highlight — Lichess rounded style (empty squares) */}
+              {/* Rounded corner highlight — Lichess style for valid-move stars */}
+              {isValidMove && hasStar && (
+                <>
+                  <div className="absolute top-0 left-0 w-[18%] h-[18%] rounded-br-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
+                  <div className="absolute top-0 right-0 w-[18%] h-[18%] rounded-bl-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
+                  <div className="absolute bottom-0 left-0 w-[18%] h-[18%] rounded-tr-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
+                  <div className="absolute bottom-0 right-0 w-[18%] h-[18%] rounded-tl-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
+                </>
+              )}
+              {/* Hover highlight — Lichess rounded style (empty squares) */}
                 {isHover && !dragPiece && !sel && !hasStar && !isValidMove && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.35)] pointer-events-none z-10" />
                 )}
@@ -416,10 +425,6 @@ function InlineChessBoard({
                 {/* Selected square highlight */}
                 {sel && !hasStar && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
-                )}
-                {/* Valid move on star square */}
-                {isValidMove && hasStar && (
-                  <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.4)] pointer-events-none z-10" />
                 )}
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
