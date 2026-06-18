@@ -347,7 +347,7 @@ function InlineChessBoard({
                 data-square={sq}
                 className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
+                } ${sel ? 'outline outline-2 outline-blue-500 outline-offset-[-2px]' : ''} ${isHover && dragPiece ? 'outline outline-2 outline-blue-400 outline-offset-[-2px]' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
                 onPointerUp={handlePointerUp}
@@ -357,7 +357,7 @@ function InlineChessBoard({
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
                 {hasStar && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                    <div className="animate-pulse"><StarSvg /></div>
+                    <StarSvg />
                   </div>
                 )}
                 {pieceObj && !isSource && (
