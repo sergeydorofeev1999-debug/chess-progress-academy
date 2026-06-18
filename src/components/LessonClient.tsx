@@ -183,22 +183,14 @@ function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
 
 function StarSvg() {
   return (
-    <svg viewBox="0 0 45 45" className="w-7 h-7"
-      style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.35))' }}
+    <svg viewBox="0 0 55 55" className="w-11 h-11"
+      style={{ filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.3))' }}
     >
-      <defs>
-        <radialGradient id="starGrad" cx="35%" cy="30%" r="65%">
-          <stop offset="0%" stopColor="#fff8cc" />
-          <stop offset="40%" stopColor="#ffd700" />
-          <stop offset="75%" stopColor="#ffaa00" />
-          <stop offset="100%" stopColor="#cc7700" />
-        </radialGradient>
-      </defs>
       <path
-        d="M22.5 2.5l5.8 14.5L43 18l-11.8 8.8 4.2 14.8-13-9.5-13 9.5 4.2-14.8L2 18l14.7-1z"
-        fill="url(#starGrad)"
-        stroke="#b8860b"
-        strokeWidth="1.5"
+        d="M27.5 5l6.5 16.5L52 21l-13 9.5 4.5 16-14.5-10.5L14.5 46.5 19 30.5 6 21l17.5-1z"
+        fill="#FFD700"
+        stroke="#E6AC00"
+        strokeWidth="1.8"
         strokeLinejoin="round"
       />
     </svg>
