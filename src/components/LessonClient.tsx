@@ -542,7 +542,21 @@ function MultiLevelStarBoard({
               }`}
             >
               <span className="font-bold w-4">{i + 1}</span>
-              <span className="flex-1 text-left truncate">{allDone || i < currentLevel ? '✓' : i === currentLevel ? '...' : ''}</span>
+              <span className="flex gap-0.5">
+                {[1, 2, 3].map((s) => (
+                  <img
+                    key={s}
+                    src="/images/learn/star.png"
+                    className={`w-3 h-3 ${(() => {
+                      const earned = levelStars[i];
+                      if (earned == null) return 'opacity-40 grayscale';
+                      return s <= earned ? '' : 'opacity-40 grayscale';
+                    })()}`}
+                    draggable={false}
+                    alt=""
+                  />
+                ))}
+              </span>
             </button>
           ))}
         </div>
@@ -588,7 +602,7 @@ function MultiLevelStarBoard({
       </div>
 
       {/* RIGHT COLUMN: Exercise info */}
-      <div className="w-[180px] flex-shrink-0 flex flex-col gap-3">
+      <div className="w-[180px] flex-shrink-0 space-y-3">
         {/* Figure name header — Lichess style */}
         <div className="bg-blue-500 text-white rounded-t-lg p-2.5">
           <div className="flex items-center gap-2">
@@ -621,36 +635,6 @@ function MultiLevelStarBoard({
             Дальше <ArrowRight size={16} />
           </button>
         )}
-
-        {/* Level progress stars — Lichess style */}
-        <div className="mt-auto flex rounded overflow-hidden border border-gray-200">
-          {levels.map((_l: any, i: number) => {
-            const earned = levelStars[i];
-            const isCurrent = i === currentLevel;
-            const isDone = earned != null;
-            const isFuture = i > currentLevel && !allDone;
-            return (
-              <div
-                key={i}
-                className={`flex-1 py-1 flex justify-center gap-0.5 ${
-                  isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
-                }`}
-              >
-                {[1, 2, 3].map((s) => (
-                  <img
-                    key={s}
-                    src="/images/learn/star.png"
-                    className={`w-3 h-3 ${
-                      isFuture ? 'opacity-20 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                    }`}
-                    draggable={false}
-                    alt=""
-                  />
-                ))}
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
