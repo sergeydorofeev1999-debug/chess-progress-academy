@@ -79,11 +79,14 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
       {/* Interactive Lesson */}
       {interactiveConfig ? (
-        <div className="mb-8">
-          <InteractiveCollectStars
-            config={interactiveConfig}
-            onComplete={handleInteractiveComplete}
-          />
+        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <p className="text-blue-800 font-medium mb-2">{interactiveConfig.instructions || 'Интерактивный урок'}</p>
+          <p className="text-sm text-blue-600">🎯 Соберите звёзды на доске, двигая фигурами!</p>
+          {lesson.chess_board_fen && (
+            <div className="mt-4">
+              <ChessBoard fen={lesson.chess_board_fen} interactive={true} />
+            </div>
+          )}
         </div>
       ) : (
         /* Regular video placeholder */
