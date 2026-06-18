@@ -193,6 +193,12 @@ function InlineChessBoard({
   const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
   const [sqSize, setSqSize] = useState(44);
 
+  // Stable refs to avoid re-subscribing window events on every state change
+  const squaresRef = useRef<Record<string, any>>({});
+  const clickRef = useRef<(square: string) => void>(() => {});
+  const starsRef = useRef<string[]>([]);
+  const onMoveRef = useRef<((from: string, to: string) => boolean) | undefined>(undefined);
+
   useEffect(() => {
     const update = () => setSqSize(Math.min(44, Math.max(36, Math.floor((window.innerWidth - 32) / 8))));
     update();
@@ -245,6 +251,20 @@ function InlineChessBoard({
     [selectedSquare, squares, stars, onMove]
   );
 
+  // Sync refs after click is defined
+  useEffect(() => {
+    squaresRef.current = squares;
+  }, [squares]);
+  useEffect(() => {
+    clickRef.current = click;
+  }, [click]);
+  useEffect(() => {
+    starsRef.current = stars;
+  }, [stars]);
+  useEffect(() => {
+    onMoveRef.current = onMove;
+  }, [onMove]);
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
@@ -257,18 +277,15 @@ function InlineChessBoard({
     (e: React.PointerEvent) => {
       const start = pointerStartRef.current;
       if (!start) return;
-      // If a drag started (threshold exceeded), leave it to the global window handler
       if (start.moved) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
       if (Math.abs(dx) <= 20 && Math.abs(dy) <= 20) {
-        // Tap: execute click on the original square
-        click(start.square);
+        clickRef.current(start.square);
       }
-      // Mark as handled so global handler skips it
       pointerStartRef.current = null;
     },
-    [click]
+    []
   );
 
   useEffect(() => {
@@ -279,13 +296,13 @@ function InlineChessBoard({
       const dy = e.clientY - start.y;
       if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         start.moved = true;
-        const piece = squares[start.square];
+        const piece = squaresRef.current[start.square];
         if (piece && piece.color === 'w') {
           setDragPiece({ square: start.square, type: piece.type, color: piece.color });
           setSelectedSquare(null);
         }
       }
-      if (start.moved && dragPiece) {
+      if (start.moved) {
         setDragPos({ x: e.clientX, y: e.clientY });
         setHoverSquare(getSquareFromPoint(e.clientX, e.clientY));
       }
@@ -294,22 +311,22 @@ function InlineChessBoard({
       const start = pointerStartRef.current;
       if (!start) return;
       if (!start.moved) {
-        click(start.square);
-      } else if (dragPiece) {
+        clickRef.current(start.square);
+      } else {
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          if (isValidRookMove(start.square, targetSquare, squares)) {
-            const newSquares = { ...squares };
+          if (isValidRookMove(start.square, targetSquare, squaresRef.current)) {
+            const newSquares = { ...squaresRef.current };
             delete newSquares[start.square];
             newSquares[targetSquare] = { type: 'r', color: 'w' };
             const newFen = squaresToFen(newSquares, 'w');
             setPosition(newFen);
-            if (stars.includes(targetSquare)) {
+            if (starsRef.current.includes(targetSquare)) {
               setCollectedStars((prev) => new Set([...prev, targetSquare]));
             }
             setMsg('');
-            onMove?.(start.square, targetSquare);
+            onMoveRef.current?.(start.square, targetSquare);
           } else {
             setMsg('Недопустимый ход. Ладья ходит только прямо!');
           }
@@ -325,7 +342,7 @@ function InlineChessBoard({
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
     };
-  }, [squares, stars, onMove, click]);
+  }, []);
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
