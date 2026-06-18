@@ -592,6 +592,32 @@ function MultiLevelStarBoard({
           <div className="text-xs opacity-90 mt-0.5">Движется по прямой</div>
         </div>
 
+        {/* Dynamic star rating */}
+        {(() => {
+          const max = level.maxMoves || stars.length + 1;
+          let earned = 3;
+          if (allCollected) {
+            if (moves <= max) earned = 3;
+            else if (moves <= max + 2) earned = 2;
+            else earned = 1;
+          } else {
+            earned = 0;
+          }
+          return (
+            <div className="bg-blue-600 text-white px-2 py-1 flex justify-center gap-1">
+              {[1,2,3].map((s) => (
+                <img
+                  key={s}
+                  src="/images/learn/star.png"
+                  className={`w-5 h-5 ${s <= earned ? 'opacity-100' : 'opacity-30 grayscale'}`}
+                  draggable={false}
+                  alt=""
+                />
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Instructions */}
         {level.instructions && (
           <div className="bg-white rounded-b-lg p-3 text-sm font-medium text-gray-800">
