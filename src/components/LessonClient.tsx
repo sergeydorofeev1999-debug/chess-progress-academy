@@ -162,7 +162,14 @@ function InlineChessBoard({
   const selectedSquareRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const update = () => setSqSize(Math.min(64, Math.max(48, Math.floor((window.innerWidth - 340) / 8))));
+    const update = () => {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        setSqSize(Math.min(64, Math.max(36, Math.floor((window.innerWidth - 24) / 8))));
+      } else {
+        setSqSize(Math.min(64, Math.max(48, Math.floor((window.innerWidth - 340) / 8))));
+      }
+    };
     update();
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
@@ -515,11 +522,11 @@ function MultiLevelStarBoard({
   const allCollected = stars.every((s: string) => collected.includes(s));
 
   return (
-    <div className="flex gap-4 w-full min-h-[500px]">
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Figure menu + level progress */}
-      <div className="w-[140px] flex-shrink-0 space-y-2">
-        {/* Level progress — clickable colored blocks */}
-        <div className="space-y-0.5">
+      <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
+        {/* Level progress — horizontal on mobile, vertical on desktop */}
+        <div className="flex flex-row lg:flex-col gap-0.5">
           {levels.map((_l: any, i: number) => (
             <button
               key={i}
@@ -561,8 +568,8 @@ function MultiLevelStarBoard({
           ))}
         </div>
 
-        {/* Piece menu — Lichess style */}
-        <div className="border border-gray-200 rounded overflow-hidden">
+        {/* Piece menu — Lichess style (hidden on mobile) */}
+        <div className="hidden lg:block border border-gray-200 rounded overflow-hidden">
           <div className="bg-blue-500 text-white text-[11px] font-bold px-2 py-1">
             Шахматные фигуры
           </div>
@@ -590,7 +597,7 @@ function MultiLevelStarBoard({
           ))}
         </div>
 
-        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
+        <button onClick={reset} className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
           <RotateCcw size={14} /> Заново
         </button>
       </div>
@@ -602,7 +609,7 @@ function MultiLevelStarBoard({
       </div>
 
       {/* RIGHT COLUMN: Exercise info */}
-      <div className="w-[180px] flex-shrink-0 space-y-3">
+      <div className="w-full lg:w-[180px] flex-shrink-0 space-y-3">
         {/* Figure name header — Lichess style */}
         <div className="bg-blue-500 text-white rounded-t-lg p-2.5">
           <div className="flex items-center gap-2">
