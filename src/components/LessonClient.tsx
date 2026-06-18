@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import StarBoard from '@/components/StarBoard';
-import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
+import { Chess } from 'chess.js';
 
 interface Lesson {
   id: string;
@@ -33,6 +33,200 @@ function parseInteractiveConfig(videoUrl: string | null) {
     return null;
   }
 }
+
+/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (избегаем tree-shaking) ====== */
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+const PIECE_SYMBOLS: Record<string, string> = {
+  wP: '♙', wN: '♘', wB: '♗', wR: '♖', wQ: '♕', wK: '♔',
+  bP: '♟', bN: '♞', bB: '♝', bR: '♜', bQ: '♛', bK: '♚',
+};
+
+function InlineChessBoard({
+  fen,
+  stars = [],
+  onMove,
+}: {
+  fen: string;
+  stars?: string[];
+  onMove?: (from: string, to: string) => boolean;
+}) {
+  const [game] = useState(() => new Chess(fen));
+  const [position, setPosition] = useState(fen);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
+  const [msg, setMsg] = useState('');
+
+  const getPiece = (sq: string) => {
+    const p = game.get(sq as any);
+    if (!p) return null;
+    return PIECE_SYMBOLS[`${p.color === 'w' ? 'w' : 'b'}${p.type.toUpperCase()}`] || null;
+  };
+
+  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
+
+  const click = useCallback(
+    (square: string) => {
+      const piece = game.get(square as any);
+      if (selectedSquare) {
+        try {
+          const move = game.move({ from: selectedSquare, to: square });
+          if (move && onMove?.(selectedSquare, square)) {
+            setPosition(game.fen());
+            if (stars.includes(square)) {
+              setCollectedStars((prev) => new Set([...prev, square]));
+            }
+            setSelectedSquare(null);
+            setMsg('');
+            return;
+          }
+        } catch {}
+        if (piece && piece.color === game.turn()) {
+          setSelectedSquare(square);
+          setMsg('');
+        } else {
+          setSelectedSquare(null);
+          setMsg('Недопустимый ход');
+        }
+      } else {
+        if (piece && piece.color === game.turn()) {
+          setSelectedSquare(square);
+        }
+      }
+    },
+    [selectedSquare, game, stars, onMove]
+  );
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="grid border-2 border-amber-800 rounded" style={{ gridTemplateColumns: 'repeat(8, 44px)', gridTemplateRows: 'repeat(8, 44px)' }}>
+        {RANKS.map((rank, ri) =>
+          FILES.map((file, fi) => {
+            const sq = `${file}${rank}`;
+            const piece = getPiece(sq);
+            const light = isLight(fi, ri);
+            const sel = selectedSquare === sq;
+            const hasStar = stars.includes(sq) && !collectedStars.has(sq);
+            return (
+              <div
+                key={sq}
+                onClick={() => click(sq)}
+                className={`flex items-center justify-center relative cursor-pointer select-none text-2xl ${
+                  light ? 'bg-amber-100' : 'bg-amber-700'
+                } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} hover:opacity-90 transition`}
+                style={{ width: 44, height: 44 }}
+              >
+                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[9px] font-bold ${light ? 'text-amber-800' : 'text-amber-100'}`}>{rank}</span>}
+                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[9px] font-bold ${light ? 'text-amber-800' : 'text-amber-100'}`}>{file}</span>}
+                {hasStar && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-pulse"><span className="text-yellow-800 text-xs">★</span></div>
+                  </div>
+                )}
+                {piece && <span className={`relative z-10 ${'wR wQ wK wB wN wP'.includes(piece) ? 'text-white drop-shadow' : 'text-slate-900 drop-shadow'}`}>{piece}</span>}
+              </div>
+            );
+          })
+        )}
+      </div>
+      {msg && <p className="text-red-500 text-xs">{msg}</p>}
+    </div>
+  );
+}
+
+function InlineStarBoard({
+  config,
+  onComplete,
+}: {
+  config: any;
+  onComplete?: () => void;
+}) {
+  const [game] = useState(() => new Chess(config.initialFen));
+  const [position, setPosition] = useState(config.initialFen);
+  const [collected, setCollected] = useState<Set<string>>(new Set());
+  const [moves, setMoves] = useState(0);
+  const [complete, setComplete] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const stars = config.stars?.map((s: any) => s.square) || [];
+  const allowed = config.allowedPieces || [];
+  const remaining = stars.filter((s: string) => !collected.has(s)).length;
+
+  const handleMove = useCallback(
+    (from: string, to: string) => {
+      if (complete) return false;
+      const piece = game.get(from as any);
+      if (!piece) return false;
+      if (allowed.length > 0 && !allowed.includes(piece.type)) {
+        setMsg(`Используйте ${pieceName(allowed[0])}!`);
+        return false;
+      }
+      try {
+        const move = game.move({ from, to });
+        if (move) {
+          setPosition(game.fen());
+          setMoves((c) => c + 1);
+          setMsg('');
+          if (stars.includes(to) && !collected.has(to)) {
+            setCollected((prev) => new Set([...prev, to]));
+            const still = stars.length - (collected.size + 1);
+            if (still <= 0) {
+              setComplete(true);
+              setMsg('🎉 Все звёзды собраны! Урок пройден!');
+              onComplete?.();
+            } else {
+              setMsg(`⭐ Осталось ${still} звёзд`);
+            }
+          }
+          return true;
+        }
+      } catch {}
+      setMsg('Недопустимый ход');
+      return false;
+    },
+    [game, stars, collected, allowed, complete, onComplete]
+  );
+
+  const reset = () => {
+    game.load(config.initialFen);
+    setPosition(config.initialFen);
+    setCollected(new Set());
+    setMoves(0);
+    setComplete(false);
+    setMsg('');
+  };
+
+  return (
+    <div className="space-y-3 w-full">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1">
+          <Star size={16} fill="#fbbf24" color="#f59e0b" />
+          <span className="text-sm font-medium">{collected.size} / {stars.length} звёзд</span>
+        </div>
+        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-full bg-yellow-400 transition-all" style={{ width: `${(collected.size / stars.length) * 100}%` }} />
+        </div>
+        {complete && <span className="text-green-600 text-sm font-medium">✓ Готово!</span>}
+      </div>
+      {msg && <div className={`text-center py-1.5 px-3 rounded text-sm font-medium ${complete ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{msg}</div>}
+      <div className="flex justify-center">
+        <InlineChessBoard fen={position} stars={stars.filter((s: string) => !collected.has(s))} onMove={handleMove} />
+      </div>
+      <div className="flex items-center justify-between">
+        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition">
+          <RotateCcw size={14} /> Начать заново
+        </button>
+        <span className="text-xs text-gray-500">Ходов: {moves}</span>
+      </div>
+    </div>
+  );
+}
+
+function pieceName(p: string) {
+  const n: Record<string, string> = { r: 'ладью', n: 'коня', b: 'слона', q: 'ферзя', k: 'короля', p: 'пешку' };
+  return n[p] || p;
+}
+/* ====== /ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА ====== */
 
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
@@ -85,10 +279,8 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           )}
           {lesson.chess_board_fen && (
             <div className="mt-4 flex justify-center">
-              <StarBoard
-                fen={lesson.chess_board_fen}
-                stars={interactiveConfig.stars?.map((s: any) => s.square) || []}
-                allowedPieces={interactiveConfig.allowedPieces || []}
+              <InlineStarBoard
+                config={interactiveConfig}
                 onComplete={handleInteractiveComplete}
               />
             </div>
