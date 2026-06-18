@@ -59,6 +59,8 @@ function parseFen(fen: string) {
 }
 
 function isValidRookMove(from: string, to: string, squares: Record<string, any>) {
+  // Must have a white piece on 'from'
+  if (squares[from]?.color !== 'w') return false;
   const ff = FILES.indexOf(from[0]);
   const tf = FILES.indexOf(to[0]);
   const fr = RANKS.indexOf(from[1]);
@@ -188,13 +190,15 @@ function InlineChessBoard({
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverSquare, setHoverSquare] = useState<string | null>(null);
-  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean; pointerId: number } | null>(null);
+  const processLockRef = useRef(false);
   const [sqSize, setSqSize] = useState(44);
 
   // Stable refs to avoid re-subscribing window events on every state change
   const squaresRef = useRef<Record<string, any>>({});
   const clickRef = useRef<(square: string) => void>(() => {});
   const onMoveRef = useRef<((from: string, to: string) => boolean) | undefined>(undefined);
+  const selectedSquareRef = useRef<string | null>(null);
 
   useEffect(() => {
     const update = () => setSqSize(Math.min(44, Math.max(36, Math.floor((window.innerWidth - 32) / 8))));
@@ -216,35 +220,41 @@ function InlineChessBoard({
 
   const click = useCallback(
     (square: string) => {
-      const piece = squares[square];
-      if (selectedSquare) {
-        if (selectedSquare === square) {
+      const sqs = squaresRef.current;
+      const sel = selectedSquareRef.current;
+      const piece = sqs[square];
+      if (sel) {
+        if (sel === square) {
+          selectedSquareRef.current = null;
           setSelectedSquare(null);
           return;
         }
-        if (isValidRookMove(selectedSquare, square, squares)) {
-          // Delegate move to parent — parent owns position state
-          const accepted = onMove?.(selectedSquare, square);
+        if (isValidRookMove(sel, square, sqs)) {
+          const accepted = onMoveRef.current?.(sel, square);
           if (accepted !== false) {
+            selectedSquareRef.current = null;
             setSelectedSquare(null);
             setMsg('');
           }
         } else {
           if (piece && piece.color === 'w') {
+            selectedSquareRef.current = square;
             setSelectedSquare(square);
             setMsg('');
           } else {
+            selectedSquareRef.current = null;
             setSelectedSquare(null);
             setMsg('Недопустимый ход. Ладья ходит только прямо!');
           }
         }
       } else {
         if (piece && piece.color === 'w') {
+          selectedSquareRef.current = square;
           setSelectedSquare(square);
         }
       }
     },
-    [selectedSquare, squares, onMove]
+    []
   );
 
   // Sync refs after click is defined
@@ -260,7 +270,12 @@ function InlineChessBoard({
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
-      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false };
+      // Ignore new pointer if processing a move
+      if (processLockRef.current) return;
+      // Ignore secondary pointers (multi-touch)
+      if (e.pointerType === 'touch' && e.isPrimary === false) return;
+      e.preventDefault();
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
       setMsg('');
     },
     []
@@ -270,6 +285,7 @@ function InlineChessBoard({
     const handleGlobalMove = (e: PointerEvent) => {
       const start = pointerStartRef.current;
       if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
       if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
@@ -288,6 +304,7 @@ function InlineChessBoard({
     const handleGlobalUp = (e: PointerEvent) => {
       const start = pointerStartRef.current;
       if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
       if (!start.moved) {
         clickRef.current(start.square);
       } else {
@@ -305,11 +322,20 @@ function InlineChessBoard({
       }
       pointerStartRef.current = null;
     };
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        setHoverSquare(null);
+        pointerStartRef.current = null;
+      }
+    };
     window.addEventListener('pointermove', handleGlobalMove);
     window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
     return () => {
       window.removeEventListener('pointermove', handleGlobalMove);
       window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
     };
   }, []);
 
@@ -441,6 +467,9 @@ function MultiLevelStarBoard({
     (from: string, to: string) => {
       // Read current position from ref to avoid dependency churn
       const parsed = parseFen(positionRef.current);
+      if (parsed.squares[from]?.color !== 'w') {
+        return false;
+      }
       if (!isValidRookMove(from, to, parsed.squares)) {
         setMsg('Недопустимый ход');
         return false;
