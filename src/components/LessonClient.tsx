@@ -190,13 +190,14 @@ function InlineChessBoard({
   const [collectedStars, setCollectedStars] = useState<Set<string>>(new Set());
   const [msg, setMsg] = useState('');
 
-  // Drag state
+  // Click mode
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+
+  // Drag mode
   const [dragPiece, setDragPiece] = useState<{
     square: string;
     type: string;
     color: string;
-    offsetX: number;
-    offsetY: number;
   } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverSquare, setHoverSquare] = useState<string | null>(null);
@@ -205,49 +206,8 @@ function InlineChessBoard({
   const squares = parsed.squares;
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  const boardRef = useRef<HTMLDivElement>(null);
-
-  // Global pointer events for drag that works outside board bounds
-  useEffect(() => {
-    const handleGlobalMove = (e: PointerEvent) => {
-      if (!dragPiece) return;
-      setDragPos({ x: e.clientX, y: e.clientY });
-      const sq = getSquareFromPoint(e.clientX, e.clientY);
-      setHoverSquare(sq);
-    };
-    const handleGlobalUp = (e: PointerEvent) => {
-      if (!dragPiece) return;
-
-      const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
-
-      if (targetSquare && targetSquare !== dragPiece.square) {
-        if (isValidRookMove(dragPiece.square, targetSquare, squares)) {
-          const newSquares = { ...squares };
-          delete newSquares[dragPiece.square];
-          newSquares[targetSquare] = { type: 'r', color: 'w' };
-          const newFen = squaresToFen(newSquares, 'w');
-          setPosition(newFen);
-          if (stars.includes(targetSquare)) {
-            setCollectedStars((prev) => new Set([...prev, targetSquare]));
-          }
-          setMsg('');
-          onMove?.(dragPiece.square, targetSquare);
-        } else {
-          setMsg('Недопустимый ход. Ладья ходит только прямо!');
-        }
-      }
-
-      setDragPiece(null);
-      setHoverSquare(null);
-    };
-
-    window.addEventListener('pointermove', handleGlobalMove);
-    window.addEventListener('pointerup', handleGlobalUp);
-    return () => {
-      window.removeEventListener('pointermove', handleGlobalMove);
-      window.removeEventListener('pointerup', handleGlobalUp);
-    };
-  }, [dragPiece, squares, stars, onMove]);
+  // Track pointer start for click vs drag
+  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
 
   // Helper: find square under cursor
   const getSquareFromPoint = (clientX: number, clientY: number): string | null => {
@@ -257,6 +217,42 @@ function InlineChessBoard({
     return cell?.dataset.square || null;
   };
 
+  // Click handler (old logic)
+  const click = useCallback(
+    (square: string) => {
+      const piece = squares[square];
+      if (selectedSquare) {
+        if (isValidRookMove(selectedSquare, square, squares)) {
+          const newSquares = { ...squares };
+          delete newSquares[selectedSquare];
+          newSquares[square] = { type: 'r', color: 'w' };
+          const newFen = squaresToFen(newSquares, 'w');
+          setPosition(newFen);
+          if (stars.includes(square)) {
+            setCollectedStars((prev) => new Set([...prev, square]));
+          }
+          setSelectedSquare(null);
+          setMsg('');
+          onMove?.(selectedSquare, square);
+        } else {
+          if (piece && piece.color === 'w') {
+            setSelectedSquare(square);
+            setMsg('');
+          } else {
+            setSelectedSquare(null);
+            setMsg('Недопустимый ход. Ладья ходит только прямо!');
+          }
+        }
+      } else {
+        if (piece && piece.color === 'w') {
+          setSelectedSquare(square);
+        }
+      }
+    },
+    [selectedSquare, squares, stars, onMove]
+  );
+
+  // Pointer handlers for drag
   const handlePointerDown = useCallback(
     (e: React.PointerEvent, square: string) => {
       const piece = squares[square];
@@ -264,35 +260,94 @@ function InlineChessBoard({
 
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
 
-      setDragPiece({
+      pointerStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
         square,
-        type: piece.type,
-        color: piece.color,
-        offsetX: e.clientX,
-        offsetY: e.clientY,
-      });
-      setDragPos({ x: e.clientX, y: e.clientY });
-      setHoverSquare(square);
+        moved: false,
+      };
       setMsg('');
     },
     [squares]
   );
+
+  // Global pointer events
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+        start.moved = true;
+        const piece = squares[start.square];
+        if (piece) {
+          setDragPiece({ square: start.square, type: piece.type, color: piece.color });
+          setSelectedSquare(null); // clear click selection when drag starts
+        }
+      }
+
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+        const sq = getSquareFromPoint(e.clientX, e.clientY);
+        setHoverSquare(sq);
+      }
+    };
+
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+
+      if (!start.moved) {
+        // It was a click, not a drag
+        click(start.square);
+      } else {
+        // It was a drag
+        const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
+        if (targetSquare && targetSquare !== start.square) {
+          if (isValidRookMove(start.square, targetSquare, squares)) {
+            const newSquares = { ...squares };
+            delete newSquares[start.square];
+            newSquares[targetSquare] = { type: 'r', color: 'w' };
+            const newFen = squaresToFen(newSquares, 'w');
+            setPosition(newFen);
+            if (stars.includes(targetSquare)) {
+              setCollectedStars((prev) => new Set([...prev, targetSquare]));
+            }
+            setMsg('');
+            onMove?.(start.square, targetSquare);
+          } else {
+            setMsg('Недопустимый ход. Ладья ходит только прямо!');
+          }
+        }
+        setDragPiece(null);
+        setHoverSquare(null);
+      }
+
+      pointerStartRef.current = null;
+    };
+
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+    };
+  }, [squares, stars, onMove, click]);
 
   // Prevent default drag behavior
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div
-        ref={boardRef}
-        className="grid border-2 border-slate-700 rounded relative"
-        style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}
-      >
+      <div className="grid border-2 border-slate-700 rounded relative" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)' }}>
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
             const pieceObj = squares[sq];
             const light = isLight(fi, ri);
+            const sel = selectedSquare === sq;
             const isHover = hoverSquare === sq;
             const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq) && !collectedStars.has(sq);
@@ -303,7 +358,7 @@ function InlineChessBoard({
                 data-square={sq}
                 className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
+                } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
                 style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default' }}
                 onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
                 onDragStart={preventDrag}
