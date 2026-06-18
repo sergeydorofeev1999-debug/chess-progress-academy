@@ -405,16 +405,7 @@ function InlineChessBoard({
                 onPointerLeave={() => setHoverSquare(null)}
                 onDragStart={preventDrag}
               >
-              {/* Rounded corner highlight — Lichess style for valid-move stars */}
-              {isValidMove && hasStar && (
-                <>
-                  <div className="absolute top-0 left-0 w-[18%] h-[18%] rounded-br-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
-                  <div className="absolute top-0 right-0 w-[18%] h-[18%] rounded-bl-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
-                  <div className="absolute bottom-0 left-0 w-[18%] h-[18%] rounded-tr-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
-                  <div className="absolute bottom-0 right-0 w-[18%] h-[18%] rounded-tl-[5px] bg-[rgba(100,160,60,0.65)] pointer-events-none z-10" />
-                </>
-              )}
-              {/* Hover highlight — Lichess rounded style (empty squares) */}
+                {/* Hover highlight — Lichess rounded style (empty squares) */}
                 {isHover && !dragPiece && !sel && !hasStar && !isValidMove && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.35)] pointer-events-none z-10" />
                 )}
@@ -442,22 +433,13 @@ function InlineChessBoard({
                     />
                   </div>
                 )}
-                {isValidMove && hasStar && (
-                  <div className="absolute inset-0 pointer-events-none z-20">
-                    <div className="absolute top-0 left-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
-                    <div className="absolute top-0 right-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
-                    <div className="absolute bottom-0 left-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
-                    <div className="absolute bottom-0 right-0 bg-[#5d9040]" style={{ width: Math.round(sqSize * 0.15), height: Math.round(sqSize * 0.15) }} />
-                  </div>
-                )}
-                {(
+                {/* Star icon (collected/uncollected) */}
                   <div
                     className="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
                     style={{ opacity: hasStar ? 1 : 0 }}
                   >
                     <StarSvg />
                   </div>
-                )}
                 {pieceObj && !isSource && (
                   <div className="relative pointer-events-none" style={{ width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
                     <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
