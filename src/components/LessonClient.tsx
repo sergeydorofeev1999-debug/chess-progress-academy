@@ -414,12 +414,12 @@ function InlineChessBoard({
                   </div>
                 )}
                 {/* Star icon (collected/uncollected) */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                    style={{ zIndex: 25, display: hasStar ? 'flex' : 'none' }}
-                  >
-                    <StarSvg />
-                  </div>
+                <div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  style={{ zIndex: 25, opacity: hasStar ? 1 : 0, visibility: hasStar ? 'visible' : 'hidden' }}
+                >
+                  <StarSvg />
+                </div>
                 {pieceObj && !isSource && (
                   <div className="relative pointer-events-none" style={{ width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
                     <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
@@ -485,26 +485,26 @@ function MultiLevelStarBoard({
   const [position, setPosition] = useState(levels[0].initialFen);
   const positionRef = useRef(position);
   useEffect(() => { positionRef.current = position; }, [position]);
-  const [collected, setCollected] = useState<Set<string>>(new Set());
+  const [collected, setCollected] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
 
   const level = levels[currentLevel];
   const stars = useMemo(() => level.stars?.map((s: any) => typeof s === 'string' ? s : s?.square).filter(Boolean) || [], [level.stars]);
-  const visibleStars = useMemo(() => stars.filter((s: string) => !collected.has(s)), [stars, collected]);
+  const visibleStars = useMemo(() => stars.filter((s: string) => !collected.includes(s)), [stars, collected]);
   const totalLevels = levels.length;
 
   const reset = useCallback(() => {
     setPosition(level.initialFen);
-    setCollected(new Set());
+    setCollected([]);
     setMoves(0);
     setMsg('');
   }, [level]);
 
   useEffect(() => {
     setPosition(levels[currentLevel].initialFen);
-    setCollected(new Set());
+    setCollected([]);
     setMoves(0);
     setMsg('');
   }, [currentLevel, levels]);
@@ -530,10 +530,10 @@ function MultiLevelStarBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      if (stars.includes(to) && !collected.has(to)) {
+      if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
-          const next = new Set([...prev, to]);
-          const allCollected = stars.every((s: string) => next.has(s));
+          const next = [...prev, to];
+          const allCollected = stars.every((s: string) => next.includes(s));
           if (allCollected) {
             setTimeout(() => {
               if (currentLevel + 1 < totalLevels) {
@@ -546,7 +546,7 @@ function MultiLevelStarBoard({
               }
             }, 600);
           } else {
-            setMsg(`⭐ ${next.size} / ${stars.length} звёзд`);
+            setMsg(`⭐ ${next.length} / ${stars.length} звёзд`);
           }
           return next;
         });
@@ -556,8 +556,8 @@ function MultiLevelStarBoard({
     [stars, collected, currentLevel, totalLevels, onAllComplete]
   );
 
-  const collectedCount = stars.filter((s: string) => collected.has(s)).length;
-  const allCollected = stars.every((s: string) => collected.has(s));
+  const collectedCount = stars.filter((s: string) => collected.includes(s)).length;
+  const allCollected = stars.every((s: string) => collected.includes(s));
 
   return (
     <div className="space-y-3 w-full">
