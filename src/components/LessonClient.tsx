@@ -191,6 +191,14 @@ function InlineChessBoard({
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const [hoverSquare, setHoverSquare] = useState<string | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean } | null>(null);
+  const [sqSize, setSqSize] = useState(44);
+
+  useEffect(() => {
+    const update = () => setSqSize(Math.min(44, Math.max(36, Math.floor((window.innerWidth - 32) / 8))));
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const parsed = parseFen(position);
   const squares = parsed.squares;
@@ -307,8 +315,8 @@ function InlineChessBoard({
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)', touchAction: 'none' }}>
+    <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
+      <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: `repeat(8, ${sqSize}px)`, gridTemplateRows: `repeat(8, ${sqSize}px)`, touchAction: 'none' }}>
         {RANKS.map((rank, ri) =>
           FILES.map((file, fi) => {
             const sq = `${file}${rank}`;
@@ -325,7 +333,7 @@ function InlineChessBoard({
                 className={`flex items-center justify-center relative select-none ${
                   light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
                 } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
-                style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default' }}
+                style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
                 onDragStart={preventDrag}
               >
@@ -337,7 +345,7 @@ function InlineChessBoard({
                   </div>
                 )}
                 {pieceObj && !isSource && (
-                  <div className="w-[42px] h-[42px] relative pointer-events-none">
+                  <div className="relative pointer-events-none" style={{ width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
                     <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
                   </div>
                 )}
@@ -347,8 +355,8 @@ function InlineChessBoard({
         )}
       </div>
       {dragPiece && (
-        <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - 26, top: dragPos.y - 26, width: 52, height: 52 }}>
-          <div className="w-full h-full"><PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} /></div>
+        <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - Math.round(sqSize/2), top: dragPos.y - Math.round(sqSize/2), width: Math.round(sqSize*0.85), height: Math.round(sqSize*0.85) }}>
+          <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} />
         </div>
       )}
       {msg && <p className="text-red-500 text-xs">{msg}</p>}
