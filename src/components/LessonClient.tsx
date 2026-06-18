@@ -34,12 +34,12 @@ function parseInteractiveConfig(videoUrl: string | null) {
   }
 }
 
-/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (без chess.js — pure JS) ====== */
-const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
+/* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (Lichess-style) ====== */
+const FILES = ['a','b','c','d','e','f','g','h'];
+const RANKS = ['8','7','6','5','4','3','2','1'];
 
 function parseFen(fen: string) {
-  const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
+  const squares: Record<string, { type: string; color: 'w'|'b' }> = {};
   const [placement] = fen.split(' ');
   const rows = placement.split('/');
   for (let ri = 0; ri < 8; ri++) {
@@ -58,7 +58,7 @@ function parseFen(fen: string) {
   return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
 }
 
-function isValidRookMove(from: string, to: string, squares: Record<string, any>) {
+function isValidRookMove(from: string, to: string, squares: Record<string,any>) {
   const ff = FILES.indexOf(from[0]);
   const tf = FILES.indexOf(to[0]);
   const fr = RANKS.indexOf(from[1]);
@@ -84,7 +84,7 @@ function isValidRookMove(from: string, to: string, squares: Record<string, any>)
 }
 
 // ─── SVG Chess Pieces ───────────────────────────
-function PieceSvg({ type, color }: { type: string; color: 'w' | 'b' }) {
+function PieceSvg({ type, color }: { type: string; color: 'w'|'b' }) {
   const fill = color === 'w' ? '#fff' : '#333';
   const stroke = '#1a1a1a';
   const sw = color === 'w' ? 2 : 1.2;
@@ -173,6 +173,8 @@ function StarSvg() {
     </svg>
   );
 }
+
+const SQ = 44; // square size px
 
 function InlineChessBoard({
   fen,
@@ -304,50 +306,71 @@ function InlineChessBoard({
   }, [squares, stars, onMove, click]);
 
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
+  const boardSize = SQ * 8;
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="grid border-2 border-slate-700 rounded relative select-none" style={{ gridTemplateColumns: 'repeat(8, 52px)', gridTemplateRows: 'repeat(8, 52px)', touchAction: 'none' }}>
-        {RANKS.map((rank, ri) =>
-          FILES.map((file, fi) => {
-            const sq = `${file}${rank}`;
-            const pieceObj = squares[sq];
-            const light = isLight(fi, ri);
-            const sel = selectedSquare === sq;
-            const isHover = hoverSquare === sq;
-            const isSource = dragPiece?.square === sq;
-            const hasStar = stars.includes(sq) && !collectedStars.has(sq);
-            return (
-              <div
-                key={sq}
-                data-square={sq}
-                className={`flex items-center justify-center relative select-none ${
-                  light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${sel ? 'ring-2 ring-blue-500 ring-inset' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset' : ''} ${isSource ? 'opacity-50' : ''}`}
-                style={{ width: 52, height: 52, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
-                onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
-                onDragStart={preventDrag}
-              >
-                {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
-                {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
-                {hasStar && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                    <div className="animate-pulse"><StarSvg /></div>
+    <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none', userSelect: 'none' }}>
+      {/* Board container with frame labels */}
+      <div className="flex">
+        {/* Rank labels (8..1) on left */}
+        <div className="flex flex-col justify-around mr-1" style={{ height: boardSize }}>
+          {RANKS.map((rank) => (
+            <span key={rank} className="text-[11px] font-bold text-slate-400 w-4 text-right leading-none">{rank}</span>
+          ))}
+        </div>
+
+        {/* The board */}
+        <div className="border border-slate-700 rounded overflow-hidden relative" style={{ width: boardSize, height: boardSize }}>
+          <div className="grid" style={{ gridTemplateColumns: `repeat(8, ${SQ}px)`, gridTemplateRows: `repeat(8, ${SQ}px)`, touchAction: 'none' }}>
+            {RANKS.map((rank, ri) =>
+              FILES.map((file, fi) => {
+                const sq = `${file}${rank}`;
+                const pieceObj = squares[sq];
+                const light = isLight(fi, ri);
+                const sel = selectedSquare === sq;
+                const isHover = hoverSquare === sq;
+                const isSource = dragPiece?.square === sq;
+                const hasStar = stars.includes(sq) && !collectedStars.has(sq);
+                return (
+                  <div
+                    key={sq}
+                    data-square={sq}
+                    className={`flex items-center justify-center relative ${
+                      light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
+                    } ${sel ? 'ring-2 ring-blue-500 ring-inset z-10' : ''} ${isHover && dragPiece ? 'ring-2 ring-blue-400 ring-inset z-10' : ''} ${isSource ? 'opacity-50' : ''}`}
+                    style={{ width: SQ, height: SQ, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
+                    onPointerDown={(e) => pieceObj && handlePointerDown(e, sq)}
+                    onDragStart={preventDrag}
+                  >
+                    {hasStar && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <div className="animate-pulse"><StarSvg /></div>
+                      </div>
+                    )}
+                    {pieceObj && !isSource && (
+                      <div className="relative pointer-events-none" style={{ width: Math.round(SQ*0.85), height: Math.round(SQ*0.85) }}>
+                        <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w'|'b'} />
+                      </div>
+                    )}
                   </div>
-                )}
-                {pieceObj && !isSource && (
-                  <div className="w-[42px] h-[42px] relative pointer-events-none">
-                    <PieceSvg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* File labels (a..h) below */}
+      <div className="flex ml-5" style={{ width: boardSize }}>
+        {FILES.map((file) => (
+          <span key={file} className="text-[11px] font-bold text-slate-400 text-center leading-none" style={{ width: SQ }}>{file}</span>
+        ))}
+      </div>
+
+      {/* Drag ghost */}
       {dragPiece && (
-        <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - 26, top: dragPos.y - 26, width: 52, height: 52 }}>
-          <div className="w-full h-full"><PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w' | 'b'} /></div>
+        <div className="fixed pointer-events-none z-50" style={{ left: dragPos.x - Math.round(SQ/2), top: dragPos.y - Math.round(SQ/2), width: Math.round(SQ*0.85), height: Math.round(SQ*0.85) }}>
+          <PieceSvg type={dragPiece.type.toUpperCase()} color={dragPiece.color as 'w'|'b'} />
         </div>
       )}
       {msg && <p className="text-red-500 text-xs">{msg}</p>}
@@ -355,7 +378,7 @@ function InlineChessBoard({
   );
 }
 
-function squaresToFen(squares: Record<string, any>, turn: string) {
+function squaresToFen(squares: Record<string,any>, turn: string) {
   let rows = [];
   for (let ri = 0; ri < 8; ri++) {
     let row = '';
@@ -378,7 +401,7 @@ function squaresToFen(squares: Record<string, any>, turn: string) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Multi-level interactive star board (like Lichess learn)
+// Multi-level interactive star board
 // ═══════════════════════════════════════════════════════════════════════════════
 function MultiLevelStarBoard({
   config,
@@ -467,7 +490,6 @@ function MultiLevelStarBoard({
 
   return (
     <div className="space-y-3 w-full">
-      {/* Level progress bar */}
       <div className="flex items-center gap-2">
         {levels.map((_l: any, i: number) => (
           <div
@@ -488,7 +510,6 @@ function MultiLevelStarBoard({
         {allDone && <span className="text-green-600 text-sm font-medium">✓ Все позиции пройдены!</span>}
       </div>
 
-      {/* Stars progress for current level */}
       <div className="flex items-center gap-2">
         <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
           <div className="h-full bg-yellow-400 transition-all" style={{ width: `${stars.length > 0 ? (collectedCount / stars.length) * 100 : 0}%` }} />
@@ -496,44 +517,36 @@ function MultiLevelStarBoard({
         <span className="text-xs text-gray-500">⭐ {collectedCount} / {stars.length}</span>
       </div>
 
-      {/* Instructions */}
       {level.instructions && <p className="text-blue-800 font-medium">{level.instructions}</p>}
       {level.hint && <p className="text-sm text-blue-600">💡 {level.hint}</p>}
 
-      {/* Message */}
+      <InlineChessBoard fen={position} stars={stars} onMove={handleMove} />
+
       {msg && (
-        <div className={`text-center py-1.5 px-3 rounded text-sm font-medium ${msg.includes('Все позиции') ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+        <p className={`text-center text-sm font-medium ${msg.includes('Все') || msg.includes('пройдены') ? 'text-green-600' : msg.includes('Недопустимый') ? 'text-red-500' : 'text-amber-600'}`}>
           {msg}
-        </div>
+        </p>
       )}
 
-      {/* Auto-advance message */}
-      {allCollected && currentLevel + 1 < totalLevels && (
-        <div className="flex items-center justify-center gap-2 text-blue-600 text-sm animate-pulse">
-          <ChevronRight size={16} /> Переход к следующей позиции...
-        </div>
-      )}
-
-      <div className="flex justify-center">
-        <InlineChessBoard fen={position} stars={stars.filter((s: string) => !collected.has(s))} onMove={handleMove} />
-      </div>
-
-      <div className="flex items-center justify-between">
-        <button onClick={reset} className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition">
-          <RotateCcw size={14} /> Начать заново
+      <div className="flex gap-2 justify-center">
+        <button onClick={reset} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded text-sm hover:bg-slate-200 transition flex items-center gap-1">
+          <RotateCcw size={14} /> Сбросить
         </button>
-        <span className="text-xs text-gray-500">Ходов: {moves}</span>
       </div>
 
-      {/* Next lesson button when all done */}
       {allDone && nextLessonUrl && (
-        <div className="pt-4">
-          <button
-            onClick={() => router.push(nextLessonUrl)}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
-          >
-            Следующий урок <ArrowRight size={18} />
-          </button>
+        <div className="flex justify-center">
+          <Link href={nextLessonUrl} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            Следующий урок <ArrowRight size={16} />
+          </Link>
+        </div>
+      )}
+
+      {allDone && !nextLessonUrl && (
+        <div className="text-center">
+          <Link href={`/courses/${config.courseId || ''}`} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            К курсу <ChevronRight size={16} />
+          </Link>
         </div>
       )}
     </div>
@@ -541,119 +554,131 @@ function MultiLevelStarBoard({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LessonClient — main component
+// Main Lesson Client
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
+  const router = useRouter();
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
-  const [completing, setCompleting] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
+  const [showBoard, setShowBoard] = useState(true);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
-  const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
-  const prevLesson = lessonIndex > 0 ? allLessons[lessonIndex - 1] : null;
-  const nextLesson = lessonIndex < allLessons.length - 1 ? allLessons[lessonIndex + 1] : null;
+  const currentIndex = allLessons.findIndex((l) => l.id === lesson.id);
+  const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
+  const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
-  const interactiveConfig = parseInteractiveConfig(lesson.video_url);
-
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
     if (!userId) {
-      alert('Войдите, чтобы сохранить прогресс');
+      setShowCompleteModal(true);
       return;
     }
-    setCompleting(true);
     try {
       await markLessonComplete(userId, lesson.id);
       setIsCompleted(true);
-    } catch (e) {
-      alert('Ошибка сохранения прогресса');
-    } finally {
-      setCompleting(false);
+      setShowComplete(true);
+      setTimeout(() => setShowComplete(false), 3000);
+    } catch {
+      // silent fail — progress not saved
     }
-  };
+  }, [userId, lesson.id]);
 
-  const handleInteractiveComplete = async () => {
-    if (userId) {
-      await markLessonComplete(userId, lesson.id);
-      setIsCompleted(true);
-    }
-  };
+  const interactive = parseInteractiveConfig(lesson.video_url);
+  const hasInteractive = interactive && interactive.initialFen;
+  const hasLevels = interactive && interactive.levels;
+
+  const plainBoard = !hasInteractive && lesson.chess_board_fen;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <Link href={`/courses/${courseId}`} className="text-sm text-slate-500 hover:text-slate-800 mb-4 inline-block">
-        ← Назад к курсу
-      </Link>
-
-      <h1 className="text-2xl font-bold mb-2">{lesson.title}</h1>
-      <p className="text-sm text-slate-500 mb-6">{lesson.duration_minutes} мин</p>
-
-      {/* Interactive Lesson */}
-      {interactiveConfig ? (
-        <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <MultiLevelStarBoard
-            config={interactiveConfig}
-            onAllComplete={handleInteractiveComplete}
-            nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
-          />
-        </div>
-      ) : (
-        /* Regular video placeholder */
-        <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center mb-6">
-          <div className="text-center text-white">
-            <div className="text-5xl mb-2">▶️</div>
-            <p className="text-sm text-slate-300">Видео будет здесь</p>
-          </div>
-        </div>
-      )}
-
-      {/* Regular text content */}
-      {lesson.content && !interactiveConfig && (
-        <div className="prose max-w-none mb-8">
-          <p className="text-slate-700 leading-relaxed whitespace-pre-line">{lesson.content}</p>
-        </div>
-      )}
-
-      {lesson.chess_board_fen && !interactiveConfig && (
-        <div className="mb-8">
-          <h3 className="font-semibold mb-4">Позиция на доске</h3>
-          <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-            <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
-          </div>
-        </div>
-      )}
-
-      {!isCompleted && (
-        <button
-          onClick={handleComplete}
-          disabled={completing}
-          className="w-full bg-amber-500 hover:bg-amber-600 text-slate-900 font-semibold py-3 rounded-lg transition mb-6 disabled:opacity-50"
-        >
-          {completing ? 'Сохранение...' : 'Отметить урок пройденным ✓'}
-        </button>
-      )}
-
-      {isCompleted && (
-        <div className="flex items-center gap-2 text-green-600 font-medium mb-6">
-          <CheckCircle size={20} /> Урок пройден!
-        </div>
-      )}
-
-      <div className="flex gap-3 pt-4 border-t border-slate-200">
-        {prevLesson && (
-          <Link
-            href={`/lessons/${prevLesson.id}?course=${courseId}`}
-            className="flex-1 flex items-center justify-center gap-2 py-3 border border-slate-200 rounded-lg hover:bg-slate-50 transition"
-          >
-            <ArrowLeft size={18} /> Предыдущий
-          </Link>
-        )}
-        {nextLesson && (
-          <Link
-            href={`/lessons/${nextLesson.id}?course=${courseId}`}
-            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition"
-          >
-            Следующий <ArrowRight size={18} />
-          </Link>
-        )}
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        <Link href={`/courses/${courseId}`} className="hover:text-blue-600 flex items-center gap-1">
+          <ArrowLeft size={14} /> К курсу
+        </Link>
+        <ChevronRight size={14} />
+        <span className="text-gray-800 font-medium">Урок {currentIndex + 1}</span>
       </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-6 md:p-8 space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{lesson.title}</h1>
+            {isCompleted && (
+              <span className="flex items-center gap-1 text-green-600 text-sm font-medium bg-green-50 px-2 py-1 rounded">
+                <CheckCircle size={16} /> Пройден
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500">{lesson.duration_minutes} мин</p>
+
+          {showComplete && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-green-700">
+              <CheckCircle size={20} />
+              <span className="font-medium">Урок отмечен как пройденный!</span>
+            </div>
+          )}
+
+          <div className="prose prose-slate max-w-none">
+            <div dangerouslySetInnerHTML={{ __html: lesson.content }} />
+          </div>
+
+          {hasLevels ? (
+            <MultiLevelStarBoard
+              config={interactive}
+              onAllComplete={handleComplete}
+              nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}` : undefined}
+            />
+          ) : hasInteractive ? (
+            <MultiLevelStarBoard
+              config={interactive}
+              onAllComplete={handleComplete}
+              nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}` : undefined}
+            />
+          ) : plainBoard ? (
+            <div className="flex flex-col items-center gap-2">
+              <InlineChessBoard fen={lesson.chess_board_fen || '8/8/8/8/8/8/8/8 w - - 0 1'} />
+              <p className="text-xs text-gray-400 italic">Диаграмма для анализа</p>
+            </div>
+          ) : null}
+
+          {!isCompleted && (
+            <div className="pt-4 border-t border-gray-100">
+              <button
+                onClick={handleComplete}
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition"
+              >
+                <CheckCircle size={18} />
+                {userId ? 'Отметить как пройденный' : 'Отметить как пройденный (требуется вход)'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        {prevLesson ? (
+          <Link href={`/lessons/${prevLesson.id}`} className="flex items-center gap-1 text-sm text-gray-500 hover:text-blue-600">
+            <ArrowLeft size={14} /> Предыдущий урок
+          </Link>
+        ) : <div />}
+        {nextLesson ? (
+          <Link href={`/lessons/${nextLesson.id}`} className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 font-medium">
+            Следующий урок <ArrowRight size={14} />
+          </Link>
+        ) : <div />}
+      </div>
+
+      {showCompleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowCompleteModal(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-2">Войдите, чтобы сохранить прогресс</h3>
+            <p className="text-gray-600 text-sm mb-4">Войдите в систему, чтобы отслеживать пройденные уроки.</p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowCompleteModal(false)} className="flex-1 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">Отмена</button>
+              <Link href="/auth" className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm text-center hover:bg-blue-700">Войти</Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
