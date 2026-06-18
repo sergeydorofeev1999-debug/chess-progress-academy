@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import ChessBoardClientOnly from '@/components/ChessBoardClientOnly';
 import { CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { markLessonComplete } from '@/lib/data';
 
@@ -83,7 +82,9 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           <p className="text-sm text-blue-600">🎯 Соберите звёзды на доске, двигая фигурами!</p>
           {lesson.chess_board_fen && (
             <div className="mt-4">
-              <ChessBoardClientOnly fen={lesson.chess_board_fen} />
+              <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+                <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
+              </div>
             </div>
           )}
         </div>
@@ -107,7 +108,9 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       {lesson.chess_board_fen && !interactiveConfig && (
         <div className="mb-8">
           <h3 className="font-semibold mb-4">Позиция на доске</h3>
-          <ChessBoardClientOnly fen={lesson.chess_board_fen} />
+          <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
+            <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
+          </div>
         </div>
       )}
 

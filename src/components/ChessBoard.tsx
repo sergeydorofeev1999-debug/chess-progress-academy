@@ -8,28 +8,38 @@ interface Props {
   interactive?: boolean;
 }
 
+// SSR-safe placeholder — MUST match server render exactly
+function BoardPlaceholder() {
+  return (
+    <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
+      <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
 export default function ChessBoardComponent({
   fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
   interactive = true,
 }: Props) {
-  // SSR guard — never import react-chessboard on server
-  if (typeof window === 'undefined') {
-    return (
-      <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Шахматная доска загружается...</p>
-      </div>
-    );
-  }
-
+  const [isClient, setIsClient] = useState(false);
   const [Chessboard, setChessboard] = useState<any>(null);
   const [game] = useState(new Chess(fen));
   const [boardFen, setBoardFen] = useState(fen);
 
+  // On mount: mark as client, then dynamically import react-chessboard
   useEffect(() => {
+    setIsClient(true);
+    let cancelled = false;
     import('react-chessboard').then((mod) => {
-      setChessboard(() => mod.Chessboard);
+      if (!cancelled) setChessboard(() => mod.Chessboard);
     });
+    return () => { cancelled = true; };
   }, []);
+
+  // CRITICAL: Server and first client render must return SAME JSX
+  if (!isClient || !Chessboard) {
+    return <BoardPlaceholder />;
+  }
 
   const onDrop = useCallback(
     ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
