@@ -549,7 +549,7 @@ function MultiLevelStarBoard({
               }`}
             >
               <span className="font-bold w-4">{i + 1}</span>
-              <span className="flex gap-0.5">
+              <span className="hidden lg:flex gap-0.5">
                 {[1, 2, 3].map((s) => (
                   <img
                     key={s}
