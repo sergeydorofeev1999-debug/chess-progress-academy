@@ -649,15 +649,36 @@ function MultiLevelStarBoard({
     { initialFen: config.initialFen, stars: config.stars, instructions: config.instructions, hint: config.hint }
   ]);
 
-  const [currentLevel, setCurrentLevel] = useState(0);
-  const [position, setPosition] = useState(levels[0].initialFen);
+  // Load saved progress
+  const savedKey = `lesson_progress_${currentLessonId || ''}`;
+  const savedProgress = useMemo(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem(savedKey) || '{}');
+    } catch { return {}; }
+  }, [savedKey]);
+  const savedCurrentLevel = useMemo(() => {
+    if (typeof window === 'undefined') return 0;
+    const v = localStorage.getItem(`${savedKey}_level`);
+    return v ? parseInt(v, 10) : 0;
+  }, [savedKey]);
+
+  const [currentLevel, setCurrentLevel] = useState(() => {
+    // Start at first unfinished level
+    let start = savedCurrentLevel || 0;
+    while (start < levels.length && savedProgress[start] != null) {
+      start++;
+    }
+    return Math.min(start, levels.length - 1);
+  });
+  const [position, setPosition] = useState(levels[currentLevel || 0].initialFen);
   const positionRef = useRef(position);
   useEffect(() => { positionRef.current = position; }, [position]);
   const [collected, setCollected] = useState<string[]>([]);
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
-  const [levelStars, setLevelStars] = useState<Record<number, number>>({});
+  const [levelStars, setLevelStars] = useState<Record<number, number>>(() => savedProgress);
   const movesRef = useRef(moves);
   useEffect(() => { movesRef.current = moves; }, [moves]);
 
@@ -717,7 +738,11 @@ function MultiLevelStarBoard({
             onLevelComplete?.(currentLevel, earned);
             setTimeout(() => {
               if (currentLevel + 1 < totalLevels) {
-                setCurrentLevel((l) => l + 1);
+                setCurrentLevel((l) => {
+                  const next = l + 1;
+                  localStorage.setItem(`${savedKey}_level`, String(next));
+                  return next;
+                });
                 setMsg('');
               } else {
                 setAllDone(true);
