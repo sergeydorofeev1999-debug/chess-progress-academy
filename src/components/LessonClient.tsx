@@ -710,13 +710,15 @@ function MultiLevelStarBoard({
       if (parsed.squares[from]?.color !== 'w') {
         return false;
       }
-      if (!isValidMove(pieceType, from, to, parsed.squares, visibleStars)) {
+      // Use actual piece type on the board
+      const fromType = parsed.squares[from]?.type || pieceType;
+      if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) {
         setMsg('Недопустимый ход');
         return false;
       }
 
       // Promotion: pawn reaching rank 8
-      if (pieceType === 'p' && to[1] === '8') {
+      if (fromType === 'p' && to[1] === '8') {
         setPromotionPending({ from, to });
         return false; // wait for piece choice
       }
