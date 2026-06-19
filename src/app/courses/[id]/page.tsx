@@ -3,6 +3,7 @@ import { getCourseWithModules, getUserProgress } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { CheckCircle, Play } from 'lucide-react';
 import PieceCards from '@/components/PieceCards';
+import CourseProgress from '@/components/CourseProgress';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +15,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let progressMap: Record<string, boolean> = {};
+  let serverProgressMap: Record<string, boolean> = {};
   if (user) {
     const progress = await getUserProgress(user.id, id);
     progress.forEach((p: any) => {
-      progressMap[p.lesson_id] = p.is_completed;
+      serverProgressMap[p.lesson_id] = p.is_completed;
     });
   }
 
@@ -27,8 +28,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
     .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
 
   const totalLessons = allLessons.length;
-  const completedCount = Object.values(progressMap).filter(Boolean).length;
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   if (!course) {
     return <div className="max-w-6xl mx-auto px-4 py-12">Курс не найден</div>;
@@ -41,17 +40,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
         <p className="text-slate-600 mb-4">{course.description}</p>
-
-        <div className="bg-slate-100 rounded-lg p-4">
-          <div className="flex justify-between text-sm mb-2">
-            <span>Прогресс курса</span>
-            <span className="font-medium">{progressPercent}%</span>
-          </div>
-          <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-amber-500 rounded-full transition-all" style={{ width: `${progressPercent}%` }} />
-          </div>
-          <p className="text-xs text-slate-500 mt-1">{completedCount} из {totalLessons} уроков пройдено</p>
-        </div>
+        <CourseProgress totalLessons={totalLessons} serverProgressMap={serverProgressMap} allLessons={allLessons} />
       </div>
 
       <div className="space-y-6">
@@ -67,7 +56,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               } catch {}
               return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
             })}
-            progressMap={progressMap}
+            progressMap={serverProgressMap}
             courseId={course.id}
           />
         </div>
@@ -77,7 +66,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Дальше</h2>
           <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
             {allLessons.slice(6).map((lesson: any) => {
-              const isCompleted = progressMap[lesson.id];
+              const isCompleted = serverProgressMap[lesson.id];
               return (
                 <Link
                   key={lesson.id}
