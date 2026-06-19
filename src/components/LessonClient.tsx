@@ -741,8 +741,8 @@ function MultiLevelStarBoard({
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        {/* Stars progress — Lichess style (top left) */}
-        <div className="flex rounded overflow-hidden border border-gray-200">
+        {/* Stars progress — Lichess style vertical list with numbers */}
+        <div className="flex flex-col rounded overflow-hidden border border-gray-200">
           {levels.map((_l: any, i: number) => {
             const earned = levelStars[i];
             const isCurrent = i === currentLevel;
@@ -759,21 +759,24 @@ function MultiLevelStarBoard({
                   }
                 }}
                 disabled={isFuture}
-                className={`flex-1 py-1.5 flex justify-center gap-0.5 transition ${
-                  isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
+                className={`flex items-center justify-between px-2 py-1.5 transition ${
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
-                {[1, 2, 3].map((s) => (
-                  <img
-                    key={s}
-                    src="/images/learn/star.png"
-                    className={`w-3.5 h-3.5 ${
-                      isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                    }`}
-                    draggable={false}
-                    alt=""
-                  />
-                ))}
+                <span className="text-xs font-bold">{i + 1}</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map((s) => (
+                    <img
+                      key={s}
+                      src="/images/learn/star.png"
+                      className={`w-3.5 h-3.5 ${
+                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                      }`}
+                      draggable={false}
+                      alt=""
+                    />
+                  ))}
+                </div>
               </button>
             );
           })}
