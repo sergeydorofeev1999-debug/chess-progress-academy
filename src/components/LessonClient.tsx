@@ -143,14 +143,14 @@ function isValidMove(pieceType: string, from: string, to: string, squares: Recor
     }
     case 'p': { // Pawn
       const forwardDir = -1; // white moves toward rank 8 (decreasing RANKS index)
-      // Forward 1 square
-      if (df === 0 && dr === forwardDir) return !squares[to];
-      // Forward 2 from start
+      // Forward 1 square — blocked by any piece OR star
+      if (df === 0 && dr === forwardDir) return !squares[to] && !starSquares.includes(to);
+      // Forward 2 from start — blocked if star on middle or destination
       if (df === 0 && dr === 2 * forwardDir) {
         if (from[1] !== '2') return false;
         const middleSq = `${FILES[ff]}${RANKS[fr + forwardDir]}`;
         if (squares[middleSq] || starSquares.includes(middleSq)) return false;
-        return !squares[to];
+        return !squares[to] && !starSquares.includes(to);
       }
       // Diagonal capture (stars only — no enemies in our lessons)
       if (Math.abs(df) === 1 && dr === forwardDir) {
@@ -246,11 +246,11 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
     }
     case 'p': {
       const forwardDir = -1;
-      // Forward 1
+      // Forward 1 — blocked by piece OR star
       const r1 = fr + forwardDir;
       if (r1 >= 0) {
         const sq = `${FILES[ff]}${RANKS[r1]}`;
-        if (!squares[sq]) {
+        if (!squares[sq] && !starSquares.includes(sq)) {
           valid.push(sq);
           // Forward 2 from start
           if (from[1] === '2') {
@@ -262,7 +262,7 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           }
         }
       }
-      // Diagonal captures
+      // Diagonal captures only
       for (const df of [-1, 1]) {
         const fd = ff + df;
         const rd = fr + forwardDir;
