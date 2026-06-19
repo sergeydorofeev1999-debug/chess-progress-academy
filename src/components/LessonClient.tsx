@@ -741,8 +741,8 @@ function MultiLevelStarBoard({
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        {/* Stars progress — Lichess style vertical list with numbers */}
-        <div className="flex flex-col rounded overflow-hidden border border-gray-200">
+        {/* Stars progress — Lichess style vertical list with numbers (desktop only) */}
+        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
           {levels.map((_l: any, i: number) => {
             const earned = levelStars[i];
             const isCurrent = i === currentLevel;
@@ -828,6 +828,47 @@ function MultiLevelStarBoard({
       <div className="flex-1 flex flex-col items-center gap-3">
         <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} />
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
+
+        {/* Mobile stars — horizontal bar under board */}
+        <div className="flex lg:hidden flex-wrap gap-1 justify-center w-full">
+          {levels.map((_l: any, i: number) => {
+            const earned = levelStars[i];
+            const isCurrent = i === currentLevel;
+            const isDone = earned != null;
+            const isFuture = !isCurrent && !isDone && i > currentLevel;
+            return (
+              <button
+                key={i}
+                onClick={() => {
+                  if (isFuture) return;
+                  if (i !== currentLevel) {
+                    setCurrentLevel(i);
+                    setAllDone(false);
+                  }
+                }}
+                disabled={isFuture}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition ${
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <span className="font-bold">{i + 1}</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map((s) => (
+                    <img
+                      key={s}
+                      src="/images/learn/star.png"
+                      className={`w-3 h-3 ${
+                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                      }`}
+                      draggable={false}
+                      alt=""
+                    />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* RIGHT COLUMN: Exercise info */}
