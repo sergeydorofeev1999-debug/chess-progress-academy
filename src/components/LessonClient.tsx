@@ -678,6 +678,7 @@ function MultiLevelStarBoard({
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
+  const [promotionPending, setPromotionPending] = useState<{from: string, to: string} | null>(null);
   const [levelStars, setLevelStars] = useState<Record<number, number>>(() => savedProgress);
   const movesRef = useRef(moves);
   useEffect(() => { movesRef.current = moves; }, [moves]);
@@ -703,7 +704,6 @@ function MultiLevelStarBoard({
 
   const handleMove = useCallback(
     (from: string, to: string) => {
-      // Read current position from ref to avoid dependency churn
       const parsed = parseFen(positionRef.current);
       if (parsed.squares[from]?.color !== 'w') {
         return false;
@@ -712,6 +712,13 @@ function MultiLevelStarBoard({
         setMsg('Недопустимый ход');
         return false;
       }
+
+      // Promotion: pawn reaching rank 8
+      if (pieceType === 'p' && to[1] === '8') {
+        setPromotionPending({ from, to });
+        return false; // wait for piece choice
+      }
+
       const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
       const movedType = movedPiece?.type || pieceType;
@@ -851,7 +858,77 @@ function MultiLevelStarBoard({
       </div>
 
       {/* CENTER COLUMN: Chess board */}
-      <div className="flex-1 flex flex-col items-center gap-3">
+      <div className="flex-1 flex flex-col items-center gap-3 relative">
+        {/* Promotion dialog */}
+        {promotionPending && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 rounded-lg">
+            <div className="bg-white rounded-lg p-4 shadow-xl text-center space-y-3 max-w-[260px]">
+              <p className="font-bold text-sm">Превращение пешки!</p>
+              <p className="text-xs text-gray-500">Ваша пешка достигла края доски</p>
+              <div className="flex gap-2 justify-center">
+                {[
+                  { code: 'q', name: 'Ферзь' },
+                  { code: 'r', name: 'Ладья' },
+                  { code: 'b', name: 'Слон' },
+                  { code: 'n', name: 'Конь' },
+                ].map(({ code, name }) => (
+                  <button
+                    key={code}
+                    onClick={() => {
+                      const parsed = parseFen(positionRef.current);
+                      const newSquares = { ...parsed.squares };
+                      delete newSquares[promotionPending.from];
+                      newSquares[promotionPending.to] = { type: code, color: 'w' };
+                      const newFen = squaresToFen(newSquares, 'w');
+                      positionRef.current = newFen;
+                      setPosition(newFen);
+                      setMoves((c) => c + 1);
+                      setPromotionPending(null);
+                      // Check star collection after promotion
+                      if (stars.includes(promotionPending.to) && !collected.includes(promotionPending.to)) {
+                        setCollected((prev) => {
+                          const next = [...prev, promotionPending.to];
+                          const allCollected = stars.every((s: string) => next.includes(s));
+                          if (allCollected) {
+                            const max = level.maxMoves || stars.length + 1;
+                            const m = movesRef.current + 1;
+                            let earned = 3;
+                            if (m <= max) earned = 3;
+                            else if (m <= max + 1) earned = 2;
+                            else earned = 1;
+                            setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
+                            onLevelComplete?.(currentLevel, earned);
+                            setTimeout(() => {
+                              if (currentLevel + 1 < totalLevels) {
+                                setCurrentLevel((l) => {
+                                  const nextL = l + 1;
+                                  localStorage.setItem(`${savedKey}_level`, String(nextL));
+                                  return nextL;
+                                });
+                                setMsg('');
+                              } else {
+                                setAllDone(true);
+                                setMsg('🎉 Все позиции пройдены! Урок завершён!');
+                                onAllComplete?.();
+                              }
+                            }, 600);
+                          } else {
+                            setMsg(`⭐ ${next.length} / ${stars.length} звёзд`);
+                          }
+                          return next;
+                        });
+                      }
+                    }}
+                    className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition border border-gray-300"
+                    title={name}
+                  >
+                    <img src={`/pieces/cburnett/w${code.toUpperCase()}.svg`} className="w-8 h-8" draggable={false} alt={name} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
         <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} />
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
 
