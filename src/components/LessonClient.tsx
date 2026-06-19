@@ -626,11 +626,17 @@ function MultiLevelStarBoard({
   onComplete,
   onAllComplete,
   nextLessonUrl,
+  allLessons,
+  courseId,
+  currentLessonId,
 }: {
   config: any;
   onComplete?: () => void;
   onAllComplete?: () => void;
   nextLessonUrl?: string;
+  allLessons?: any[];
+  courseId?: string;
+  currentLessonId?: string;
 }) {
   const router = useRouter();
   const pieceCodeRaw = config.pieceCode || 'wR';
@@ -733,36 +739,82 @@ function MultiLevelStarBoard({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
-      {/* LEFT COLUMN: Figure menu + level progress */}
+      {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        {/* Piece menu — Lichess style (hidden on mobile) */}
-        <div className="hidden lg:block border border-gray-200 rounded overflow-hidden">
-          <div className="bg-blue-500 text-white text-[11px] font-bold px-2 py-1">
-            Шахматные фигуры
-          </div>
-          {[
-            { name: 'Ладья', code: 'wR', active: true },
-            { name: 'Слон', code: 'wB', active: false },
-            { name: 'Ферзь', code: 'wQ', active: false },
-            { name: 'Король', code: 'wK', active: false },
-            { name: 'Конь', code: 'wN', active: false },
-            { name: 'Пешка', code: 'wP', active: false },
-          ].map((p, i) => (
-            <div
-              key={i}
-              className={`flex items-center gap-2 px-2 py-1.5 text-xs cursor-default ${
-                p.active
-                  ? 'bg-blue-50 text-blue-900 font-semibold'
-                  : i % 2 === 0
-                    ? 'bg-white text-gray-600'
-                    : 'bg-gray-50 text-gray-600'
-              }`}
-            >
-              <img src={`/pieces/cburnett/${p.code}.svg`} className="w-5 h-5" draggable={false} alt="" />
-              <span>{p.name}</span>
-            </div>
-          ))}
+        {/* Stars progress — Lichess style (top left) */}
+        <div className="flex rounded overflow-hidden border border-gray-200">
+          {levels.map((_l: any, i: number) => {
+            const earned = levelStars[i];
+            const isCurrent = i === currentLevel;
+            const isDone = earned != null;
+            const isFuture = !isCurrent && !isDone && i > currentLevel;
+            return (
+              <button
+                key={i}
+                onClick={() => {
+                  if (isFuture) return;
+                  if (i !== currentLevel) {
+                    setCurrentLevel(i);
+                    setAllDone(false);
+                  }
+                }}
+                disabled={isFuture}
+                className={`flex-1 py-1.5 flex justify-center gap-0.5 transition ${
+                  isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
+                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
+              >
+                {[1, 2, 3].map((s) => (
+                  <img
+                    key={s}
+                    src="/images/learn/star.png"
+                    className={`w-3.5 h-3.5 ${
+                      isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                    }`}
+                    draggable={false}
+                    alt=""
+                  />
+                ))}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Piece menu — clickable navigation to lessons */}
+        {allLessons && allLessons.length > 0 && (
+          <div className="hidden lg:block border border-gray-200 rounded overflow-hidden">
+            <div className="bg-blue-500 text-white text-[11px] font-bold px-2 py-1">
+              Шахматные фигуры
+            </div>
+            {allLessons
+              .filter((l: any) => l.video_url && (typeof l.video_url === 'string' ? l.video_url.includes('interactive_collect_stars') : l.video_url?.type === 'interactive_collect_stars'))
+              .map((l: any, i: number) => {
+                const cfg = typeof l.video_url === 'string' ? JSON.parse(l.video_url) : l.video_url;
+                const code = cfg?.pieceCode || 'wR';
+                const name = cfg?.pieceName || l.title;
+                const isActive = l.id === currentLessonId;
+                return (
+                  <div
+                    key={l.id}
+                    onClick={() => {
+                      if (!isActive && courseId) {
+                        router.push(`/lessons/${l.id}?course=${courseId}`);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-2 py-1.5 text-xs ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-900 font-semibold'
+                        : i % 2 === 0
+                          ? 'bg-white text-gray-600 cursor-pointer hover:bg-gray-100'
+                          : 'bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100'
+                    }`}
+                  >
+                    <img src={`/pieces/cburnett/${code}.svg`} className="w-5 h-5" draggable={false} alt="" />
+                    <span>{name}</span>
+                  </div>
+                );
+              })}
+          </div>
+        )}
 
         <button onClick={reset} className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center">
           <RotateCcw size={14} /> Заново
@@ -810,43 +862,6 @@ function MultiLevelStarBoard({
           </button>
         )}
 
-        {/* Level progress stars — Lichess style clickable blocks */}
-        <div className="flex rounded overflow-hidden border border-gray-200">
-          {levels.map((_l: any, i: number) => {
-            const earned = levelStars[i];
-            const isCurrent = i === currentLevel;
-            const isDone = earned != null;
-            const isFuture = !isCurrent && !isDone && i > currentLevel;
-            return (
-              <button
-                key={i}
-                onClick={() => {
-                  if (isFuture) return;
-                  if (i !== currentLevel) {
-                    setCurrentLevel(i);
-                    setAllDone(false);
-                  }
-                }}
-                disabled={isFuture}
-                className={`flex-1 py-1.5 flex justify-center gap-0.5 transition ${
-                  isCurrent ? 'bg-blue-500' : isDone ? 'bg-emerald-500' : 'bg-gray-200'
-                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
-              >
-                {[1, 2, 3].map((s) => (
-                  <img
-                    key={s}
-                    src="/images/learn/star.png"
-                    className={`w-3.5 h-3.5 ${
-                      isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                    }`}
-                    draggable={false}
-                    alt=""
-                  />
-                ))}
-              </button>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
@@ -887,6 +902,9 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
             config={interactiveConfig}
             onAllComplete={handleInteractiveComplete}
             nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
+            allLessons={allLessons}
+            courseId={courseId}
+            currentLessonId={lesson.id}
           />
         </div>
       ) : (
