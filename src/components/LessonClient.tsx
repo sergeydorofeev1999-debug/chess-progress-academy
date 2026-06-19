@@ -390,7 +390,9 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        if (isValidMove(pieceType, sel, square, sqs, starsRef.current)) {
+        // Use actual piece type on the selected square
+        const fromType = sqs[sel]?.type || pieceType;
+        if (isValidMove(fromType, sel, square, sqs, starsRef.current)) {
           const accepted = onMoveRef.current?.(sel, square);
           if (accepted !== false) {
             selectedSquareRef.current = null;
@@ -481,7 +483,7 @@ function InlineChessBoard({
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          if (isValidMove(pieceType, start.square, targetSquare, squaresRef.current, starsRef.current)) {
+          if (isValidMove(squaresRef.current[start.square]?.type || pieceType, start.square, targetSquare, squaresRef.current, starsRef.current)) {
             onMoveRef.current?.(start.square, targetSquare);
           } else {
             setMsg(`Недопустимый ход. ${pieceErrHint}`);
@@ -513,9 +515,9 @@ function InlineChessBoard({
 
   // Valid move indicators (green dots like Lichess)
   const validMoves = selectedSquare
-    ? getValidSquares(pieceType, selectedSquare, squares, stars)
+    ? getValidSquares(squares[selectedSquare]?.type || pieceType, selectedSquare, squares, stars)
     : dragPiece
-      ? getValidSquares(pieceType, dragPiece.square, squares, stars)
+      ? getValidSquares(squares[dragPiece.square]?.type || pieceType, dragPiece.square, squares, stars)
       : [];
 
   return (
