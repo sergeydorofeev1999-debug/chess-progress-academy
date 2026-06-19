@@ -624,6 +624,7 @@ function MultiLevelStarBoard({
   config,
   onComplete,
   onAllComplete,
+  onLevelComplete,
   nextLessonUrl,
   allLessons,
   courseId,
@@ -632,6 +633,7 @@ function MultiLevelStarBoard({
   config: any;
   onComplete?: () => void;
   onAllComplete?: () => void;
+  onLevelComplete?: (levelIndex: number, stars: number) => void;
   nextLessonUrl?: string;
   allLessons?: any[];
   courseId?: string;
@@ -712,6 +714,7 @@ function MultiLevelStarBoard({
             else if (m <= max + 1) earned = 2;
             else earned = 1;
             setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
+            onLevelComplete?.(currentLevel, earned);
             setTimeout(() => {
               if (currentLevel + 1 < totalLevels) {
                 setCurrentLevel((l) => l + 1);
@@ -932,6 +935,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
   const interactiveConfig = parseInteractiveConfig(lesson.video_url);
 
+  const handleLevelComplete = (levelIndex: number, stars: number) => {
+    const key = `lesson_progress_${lesson.id}`;
+    const existing = JSON.parse(localStorage.getItem(key) || '{}');
+    existing[levelIndex] = stars;
+    localStorage.setItem(key, JSON.stringify(existing));
+  };
+
   const handleInteractiveComplete = async () => {
     localStorage.setItem(`lesson_completed_${lesson.id}`, 'true');
     setIsCompleted(true);
@@ -952,6 +962,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           <MultiLevelStarBoard
             config={interactiveConfig}
             onAllComplete={handleInteractiveComplete}
+            onLevelComplete={handleLevelComplete}
             nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
             allLessons={allLessons}
             courseId={courseId}
