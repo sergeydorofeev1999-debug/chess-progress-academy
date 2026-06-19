@@ -59,7 +59,14 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         <div className="mb-4">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Шахматные фигуры</h2>
           <PieceCards
-            lessons={allLessons.slice(0, 6).map((l: any) => ({ id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes }))}
+            lessons={allLessons.slice(0, 6).map((l: any) => {
+              let levelsCount = 1;
+              try {
+                const config = JSON.parse(l.video_url || '{}');
+                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+              } catch {}
+              return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
+            })}
             progressMap={progressMap}
             courseId={course.id}
           />

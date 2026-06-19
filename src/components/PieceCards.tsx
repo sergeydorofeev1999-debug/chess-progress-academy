@@ -8,6 +8,7 @@ interface Lesson {
   title: string;
   order: number;
   duration_minutes: number;
+  levelsCount: number;
 }
 
 interface Props {
@@ -26,26 +27,19 @@ const DESCRIPTIONS = [
 ];
 
 const PIECES = ['R', 'B', 'Q', 'K', 'N', 'P'];
-const TOTAL_LEVELS = [6, 5, 5, 5, 6, 5];
 
 export default function PieceCards({ lessons, progressMap, courseId }: Props) {
-  const [startedMap, setStartedMap] = useState<Record<string, boolean>>({});
   const [detailMap, setDetailMap] = useState<Record<string, Record<number, number>>>({});
 
   useEffect(() => {
-    const started: Record<string, boolean> = {};
     const details: Record<string, Record<number, number>> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith('lesson_started_')) {
-        started[key.replace('lesson_started_', '')] = true;
-      }
       if (key?.startsWith('lesson_progress_')) {
         const lessonId = key.replace('lesson_progress_', '');
         details[lessonId] = JSON.parse(localStorage.getItem(key) || '{}');
       }
     }
-    setStartedMap(started);
     setDetailMap(details);
   }, []);
 
@@ -55,16 +49,16 @@ export default function PieceCards({ lessons, progressMap, courseId }: Props) {
         const isServerCompleted = progressMap[lesson.id];
         const detail = detailMap[lesson.id] || {};
         const hasDetail = Object.keys(detail).length > 0;
-        const minStars = hasDetail ? Math.min(...Object.values(detail)) : 0;
         const levelsDone = Object.keys(detail).length;
-        const totalLevels = TOTAL_LEVELS[i] || 5;
+        const totalLevels = lesson.levelsCount || 1;
+        const minStars = hasDetail ? Math.min(...Object.values(detail)) : 0;
 
-        // Completed if all levels have 1+ stars (local) or server says done
+        // Completed = server says done OR all local levels done
         const isCompleted = isServerCompleted || (levelsDone >= totalLevels);
-        const isStarted = !isCompleted && (startedMap[lesson.id] || levelsDone > 0);
+        // Started = any level progress, but not fully done
+        const isStarted = !isCompleted && levelsDone > 0;
 
-        // Colors
-        let bgColor = 'bg-[#e6e0ec]';   // not started = purple
+        let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
         if (isCompleted) {
           bgColor = 'bg-[#ebf5d8]';
