@@ -58,59 +58,235 @@ function parseFen(fen: string) {
   return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
 }
 
-function isValidRookMove(from: string, to: string, squares: Record<string, any>, starSquares: string[] = []) {
+function isValidMove(pieceType: string, from: string, to: string, squares: Record<string, any>, starSquares: string[] = []) {
   if (squares[from]?.color !== 'w') return false;
+  if (squares[to]?.color === 'w') return false;
+  if (from === to) return false;
+
   const ff = FILES.indexOf(from[0]);
   const tf = FILES.indexOf(to[0]);
   const fr = RANKS.indexOf(from[1]);
   const tr = RANKS.indexOf(to[1]);
+  const df = tf - ff;
+  const dr = tr - fr;
 
-  if (ff !== tf && fr !== tr) return false;
-  if (squares[to]?.color === 'w') return false;
-
-  if (ff === tf) {
-    const min = Math.min(fr, tr);
-    const max = Math.max(fr, tr);
-    for (let r = min + 1; r < max; r++) {
-      const sq = `${FILES[ff]}${RANKS[r]}`;
-      if (squares[sq]) return false;
-      if (starSquares.includes(sq)) return false; // star blocks path
+  switch (pieceType) {
+    case 'r': { // Rook
+      if (ff !== tf && fr !== tr) return false;
+      if (ff === tf) {
+        const min = Math.min(fr, tr);
+        const max = Math.max(fr, tr);
+        for (let r = min + 1; r < max; r++) {
+          const sq = `${FILES[ff]}${RANKS[r]}`;
+          if (squares[sq]) return false;
+          if (starSquares.includes(sq)) return false;
+        }
+      } else {
+        const min = Math.min(ff, tf);
+        const max = Math.max(ff, tf);
+        for (let f = min + 1; f < max; f++) {
+          const sq = `${FILES[f]}${RANKS[fr]}`;
+          if (squares[sq]) return false;
+          if (starSquares.includes(sq)) return false;
+        }
+      }
+      return true;
     }
-  } else {
-    const min = Math.min(ff, tf);
-    const max = Math.max(ff, tf);
-    for (let f = min + 1; f < max; f++) {
-      const sq = `${FILES[f]}${RANKS[fr]}`;
-      if (squares[sq]) return false;
-      if (starSquares.includes(sq)) return false; // star blocks path
+    case 'b': { // Bishop
+      if (Math.abs(df) !== Math.abs(dr)) return false;
+      const sf = df > 0 ? 1 : -1;
+      const sr = dr > 0 ? 1 : -1;
+      for (let step = 1; step < Math.abs(df); step++) {
+        const sq = `${FILES[ff + sf * step]}${RANKS[fr + sr * step]}`;
+        if (squares[sq]) return false;
+        if (starSquares.includes(sq)) return false;
+      }
+      return true;
     }
+    case 'q': { // Queen = Rook + Bishop
+      const isRookLike = (ff === tf || fr === tr);
+      const isBishopLike = (Math.abs(df) === Math.abs(dr));
+      if (!isRookLike && !isBishopLike) return false;
+      if (isRookLike) {
+        if (ff === tf) {
+          const min = Math.min(fr, tr);
+          const max = Math.max(fr, tr);
+          for (let r = min + 1; r < max; r++) {
+            const sq = `${FILES[ff]}${RANKS[r]}`;
+            if (squares[sq]) return false;
+            if (starSquares.includes(sq)) return false;
+          }
+        } else {
+          const min = Math.min(ff, tf);
+          const max = Math.max(ff, tf);
+          for (let f = min + 1; f < max; f++) {
+            const sq = `${FILES[f]}${RANKS[fr]}`;
+            if (squares[sq]) return false;
+            if (starSquares.includes(sq)) return false;
+          }
+        }
+      } else {
+        const sf = df > 0 ? 1 : -1;
+        const sr = dr > 0 ? 1 : -1;
+        for (let step = 1; step < Math.abs(df); step++) {
+          const sq = `${FILES[ff + sf * step]}${RANKS[fr + sr * step]}`;
+          if (squares[sq]) return false;
+          if (starSquares.includes(sq)) return false;
+        }
+      }
+      return true;
+    }
+    case 'k': { // King
+      return Math.abs(df) <= 1 && Math.abs(dr) <= 1;
+    }
+    case 'n': { // Knight — jumps over everything
+      return (Math.abs(df) === 2 && Math.abs(dr) === 1) || (Math.abs(df) === 1 && Math.abs(dr) === 2);
+    }
+    case 'p': { // Pawn
+      const forwardDir = -1; // white moves toward rank 8 (decreasing RANKS index)
+      // Forward 1 square
+      if (df === 0 && dr === forwardDir) return !squares[to];
+      // Forward 2 from start
+      if (df === 0 && dr === 2 * forwardDir) {
+        if (from[1] !== '2') return false;
+        const middleSq = `${FILES[ff]}${RANKS[fr + forwardDir]}`;
+        if (squares[middleSq] || starSquares.includes(middleSq)) return false;
+        return !squares[to];
+      }
+      // Diagonal capture (stars only — no enemies in our lessons)
+      if (Math.abs(df) === 1 && dr === forwardDir) {
+        if (starSquares.includes(to)) return true;
+        if (squares[to] && squares[to].color !== 'w') return true;
+        return false;
+      }
+      return false;
+    }
+    default:
+      return false;
   }
-  return true;
 }
 
-function getValidRookSquares(from: string, squares: Record<string, any>, starSquares: string[]): string[] {
+function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[]): string[] {
   if (squares[from]?.color !== 'w') return [];
   const ff = FILES.indexOf(from[0]);
   const fr = RANKS.indexOf(from[1]);
   const valid: string[] = [];
-  const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
-  for (const [df, dr] of dirs) {
-    let f = ff + df, r = fr + dr;
-    while (f >= 0 && f < 8 && r >= 0 && r < 8) {
-      const sq = `${FILES[f]}${RANKS[r]}`;
-      const p = squares[sq];
-      // Blocked by own piece
-      if (p && p.color === 'w') break;
-      // Uncollected star blocks further moves (like an obstacle)
-      if (starSquares.includes(sq)) {
-        valid.push(sq); // star is a valid destination
-        break; // but blocks beyond it
-      }
+
+  const tryAdd = (f: number, r: number): boolean => {
+    if (f < 0 || f >= 8 || r < 0 || r >= 8) return false;
+    const sq = `${FILES[f]}${RANKS[r]}`;
+    const p = squares[sq];
+    if (p && p.color === 'w') return false;
+    if (starSquares.includes(sq)) {
       valid.push(sq);
-      f += df; r += dr;
+      return false; // star blocks further
+    }
+    valid.push(sq);
+    return true;
+  };
+
+  switch (pieceType) {
+    case 'r': {
+      const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+      for (const [df, dr] of dirs) {
+        let f = ff + df, r = fr + dr;
+        while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+          if (!tryAdd(f, r)) break;
+          f += df; r += dr;
+        }
+      }
+      break;
+    }
+    case 'b': {
+      const dirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+      for (const [df, dr] of dirs) {
+        let f = ff + df, r = fr + dr;
+        while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+          if (!tryAdd(f, r)) break;
+          f += df; r += dr;
+        }
+      }
+      break;
+    }
+    case 'q': {
+      const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [-1, 1], [1, -1], [1, 1]];
+      for (const [df, dr] of dirs) {
+        let f = ff + df, r = fr + dr;
+        while (f >= 0 && f < 8 && r >= 0 && r < 8) {
+          if (!tryAdd(f, r)) break;
+          f += df; r += dr;
+        }
+      }
+      break;
+    }
+    case 'k': {
+      for (let df = -1; df <= 1; df++) {
+        for (let dr = -1; dr <= 1; dr++) {
+          if (df === 0 && dr === 0) continue;
+          const f = ff + df, r = fr + dr;
+          if (f >= 0 && f < 8 && r >= 0 && r < 8) {
+            const sq = `${FILES[f]}${RANKS[r]}`;
+            const p = squares[sq];
+            if (!p || p.color !== 'w') valid.push(sq);
+          }
+        }
+      }
+      break;
+    }
+    case 'n': { // Knight jumps over obstacles
+      const jumps = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
+      for (const [df, dr] of jumps) {
+        const f = ff + df, r = fr + dr;
+        if (f >= 0 && f < 8 && r >= 0 && r < 8) {
+          const sq = `${FILES[f]}${RANKS[r]}`;
+          const p = squares[sq];
+          if (!p || p.color !== 'w') valid.push(sq);
+        }
+      }
+      break;
+    }
+    case 'p': {
+      const forwardDir = -1;
+      // Forward 1
+      const r1 = fr + forwardDir;
+      if (r1 >= 0) {
+        const sq = `${FILES[ff]}${RANKS[r1]}`;
+        if (!squares[sq]) {
+          valid.push(sq);
+          // Forward 2 from start
+          if (from[1] === '2') {
+            const r2 = fr + 2 * forwardDir;
+            if (r2 >= 0) {
+              const sq2 = `${FILES[ff]}${RANKS[r2]}`;
+              if (!squares[sq2] && !starSquares.includes(sq2)) valid.push(sq2);
+            }
+          }
+        }
+      }
+      // Diagonal captures
+      for (const df of [-1, 1]) {
+        const fd = ff + df;
+        const rd = fr + forwardDir;
+        if (fd >= 0 && fd < 8 && rd >= 0) {
+          const sq = `${FILES[fd]}${RANKS[rd]}`;
+          const p = squares[sq];
+          if ((p && p.color !== 'w') || starSquares.includes(sq)) valid.push(sq);
+        }
+      }
+      break;
     }
   }
   return valid;
+}
+
+/** @deprecated — use isValidMove('r', ...) */
+function isValidRookMove(from: string, to: string, squares: Record<string, any>, starSquares: string[] = []) {
+  return isValidMove('r', from, to, squares, starSquares);
+}
+
+/** @deprecated — use getValidSquares('r', ...) */
+function getValidRookSquares(from: string, squares: Record<string, any>, starSquares: string[]) {
+  return getValidSquares('r', from, squares, starSquares);
 }
 
 // ─── SVG Chess Pieces ───────────────────────────
@@ -141,15 +317,28 @@ function StarSvg() {
   );
 }
 
+interface InlineChessBoardProps {
+  fen: string;
+  stars?: string[];
+  onMove?: (from: string, to: string) => boolean;
+  pieceType?: string;
+  pieceName?: string;
+}
+
 function InlineChessBoard({
   fen,
   stars = [],
   onMove,
-}: {
-  fen: string;
-  stars?: string[];
-  onMove?: (from: string, to: string) => boolean;
-}) {
+  pieceType = 'r',
+  pieceName = 'Ладья',
+}: InlineChessBoardProps) {
+  const pieceErrHint =
+    pieceType === 'b' ? 'Слон ходит по диагонали!' :
+    pieceType === 'q' ? 'Ферзь ходит по прямой и по диагонали!' :
+    pieceType === 'k' ? 'Король ходит на одну клетку в любом направлении!' :
+    pieceType === 'n' ? 'Конь ходит буквой «Г»!' :
+    pieceType === 'p' ? 'Пешка ходит вперёд и бьёт по диагонали!' :
+    'Ладья ходит только прямо!';
   const [msg, setMsg] = useState('');
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
@@ -201,7 +390,7 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        if (isValidRookMove(sel, square, sqs, starsRef.current)) {
+        if (isValidMove(pieceType, sel, square, sqs, starsRef.current)) {
           const accepted = onMoveRef.current?.(sel, square);
           if (accepted !== false) {
             selectedSquareRef.current = null;
@@ -216,7 +405,7 @@ function InlineChessBoard({
           } else {
             selectedSquareRef.current = null;
             setSelectedSquare(null);
-            setMsg('Недопустимый ход. Ладья ходит только прямо!');
+            setMsg(`Недопустимый ход. ${pieceErrHint}`);
           }
         }
       } else {
@@ -292,10 +481,10 @@ function InlineChessBoard({
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          if (isValidRookMove(start.square, targetSquare, squaresRef.current, starsRef.current)) {
+          if (isValidMove(pieceType, start.square, targetSquare, squaresRef.current, starsRef.current)) {
             onMoveRef.current?.(start.square, targetSquare);
           } else {
-            setMsg('Недопустимый ход. Ладья ходит только прямо!');
+            setMsg(`Недопустимый ход. ${pieceErrHint}`);
           }
         }
         setDragPiece(null);
@@ -324,9 +513,9 @@ function InlineChessBoard({
 
   // Valid move indicators (green dots like Lichess)
   const validMoves = selectedSquare
-    ? getValidRookSquares(selectedSquare, squares, stars)
+    ? getValidSquares(pieceType, selectedSquare, squares, stars)
     : dragPiece
-      ? getValidRookSquares(dragPiece.square, squares, stars)
+      ? getValidSquares(pieceType, dragPiece.square, squares, stars)
       : [];
 
   return (
@@ -436,6 +625,11 @@ function MultiLevelStarBoard({
   nextLessonUrl?: string;
 }) {
   const router = useRouter();
+  const pieceCodeRaw = config.pieceCode || 'wR';
+  const pieceType = pieceCodeRaw.slice(-1).toLowerCase();
+  const pieceName = config.pieceName || 'Ладья';
+  const pieceDesc = config.pieceDescription || 'Движется по прямой';
+
   const [levels] = useState(() => config.levels || [
     { initialFen: config.initialFen, stars: config.stars, instructions: config.instructions, hint: config.hint }
   ]);
@@ -478,14 +672,15 @@ function MultiLevelStarBoard({
       if (parsed.squares[from]?.color !== 'w') {
         return false;
       }
-      if (!isValidRookMove(from, to, parsed.squares, visibleStars)) {
+      if (!isValidMove(pieceType, from, to, parsed.squares, visibleStars)) {
         setMsg('Недопустимый ход');
         return false;
       }
       const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
+      const movedType = movedPiece?.type || pieceType;
       delete newSquares[from];
-      newSquares[to] = { type: movedPiece?.type || 'r', color: 'w' };
+      newSquares[to] = { type: movedType, color: 'w' };
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
@@ -568,19 +763,19 @@ function MultiLevelStarBoard({
 
       {/* CENTER COLUMN: Chess board */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} />
+        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} />
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
       </div>
 
       {/* RIGHT COLUMN: Exercise info */}
       <div className="w-full lg:w-[180px] flex-shrink-0 space-y-3">
-        {/* Figure name header — Lichess style */}
+        { /* Figure name header — Lichess style */ }
         <div className="bg-blue-500 text-white rounded-t-lg p-2.5">
           <div className="flex items-center gap-2">
-            <img src="/pieces/cburnett/wR.svg" className="w-6 h-6" draggable={false} alt="" />
+            <img src={`/pieces/cburnett/${pieceCodeRaw}.svg`} className="w-6 h-6" draggable={false} alt="" />
             <div className="text-sm font-bold leading-tight">
-              <div>Ладья</div>
-              <div className="text-[11px] font-normal opacity-90">Движется по прямой</div>
+              <div>{pieceName}</div>
+              <div className="text-[11px] font-normal opacity-90">{pieceDesc}</div>
             </div>
           </div>
         </div>
