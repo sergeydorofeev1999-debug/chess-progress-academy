@@ -29,7 +29,8 @@ export async function getCourseWithModules(id: string) {
       lessons (*)
     `)
     .eq('course_id', id)
-    .order('"order"');
+    .order('"order"')
+    .order('"order"', { foreignTable: 'lessons' });
   if (modulesError) throw modulesError;
 
   return { course, modules: modules || [] };

@@ -21,7 +21,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
     });
   }
 
-  const totalLessons = modules.reduce((sum: number, m: any) => sum + (m.lessons?.length || 0), 0);
+  const allLessons = modules
+    .flatMap((m: any) => m.lessons || [])
+    .sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+
+  const totalLessons = allLessons.length;
   const completedCount = Object.values(progressMap).filter(Boolean).length;
   const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
@@ -54,7 +58,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         <div className="mb-4">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Шахматные фигуры</h2>
           <div className="space-y-2">
-            {modules.flatMap((m: any) => m.lessons || []).slice(0, 6).map((lesson: any, i: number) => {
+            {allLessons.slice(0, 6).map((lesson: any, i: number) => {
               const isCompleted = progressMap[lesson.id];
               // Colors matching Lichess: alternating green/blue/purple
               const bgColors = ['bg-[#ebf5d8]', 'bg-[#ebf5d8]', 'bg-[#cce5ff]', 'bg-[#e6e0ec]', 'bg-[#cce5ff]', 'bg-[#e6e0ec]'];
@@ -100,7 +104,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
         <div className="mb-4">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Дальше</h2>
           <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-            {modules.flatMap((m: any) => m.lessons || []).slice(6).map((lesson: any) => {
+            {allLessons.slice(6).map((lesson: any) => {
               const isCompleted = progressMap[lesson.id];
               return (
                 <Link
