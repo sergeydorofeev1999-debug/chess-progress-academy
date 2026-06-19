@@ -912,13 +912,19 @@ function MultiLevelStarBoard({
 // LessonClient — main component
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
-  const [isCompleted, setIsCompleted] = useState(isCompletedInit);
+  const [isCompleted, setIsCompleted] = useState(() => {
+    // Check localStorage for completed status on init
+    if (typeof window !== 'undefined') {
+      return isCompletedInit || localStorage.getItem(`lesson_completed_${lesson.id}`) === 'true';
+    }
+    return isCompletedInit;
+  });
 
   useEffect(() => {
-    if (!isCompletedInit) {
+    if (!isCompleted && typeof window !== 'undefined') {
       localStorage.setItem(`lesson_started_${lesson.id}`, 'true');
     }
-  }, [lesson.id, isCompletedInit]);
+  }, [lesson.id, isCompleted]);
 
   const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
   const prevLesson = lessonIndex > 0 ? allLessons[lessonIndex - 1] : null;
@@ -927,25 +933,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   const interactiveConfig = parseInteractiveConfig(lesson.video_url);
 
   const handleInteractiveComplete = async () => {
-    if (userId) {
-      try {
-        const res = await fetch('/api/progress', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lesson_id: lesson.id, is_completed: true }),
-        });
-        if (res.ok) {
-          setIsCompleted(true);
-        } else {
-          console.error('Progress save failed:', await res.text());
-        }
-      } catch (e) {
-        console.error('Progress save error:', e);
-      }
-    }
-    // Fallback: always save to localStorage for reliable client-side progress
     localStorage.setItem(`lesson_completed_${lesson.id}`, 'true');
-    localStorage.setItem(`lesson_started_${lesson.id}`, 'true');
     setIsCompleted(true);
   };
 
