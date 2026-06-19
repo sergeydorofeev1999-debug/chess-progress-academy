@@ -915,6 +915,12 @@ function MultiLevelStarBoard({
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
 
+  useEffect(() => {
+    if (!isCompletedInit) {
+      localStorage.setItem(`lesson_started_${lesson.id}`, 'true');
+    }
+  }, [lesson.id, isCompletedInit]);
+
   const lessonIndex = allLessons.findIndex((l) => l.id === lesson.id);
   const prevLesson = lessonIndex > 0 ? allLessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex < allLessons.length - 1 ? allLessons[lessonIndex + 1] : null;
