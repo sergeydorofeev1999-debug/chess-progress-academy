@@ -923,12 +923,7 @@ function MultiLevelStarBoard({
 
         {/* Next lesson button */}
         {allDone && nextLessonUrl && (
-          <button
-            onClick={() => router.push(nextLessonUrl)}
-            className="w-full flex items-center justify-center gap-1 py-2 bg-slate-900 text-white text-sm rounded-lg hover:bg-slate-800 transition"
-          >
-            Дальше <ArrowRight size={16} />
-          </button>
+          null
         )}
 
       </div>
