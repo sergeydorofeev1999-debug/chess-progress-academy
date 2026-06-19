@@ -341,6 +341,7 @@ function InlineChessBoard({
     'Ладья ходит только прямо!';
   const [msg, setMsg] = useState('');
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
   const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean; pointerId: number } | null>(null);
@@ -530,6 +531,7 @@ function InlineChessBoard({
             const isSource = dragPiece?.square === sq;
             const hasStar = stars.includes(sq);
             const isValidMove = validMoves.includes(sq);
+            const hover = hoveredSquare === sq;
             return (
               <div
                 key={sq}
@@ -540,10 +542,16 @@ function InlineChessBoard({
                 style={{ width: sqSize, height: sqSize, cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default', touchAction: 'none' }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
                 onDragStart={preventDrag}
+                onMouseEnter={() => setHoveredSquare(sq)}
+                onMouseLeave={() => setHoveredSquare(null)}
               >
                 {/* Selected square highlight */}
                 {sel && !hasStar && (
                   <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                )}
+                {/* Hover highlight */}
+                {hover && !sel && (
+                  <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: light ? 'rgba(0,0,0,0.10)' : 'rgba(0,0,0,0.15)', zIndex: 5 }} />
                 )}
                 {fi === 0 && <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>}
                 {ri === 7 && <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>}
