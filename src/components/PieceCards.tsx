@@ -29,27 +29,33 @@ const PIECES = ['R', 'B', 'Q', 'K', 'N', 'P'];
 
 export default function PieceCards({ lessons, progressMap, courseId }: Props) {
   const [startedMap, setStartedMap] = useState<Record<string, boolean>>({});
+  const [completedLocalMap, setCompletedLocalMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const map: Record<string, boolean> = {};
+    const started: Record<string, boolean> = {};
+    const completed: Record<string, boolean> = {};
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith('lesson_started_')) {
-        const lessonId = key.replace('lesson_started_', '');
-        map[lessonId] = true;
+        started[key.replace('lesson_started_', '')] = true;
+      }
+      if (key?.startsWith('lesson_completed_')) {
+        completed[key.replace('lesson_completed_', '')] = true;
       }
     }
-    setStartedMap(map);
+    setStartedMap(started);
+    setCompletedLocalMap(completed);
   }, []);
 
   return (
     <div className="space-y-2">
       {lessons.map((lesson, i) => {
-        const isCompleted = progressMap[lesson.id];
+        const isServerCompleted = progressMap[lesson.id];
+        const isLocalCompleted = completedLocalMap[lesson.id];
+        const isCompleted = isServerCompleted || isLocalCompleted;
         const isStarted = startedMap[lesson.id];
         const isNotStarted = !isCompleted && !isStarted;
 
-        // Colors: completed=green, started=blue, not-started=purple
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
         if (isCompleted) {
@@ -76,7 +82,6 @@ export default function PieceCards({ lessons, progressMap, courseId }: Props) {
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               <p className="text-xs text-gray-500 truncate">{DESCRIPTIONS[i]}</p>
             </div>
-            {/* Badge */}
             {isCompleted && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 ★★★

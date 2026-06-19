@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
-import { markLessonComplete } from '@/lib/data';
 
 interface Lesson {
   id: string;
@@ -929,9 +928,25 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
   const handleInteractiveComplete = async () => {
     if (userId) {
-      await markLessonComplete(userId, lesson.id);
-      setIsCompleted(true);
+      try {
+        const res = await fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lesson_id: lesson.id, is_completed: true }),
+        });
+        if (res.ok) {
+          setIsCompleted(true);
+        } else {
+          console.error('Progress save failed:', await res.text());
+        }
+      } catch (e) {
+        console.error('Progress save error:', e);
+      }
     }
+    // Fallback: always save to localStorage for reliable client-side progress
+    localStorage.setItem(`lesson_completed_${lesson.id}`, 'true');
+    localStorage.setItem(`lesson_started_${lesson.id}`, 'true');
+    setIsCompleted(true);
   };
 
   return (
