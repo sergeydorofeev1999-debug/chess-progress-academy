@@ -70,6 +70,15 @@ export async function getUserProgress(userId: string, courseId: string) {
 
 export async function markLessonComplete(userId: string, lessonId: string) {
   const supabase = await createClient();
+
+  // Ensure profile exists (FK on lesson_progress requires it)
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .upsert({ id: userId, display_name: 'User' }, { onConflict: 'id' });
+  if (profileError) {
+    console.error('Profile upsert error (non-blocking):', profileError.message);
+  }
+
   const { error } = await supabase
     .from('lesson_progress')
     .upsert({
@@ -78,7 +87,10 @@ export async function markLessonComplete(userId: string, lessonId: string) {
       is_completed: true,
       completed_at: new Date().toISOString(),
     });
-  if (error) throw error;
+  if (error) {
+    console.error('markLessonComplete error:', error.message, error.details);
+    throw error;
+  }
 }
 
 export async function getUserEnrollments(userId: string) {
