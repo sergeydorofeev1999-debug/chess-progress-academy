@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface Lesson {
@@ -28,29 +27,24 @@ const DESCRIPTIONS = [
 
 const PIECES = ['R', 'B', 'Q', 'K', 'N', 'P'];
 
+function getLessonDetail(lessonId: string): Record<number, number> {
+  if (typeof window === 'undefined') return {};
+  try {
+    return JSON.parse(localStorage.getItem(`lesson_progress_${lessonId}`) || '{}');
+  } catch {
+    return {};
+  }
+}
+
 export default function PieceCards({ lessons, progressMap, courseId }: Props) {
-  const [detailMap, setDetailMap] = useState<Record<string, Record<number, number>>>({});
-
-  useEffect(() => {
-    const details: Record<string, Record<number, number>> = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key?.startsWith('lesson_progress_')) {
-        const lessonId = key.replace('lesson_progress_', '');
-        details[lessonId] = JSON.parse(localStorage.getItem(key) || '{}');
-      }
-    }
-    setDetailMap(details);
-  }, []);
-
   return (
     <div className="space-y-2">
       {lessons.map((lesson, i) => {
         const isServerCompleted = progressMap[lesson.id];
-        const detail = detailMap[lesson.id] || {};
-        const hasDetail = Object.keys(detail).length > 0;
+        const detail = getLessonDetail(lesson.id);
         const levelsDone = Object.keys(detail).length;
         const totalLevels = lesson.levelsCount || 1;
+        const hasDetail = levelsDone > 0;
         const minStars = hasDetail ? Math.min(...Object.values(detail)) : 0;
 
         // Completed = server says done OR all local levels done
