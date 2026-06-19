@@ -759,11 +759,10 @@ function MultiLevelStarBoard({
                   }
                 }}
                 disabled={isFuture}
-                className={`flex items-center justify-between px-2 py-1.5 transition ${
+                className={`flex items-center justify-center px-2 py-1.5 transition ${
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
-                <span className="text-xs font-bold">{i + 1}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map((s) => (
                     <img
@@ -830,7 +829,7 @@ function MultiLevelStarBoard({
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
 
         {/* Mobile stars — horizontal bar under board */}
-        <div className="flex lg:hidden flex-wrap gap-1 justify-center w-full">
+        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
           {levels.map((_l: any, i: number) => {
             const earned = levelStars[i];
             const isCurrent = i === currentLevel;
@@ -847,11 +846,10 @@ function MultiLevelStarBoard({
                   }
                 }}
                 disabled={isFuture}
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition ${
+                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
               >
-                <span className="font-bold">{i + 1}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map((s) => (
                     <img
