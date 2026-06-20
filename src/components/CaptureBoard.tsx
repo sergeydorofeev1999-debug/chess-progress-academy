@@ -726,7 +726,7 @@ export default function CaptureBoard({
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
           const next = [...prev, to];
-          const allTargets = level.requireAll !== false
+          const allTargets = level.requireAll === true
             ? stars.every((s: string) => next.includes(s))
             : true; // any target completes
           if (allTargets) {
