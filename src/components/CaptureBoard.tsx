@@ -717,15 +717,20 @@ export default function CaptureBoard({
       }
 
       // Auto-capture check: does any black piece attack the white piece now?
-      if (!captured) {
-        for (const sq in newSquares) {
-          const p = newSquares[sq];
-          if (p.color !== 'b') continue;
-          if (isValidMove(p.type, sq, to, newSquares, 'b')) {
-            setGameOver(true);
-            setMsg('💀 Ваша фигура съедена! Попробуйте снова.');
-            return true;
-          }
+      for (const sq in newSquares) {
+        const p = newSquares[sq];
+        if (p.color !== 'b') continue;
+        if (isValidMove(p.type, sq, to, newSquares, 'b')) {
+          // Black piece captures the white piece: move black piece to 'to'
+          const attacker = { ...newSquares[sq] };
+          delete newSquares[sq];
+          newSquares[to] = attacker;
+          const captureFen = squaresToFen(newSquares, 'w');
+          positionRef.current = captureFen;
+          setPosition(captureFen);
+          setGameOver(true);
+          setMsg(`💀 ${p.type === 'r' ? 'Ладья' : p.type === 'b' ? 'Слон' : p.type === 'q' ? 'Ферзь' : p.type === 'n' ? 'Конь' : p.type === 'p' ? 'Пешка' : 'Фигура'} съела вашу фигуру! Попробуйте снова.`);
+          return true;
         }
       }
 
