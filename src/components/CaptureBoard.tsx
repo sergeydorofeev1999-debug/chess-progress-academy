@@ -339,7 +339,7 @@ function InlineChessBoard({
   const containerRef = useRef<HTMLDivElement>(null);
   const onMoveRef = useRef(onMove);
 
-  const sqSize = 52;
+  const sqSize = 48;
 
   useEffect(() => {
     const p = parseFen(fen);
@@ -708,19 +708,14 @@ export default function CaptureBoard({
 
       // Auto-capture check: does any black piece attack the white piece now?
       if (!captured) {
-        const blackAttackers: string[] = [];
         for (const sq in newSquares) {
           const p = newSquares[sq];
           if (p.color !== 'b') continue;
           if (isValidMove(p.type, sq, to, newSquares, 'b')) {
-            blackAttackers.push(sq);
+            setGameOver(true);
+            setMsg('💀 Ваша фигура съедена! Попробуйте снова.');
+            return true;
           }
-        }
-        if (blackAttackers.length > 0) {
-          // White piece is captured!
-          setGameOver(true);
-          setMsg('💀 Ваша фигура съедена! Попробуйте снова.');
-          return true; // move happened but game over
         }
       }
 
@@ -744,7 +739,7 @@ export default function CaptureBoard({
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
-      {/* LEFT: level list */}
+      {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
           {levels.map((_l: any, i: number) => {
@@ -792,31 +787,42 @@ export default function CaptureBoard({
             );
           })}
         </div>
+
         <button
           onClick={resetLevel}
-          className="w-full flex items-center justify-center gap-1.5 bg-[#e2e2e2] text-[#444] px-3 py-2 rounded text-sm font-semibold hover:bg-[#d5d5d5] transition"
+          className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
         >
-          <RotateCcw size={16} />
-          Заново
+          <RotateCcw size={14} /> Заново
         </button>
+
         {level.hint && (
-          <div className="text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed">
+          <div className="hidden lg:block text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed">
             <strong>Подсказка:</strong> {level.hint}
           </div>
         )}
       </div>
 
-      {/* CENTER: board + info */}
-      <div className="flex-1 flex flex-col items-center">
+      {/* CENTER COLUMN: Chess board + stats */}
+      <div className="flex-1 flex flex-col items-center gap-3">
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug max-w-[420px]">
           {level.instructions}
         </div>
+
         <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
-        <div className="mt-2 text-sm text-gray-600">
-          🎯 Целей: {collectedCount} / {stars.length} | Ходов: {moves} / {level.maxMoves || '-'} | Чёрных осталось: {remainingBlack}
+
+        {/* Mobile hint */}
+        {level.hint && (
+          <div className="lg:hidden text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed max-w-[420px]">
+            <strong>Подсказка:</strong> {level.hint}
+          </div>
+        )}
+
+        <div className="mt-1 text-sm text-gray-600">
+          🎯 Целей: {collectedCount} / {stars.length} | Ходов: {moves} / {level.maxMoves || '-'} | Чёрных: {remainingBlack}
         </div>
+
         {allDone && (
-          <div className="mt-3 text-emerald-700 font-bold text-lg">{successMessage}</div>
+          <div className="mt-2 text-emerald-700 font-bold text-lg">{successMessage}</div>
         )}
       </div>
     </div>
