@@ -288,12 +288,21 @@ function getValidSquares(
   return valid;
 }
 
-/* ====== Check if a black piece attacks a square ====== */
+/* ====== Check if a piece attacks a square ====== */
 function isSquareAttackedByBlack(square: string, squares: Record<string, any>) {
   for (const sq in squares) {
     const p = squares[sq];
     if (!p || p.color !== 'b') continue;
     if (isValidMove(p.type, sq, square, squares, 'b')) return true;
+  }
+  return false;
+}
+
+function isSquareAttackedBy(square: string, squares: Record<string, any>, attackerColor: 'w' | 'b') {
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (!p || p.color !== attackerColor) continue;
+    if (isValidMove(p.type, sq, square, squares, attackerColor)) return true;
   }
   return false;
 }
@@ -589,6 +598,7 @@ interface CaptureLevel {
   hint: string;
   maxMoves: number;
   requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
+  requireCheck?: boolean; // if true, every move must put black king in check
 }
 
 interface Props {
@@ -685,6 +695,26 @@ export default function CaptureBoard({
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
+
+      // Check: requireCheck = move must put black king in check
+      if (level.requireCheck) {
+        // Find black king square
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        // Check if the moved piece on 'to' attacks the black king
+        const isCheck = blackKingSq && isValidMove(fromType, to, blackKingSq, newSquares, 'w');
+        if (!isCheck) {
+          setGameOver(true);
+          setFailed(true);
+          setMsg('Это не шах! Ладья не атакует короля.');
+          return true;
+        }
+      }
 
       // Auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
