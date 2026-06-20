@@ -756,8 +756,18 @@ export default function CaptureBoard({
             break;
           }
         }
-        // Check if the moved piece on 'to' attacks the black king
-        const isCheck = blackKingSq && isValidMove(fromType, to, blackKingSq, newSquares, 'w');
+        // Check if ANY white piece attacks the black king (including discovered check)
+        let isCheck = false;
+        if (blackKingSq) {
+          for (const sq in newSquares) {
+            const p = newSquares[sq];
+            if (p.color !== 'w') continue;
+            if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w')) {
+              isCheck = true;
+              break;
+            }
+          }
+        }
         if (!isCheck) {
           setGameOver(true);
           setFailed(true);
