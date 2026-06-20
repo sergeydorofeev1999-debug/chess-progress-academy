@@ -137,7 +137,13 @@ function isValidMove(
       return true;
     }
     case 'k': {
-      return Math.abs(df) <= 1 && Math.abs(dr) <= 1;
+      if (!(Math.abs(df) <= 1 && Math.abs(dr) <= 1)) return false;
+      // King cannot move into check
+      const tempSquares = { ...squares };
+      delete tempSquares[from];
+      const attackerColor = movingColor === 'w' ? 'b' : 'w';
+      if (isSquareAttackedBy(to, tempSquares, attackerColor)) return false;
+      return true;
     }
     case 'n': {
       return (
