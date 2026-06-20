@@ -30,7 +30,9 @@ const PIECES = ['R', 'B', 'Q', 'K', 'N', 'P'];
 function getLessonDetail(lessonId: string): Record<number, number> {
   if (typeof window === 'undefined') return {};
   try {
-    return JSON.parse(localStorage.getItem(`lesson_progress_${lessonId}`) || '{}');
+    const progress = JSON.parse(localStorage.getItem(`lesson_progress_${lessonId}`) || '{}');
+    const capture = JSON.parse(localStorage.getItem(`lesson_capture_${lessonId}`) || '{}');
+    return { ...progress, ...(capture.levelStars || {}) };
   } catch {
     return {};
   }

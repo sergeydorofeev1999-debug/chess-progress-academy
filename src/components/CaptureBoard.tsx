@@ -338,10 +338,22 @@ function InlineChessBoard({
   const pointerStartRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const justDraggedRef = useRef(false);
-
   const onMoveRef = useRef(onMove);
+  const [sqSize, setSqSize] = useState(44);
 
-  const sqSize = 48;
+  useEffect(() => {
+    const update = () => {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        setSqSize(Math.min(64, Math.max(36, Math.floor((window.innerWidth - 24) / 8))));
+      } else {
+        setSqSize(Math.min(64, Math.max(48, Math.floor((window.innerWidth - 340) / 8))));
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   useEffect(() => {
     const p = parseFen(fen);
@@ -802,15 +814,56 @@ export default function CaptureBoard({
 
       {/* CENTER COLUMN: Chess board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug max-w-[420px]">
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
           {level.instructions}
         </div>
 
         <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
 
+        {/* Mobile level stars bar */}
+        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
+          {levels.map((_l: any, i: number) => {
+            const earned = levelStars[i];
+            const isCurrent = i === currentLevel;
+            const isDone = earned != null;
+            const isFuture = !isCurrent && !isDone && i > currentLevel;
+            return (
+              <button
+                key={i}
+                onClick={() => {
+                  if (isFuture) return;
+                  if (i !== currentLevel) {
+                    setCurrentLevel(i);
+                    setAllDone(false);
+                    setGameOver(false);
+                  }
+                }}
+                disabled={isFuture}
+                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+              >
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map((s) => (
+                    <img
+                      key={s}
+                      src="/images/learn/star.png"
+                      className={`w-3 h-3 ${
+                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                      }`}
+                      draggable={false}
+                      alt=""
+                    />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Mobile hint */}
         {level.hint && (
-          <div className="lg:hidden text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed max-w-[420px]">
+          <div className="lg:hidden text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed w-full">
             <strong>Подсказка:</strong> {level.hint}
           </div>
         )}
