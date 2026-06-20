@@ -683,7 +683,25 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Collect star if target square
+      // Auto-capture check FIRST — before awarding stars / completing level
+      for (const sq in newSquares) {
+        const p = newSquares[sq];
+        if (p.color !== 'b') continue;
+        if (isValidMove(p.type, sq, to, newSquares, 'b')) {
+          // Black piece captures the white piece: move black piece to 'to'
+          const attacker = { ...newSquares[sq] };
+          delete newSquares[sq];
+          newSquares[to] = attacker;
+          const captureFen = squaresToFen(newSquares, 'w');
+          positionRef.current = captureFen;
+          setPosition(captureFen);
+          setGameOver(true);
+          setMsg(`💀 ${p.type === 'r' ? 'Ладья' : p.type === 'b' ? 'Слон' : p.type === 'q' ? 'Ферзь' : p.type === 'n' ? 'Конь' : p.type === 'p' ? 'Пешка' : 'Фигура'} съела вашу фигуру! Попробуйте снова.`);
+          return true;
+        }
+      }
+
+      // Collect star if target square (only if no auto-capture happened)
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
           const next = [...prev, to];
@@ -714,24 +732,6 @@ export default function CaptureBoard({
           }
           return next;
         });
-      }
-
-      // Auto-capture check: does any black piece attack the white piece now?
-      for (const sq in newSquares) {
-        const p = newSquares[sq];
-        if (p.color !== 'b') continue;
-        if (isValidMove(p.type, sq, to, newSquares, 'b')) {
-          // Black piece captures the white piece: move black piece to 'to'
-          const attacker = { ...newSquares[sq] };
-          delete newSquares[sq];
-          newSquares[to] = attacker;
-          const captureFen = squaresToFen(newSquares, 'w');
-          positionRef.current = captureFen;
-          setPosition(captureFen);
-          setGameOver(true);
-          setMsg(`💀 ${p.type === 'r' ? 'Ладья' : p.type === 'b' ? 'Слон' : p.type === 'q' ? 'Ферзь' : p.type === 'n' ? 'Конь' : p.type === 'p' ? 'Пешка' : 'Фигура'} съела вашу фигуру! Попробуйте снова.`);
-          return true;
-        }
       }
 
       return true;
