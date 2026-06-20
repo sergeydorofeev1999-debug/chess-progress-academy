@@ -684,10 +684,9 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Auto-capture check: any white piece still under attack by any black piece?
-      // If a white piece defends the target, black cannot capture it.
+      // Auto-capture: collect all undefended white pieces under attack,
+      // pick the most valuable one, then capture it.
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
-        // Temporarily treat target as black so isValidMove allows the attack path
         const testSquares = { ...squares };
         if (testSquares[targetSq]) {
           testSquares[targetSq] = { ...testSquares[targetSq], color: 'b' };
@@ -701,25 +700,36 @@ export default function CaptureBoard({
         return false;
       }
 
+      const pieceValues: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
+      const candidates: { wsq: string; wp: { type: string; color: string }; bsq: string; bp: { type: string; color: string } }[] = [];
+
       for (const wsq in newSquares) {
         const wp = newSquares[wsq];
         if (wp.color !== 'w') continue;
+        if (isDefended(newSquares, wsq)) continue;
         for (const bsq in newSquares) {
           const bp = newSquares[bsq];
           if (bp.color !== 'b') continue;
           if (isValidMove(bp.type, bsq, wsq, newSquares, 'b')) {
-            if (isDefended(newSquares, wsq)) continue; // defended, skip
-            const attacker = { ...newSquares[bsq] };
-            delete newSquares[bsq];
-            newSquares[wsq] = attacker;
-            const captureFen = squaresToFen(newSquares, 'w');
-            positionRef.current = captureFen;
-            setPosition(captureFen);
-            setGameOver(true);
-            setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}! Попробуйте снова.`);
-            return true;
+            candidates.push({ wsq, wp, bsq, bp });
+            break; // one black attacker is enough per white piece
           }
         }
+      }
+
+      if (candidates.length > 0) {
+        // Sort by value descending (highest value first)
+        candidates.sort((a, b) => (pieceValues[b.wp.type] || 0) - (pieceValues[a.wp.type] || 0));
+        const { wsq, wp, bsq, bp } = candidates[0];
+        const attacker = { ...newSquares[bsq] };
+        delete newSquares[bsq];
+        newSquares[wsq] = attacker;
+        const captureFen = squaresToFen(newSquares, 'w');
+        positionRef.current = captureFen;
+        setPosition(captureFen);
+        setGameOver(true);
+        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}! Попробуйте снова.`);
+        return true;
       }
 
       // Collect star if target square (only if no auto-capture happened)
