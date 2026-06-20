@@ -417,23 +417,11 @@ function InlineChessBoard({
           return;
         }
         const fromType = sqs[sel]?.type || 'p';
-        if (isValidMove(fromType, sel, square, sqs, 'w')) {
-          const accepted = onMoveRef.current?.(sel, square);
-          if (accepted !== false) {
-            selectedSquareRef.current = null;
-            setSelectedSquare(null);
-            setMsg('');
-          }
-        } else {
-          if (piece && piece.color === 'w') {
-            selectedSquareRef.current = square;
-            setSelectedSquare(square);
-            setMsg('');
-          } else {
-            selectedSquareRef.current = null;
-            setSelectedSquare(null);
-            onInvalidMove?.();
-          }
+        const accepted = onMoveRef.current?.(sel, square);
+        if (accepted !== false) {
+          selectedSquareRef.current = null;
+          setSelectedSquare(null);
+          setMsg('');
         }
       } else {
         if (piece && piece.color === 'w') {
@@ -687,11 +675,9 @@ export default function CaptureBoard({
         return false;
       }
       const fromType = parsed.squares[from]?.type || 'p';
-      if (!isValidMove(fromType, from, to, parsed.squares, 'w')) {
-        setFailed(true);
-        return false;
-      }
+      const moveIsValid = isValidMove(fromType, from, to, parsed.squares, 'w');
 
+      // Always move the piece visually (even if invalid — red banner will show)
       const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
       delete newSquares[from];
@@ -702,6 +688,12 @@ export default function CaptureBoard({
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
+
+      if (!moveIsValid) {
+        setFailed(true);
+        return true;
+      }
+
       setMoves((c) => c + 1);
       setMsg('');
 
