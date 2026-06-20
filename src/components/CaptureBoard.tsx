@@ -588,7 +588,7 @@ interface CaptureLevel {
   instructions: string;
   hint: string;
   maxMoves: number;
-  movingPiece?: string; // if set, only this white piece type can be moved (e.g. "r")
+  requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
 }
 
 interface Props {
@@ -726,7 +726,9 @@ export default function CaptureBoard({
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
           const next = [...prev, to];
-          const allTargets = stars.every((s: string) => next.includes(s));
+          const allTargets = level.requireAll !== false
+            ? stars.every((s: string) => next.includes(s))
+            : true; // any target completes
           if (allTargets) {
             const max = level.maxMoves || stars.length + 1;
             const m = movesRef.current + 1;
