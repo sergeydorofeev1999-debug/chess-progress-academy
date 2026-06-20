@@ -417,6 +417,10 @@ function InlineChessBoard({
           return;
         }
         const fromType = sqs[sel]?.type || 'p';
+        if (!isValidMove(fromType, sel, square, sqs, 'w')) {
+          onInvalidMove?.();
+          return;
+        }
         const accepted = onMoveRef.current?.(sel, square);
         if (accepted !== false) {
           selectedSquareRef.current = null;
@@ -465,6 +469,8 @@ function InlineChessBoard({
         const fromType = sqs[start]?.type || 'p';
         if (isValidMove(fromType, start, targetSquare, sqs, 'w')) {
           onMoveRef.current?.(start, targetSquare);
+        } else {
+          onInvalidMove?.();
         }
       }
     }
