@@ -614,10 +614,11 @@ export default function CaptureBoard({
   const [collected, setCollected] = useState<string[]>([]);
   const [levelStars, setLevelStars] = useState<Record<number, number>>({});
   const [position, setPosition] = useState(levels[0].initialFen);
-  const [allDone, setAllDone] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState('');
   const [moves, setMoves] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
+  const [allDone, setAllDone] = useState(false);
 
   const positionRef = useRef(position);
   const movesRef = useRef(moves);
@@ -653,6 +654,7 @@ export default function CaptureBoard({
     setMoves(0);
     setAllDone(false);
     setGameOver(false);
+    setFailed(false);
     setMsg('');
     movesRef.current = 0;
     positionRef.current = lvl.initialFen;
@@ -728,7 +730,8 @@ export default function CaptureBoard({
         positionRef.current = captureFen;
         setPosition(captureFen);
         setGameOver(true);
-        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}! Попробуйте снова.`);
+        setFailed(true);
+        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
         return true;
       }
 
@@ -782,6 +785,7 @@ export default function CaptureBoard({
     setMoves(0);
     setAllDone(false);
     setGameOver(false);
+    setFailed(false);
     setMsg('');
   };
 
@@ -857,6 +861,21 @@ export default function CaptureBoard({
         </div>
 
         <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
+
+        {/* Red fail banner */}
+        {failed && (
+          <div className="w-full">
+            <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
+              <p className="text-white font-bold text-lg">Задание провалено!</p>
+              <button
+                onClick={resetLevel}
+                className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
+              >
+                ЕЩЁ РАЗ
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Mobile level stars bar */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
