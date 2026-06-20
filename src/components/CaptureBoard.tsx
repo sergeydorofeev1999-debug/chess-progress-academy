@@ -685,6 +685,17 @@ export default function CaptureBoard({
       setMsg('');
 
       // Auto-capture check: any white piece still under attack by any black piece?
+      // If a white piece defends the target, black cannot capture it.
+      function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
+        for (const sq in squares) {
+          const p = squares[sq];
+          if (p.color !== 'w') continue;
+          if (sq === targetSq) continue;
+          if (isValidMove(p.type, sq, targetSq, squares, 'w')) return true;
+        }
+        return false;
+      }
+
       for (const wsq in newSquares) {
         const wp = newSquares[wsq];
         if (wp.color !== 'w') continue;
@@ -692,7 +703,7 @@ export default function CaptureBoard({
           const bp = newSquares[bsq];
           if (bp.color !== 'b') continue;
           if (isValidMove(bp.type, bsq, wsq, newSquares, 'b')) {
-            // Black piece captures the white piece at wsq
+            if (isDefended(newSquares, wsq)) continue; // defended, skip
             const attacker = { ...newSquares[bsq] };
             delete newSquares[bsq];
             newSquares[wsq] = attacker;
