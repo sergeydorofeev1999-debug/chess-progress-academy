@@ -588,6 +588,7 @@ interface CaptureLevel {
   instructions: string;
   hint: string;
   maxMoves: number;
+  movingPiece?: string; // if set, only this white piece type can be moved (e.g. "r")
 }
 
 interface Props {
@@ -662,6 +663,11 @@ export default function CaptureBoard({
       if (gameOver) return false;
       const parsed = parseFen(positionRef.current);
       if (parsed.squares[from]?.color !== 'w') {
+        return false;
+      }
+      // If level restricts which piece can move, enforce it
+      if (level.movingPiece && parsed.squares[from]?.type !== level.movingPiece) {
+        setMsg('В этом задании ходи только указанной фигурой');
         return false;
       }
       const fromType = parsed.squares[from]?.type || 'p';
