@@ -719,6 +719,7 @@ export default function CaptureBoard({
       for (const wsq in newSquares) {
         const wp = newSquares[wsq];
         if (wp.color !== 'w') continue;
+        if (wp.type === 'k') continue; // King cannot be captured
         if (isDefended(newSquares, wsq)) continue;
         for (const bsq in newSquares) {
           const bp = newSquares[bsq];
