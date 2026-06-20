@@ -337,6 +337,8 @@ function InlineChessBoard({
   const dragPieceRef = useRef(dragPiece);
   const pointerStartRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const justDraggedRef = useRef(false);
+
   const onMoveRef = useRef(onMove);
 
   const sqSize = 48;
@@ -375,6 +377,7 @@ function InlineChessBoard({
 
   const click = useCallback(
     (square: string) => {
+      if (justDraggedRef.current) { justDraggedRef.current = false; return; }
       const sqs = squaresRef.current;
       const sel = selectedSquareRef.current;
       const piece = sqs[square];
@@ -419,13 +422,15 @@ function InlineChessBoard({
     const piece = squares[sq];
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
-    setSelectedSquare(sq);
-    selectedSquareRef.current = sq;
+    justDraggedRef.current = false;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
   const handleGlobalMove = (e: PointerEvent) => {
     if (!pointerStartRef.current) return;
+    justDraggedRef.current = true;
+    setDragPiece({ square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' });
+    dragPieceRef.current = { square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' };
   };
 
   const handleGlobalUp = (e: PointerEvent) => {
@@ -504,6 +509,7 @@ function InlineChessBoard({
                   touchAction: 'none',
                 }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
+                onClick={() => click(sq)}
                 onDragStart={preventDrag}
                 onMouseEnter={() => setHoveredSquare(sq)}
                 onMouseLeave={() => setHoveredSquare(null)}
@@ -539,24 +545,16 @@ function InlineChessBoard({
                   </span>
                 )}
                 {/* Green dot on valid squares */}
-                {isValid && (
+                {isValid && !squares[sq] && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                     <div
                       style={{
                         width: Math.round(sqSize * 0.3),
                         height: Math.round(sqSize * 0.3),
-                        backgroundColor: squares[sq] ? 'transparent' : '#5d9040',
+                        backgroundColor: '#5d9040',
                         borderRadius: '50%',
                         opacity: 0.85,
                       }}
-                    />
-                  </div>
-                )}
-                {/* Red ring on capturable black pieces */}
-                {isValid && squares[sq] && squares[sq].color === 'b' && (
-                  <div className="absolute inset-0 pointer-events-none z-20">
-                    <div
-                      className="w-full h-full rounded-full border-[3px] border-red-500/70"
                     />
                   </div>
                 )}
