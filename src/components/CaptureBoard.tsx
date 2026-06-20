@@ -335,12 +335,14 @@ function InlineChessBoard({
   whitePieceTypes,
   msg,
   setMsg,
+  onInvalidMove,
 }: {
   fen: string;
   onMove: (from: string, to: string) => boolean;
   whitePieceTypes?: string[];
   msg: string;
   setMsg: (s: string) => void;
+  onInvalidMove?: () => void;
 }) {
   const parsed = parseFen(fen);
   const [squares, setSquares] = useState(parsed.squares);
@@ -430,7 +432,7 @@ function InlineChessBoard({
           } else {
             selectedSquareRef.current = null;
             setSelectedSquare(null);
-            setMsg('Недопустимый ход.');
+            onInvalidMove?.();
           }
         }
       } else {
@@ -440,7 +442,7 @@ function InlineChessBoard({
         }
       }
     },
-    [setMsg]
+    [setMsg, onInvalidMove]
   );
 
   // Drag handlers
@@ -686,7 +688,7 @@ export default function CaptureBoard({
       }
       const fromType = parsed.squares[from]?.type || 'p';
       if (!isValidMove(fromType, from, to, parsed.squares, 'w')) {
-        setMsg('Недопустимый ход');
+        setFailed(true);
         return false;
       }
 
@@ -952,7 +954,7 @@ export default function CaptureBoard({
           {level.instructions}
         </div>
 
-        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
+        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} onInvalidMove={() => setFailed(true)} />
 
         {/* Red fail banner */}
         {failed && (
