@@ -599,6 +599,7 @@ interface CaptureLevel {
   maxMoves: number;
   requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
   requireCheck?: boolean; // if true, every move must put black king in check
+  requireSafeKing?: boolean; // if true, white king must NOT be in check after move
 }
 
 interface Props {
@@ -761,6 +762,24 @@ export default function CaptureBoard({
           setGameOver(true);
           setFailed(true);
           setMsg('Это не шах!');
+          return true;
+        }
+      }
+
+      // Check: requireSafeKing = white king must NOT be in check after move
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        const stillInCheck = whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b');
+        if (stillInCheck) {
+          setGameOver(true);
+          setFailed(true);
+          setMsg('Король под шахом! Нужно уйти от шаха.');
           return true;
         }
       }
