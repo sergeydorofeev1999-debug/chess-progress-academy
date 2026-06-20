@@ -703,6 +703,26 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
+      // Check: requireSafeKing = white king must NOT be in check after move
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        const stillInCheck = whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b');
+        if (stillInCheck) {
+          setGameOver(true);
+          setFailed(true);
+          setMsg('Король под шахом! Нужно уйти от шаха.');
+          return true;
+        }
+      }
+
+      if (failed) return true;
+
       // Auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
@@ -805,24 +825,6 @@ export default function CaptureBoard({
           }
         }, 600);
         return true;
-      }
-
-      // Check: requireSafeKing = white king must NOT be in check after move
-      if (level.requireSafeKing) {
-        let whiteKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
-            whiteKingSq = sq;
-            break;
-          }
-        }
-        const stillInCheck = whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b');
-        if (stillInCheck) {
-          setGameOver(true);
-          setFailed(true);
-          setMsg('Король под шахом! Нужно уйти от шаха.');
-          return true;
-        }
       }
 
       // Collect star if target square (only if no auto-capture happened)
