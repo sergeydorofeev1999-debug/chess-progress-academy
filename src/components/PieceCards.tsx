@@ -14,18 +14,9 @@ interface Props {
   lessons: Lesson[];
   progressMap: Record<string, boolean>;
   courseId: string;
+  pieceCodes?: string[];
+  descriptions?: string[];
 }
-
-const DESCRIPTIONS = [
-  'Движется по прямой',
-  'Двигается по диагонали',
-  'Ферзь = ладья + слон',
-  'Самая важная фигура',
-  'Ходит буквой «Г»',
-  'Ходит на 1-2 клетки вперёд',
-];
-
-const PIECES = ['R', 'B', 'Q', 'K', 'N', 'P'];
 
 function getLessonDetail(lessonId: string): Record<number, number> {
   if (typeof window === 'undefined') return {};
@@ -38,7 +29,7 @@ function getLessonDetail(lessonId: string): Record<number, number> {
   }
 }
 
-export default function PieceCards({ lessons, progressMap, courseId }: Props) {
+export default function PieceCards({ lessons, progressMap, courseId, pieceCodes, descriptions }: Props) {
   return (
     <div className="space-y-2">
       {lessons.map((lesson, i) => {
@@ -49,9 +40,7 @@ export default function PieceCards({ lessons, progressMap, courseId }: Props) {
         const hasDetail = levelsDone > 0;
         const minStars = hasDetail ? Math.min(...Object.values(detail)) : 0;
 
-        // Completed = server says done OR all local levels done
         const isCompleted = isServerCompleted || (levelsDone >= totalLevels);
-        // Started = any level progress, but not fully done
         const isStarted = !isCompleted && levelsDone > 0;
 
         let bgColor = 'bg-[#e6e0ec]';
@@ -64,21 +53,30 @@ export default function PieceCards({ lessons, progressMap, courseId }: Props) {
           borderColor = 'border-[#a3c8f0]';
         }
 
+        const piece = pieceCodes?.[i];
+        const desc = descriptions?.[i];
+
         return (
           <Link
             key={lesson.id}
             href={`/lessons/${lesson.id}?course=${courseId}`}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${bgColor} ${borderColor} hover:brightness-95 transition relative`}
           >
-            <img
-              src={`/pieces/cburnett/w${PIECES[i]}.svg`}
-              className="w-10 h-10 shrink-0"
-              draggable={false}
-              alt=""
-            />
+            {piece ? (
+              <img
+                src={`/pieces/cburnett/w${piece}.svg`}
+                className="w-10 h-10 shrink-0"
+                draggable={false}
+                alt=""
+              />
+            ) : (
+              <div className="w-10 h-10 shrink-0 rounded-full bg-white/70 border border-gray-300 flex items-center justify-center text-sm font-bold text-gray-600">
+                {lesson.order || i + 1}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
-              <p className="text-xs text-gray-500 truncate">{DESCRIPTIONS[i]}</p>
+              {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
             {isCompleted && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">

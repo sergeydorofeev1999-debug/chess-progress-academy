@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { getCourseWithModules, getUserProgress } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
-import { CheckCircle, Play } from 'lucide-react';
 import PieceCards from '@/components/PieceCards';
 import CourseProgress from '@/components/CourseProgress';
 
@@ -11,7 +10,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const { course, modules } = await getCourseWithModules(id);
 
-  // Get current user (if logged in)
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -33,6 +31,15 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
     return <div className="max-w-6xl mx-auto px-4 py-12">Курс не найден</div>;
   }
 
+  const basicLevelLessons = allLessons.slice(6);
+  const basicLevelDescriptions = [
+    'Съешь чёрную фигуру',
+    'Защити свою фигуру',
+    'Поставь шах королю',
+    'Выведи короля из шаха',
+    'Поставь мат королю',
+  ];
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <Link href="/courses" className="text-sm text-slate-500 hover:text-slate-800 mb-4 inline-block">← Назад к курсам</Link>
@@ -44,7 +51,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       </div>
 
       <div className="space-y-6">
-        {/* ШАХМАТНЫЕ ФИГУРЫ — клиентский компонент с localStorage-прогрессом */}
+        {/* ШАХМАТНЫЕ ФИГУРЫ */}
         <div className="mb-4">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Шахматные фигуры</h2>
           <PieceCards
@@ -58,36 +65,27 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             })}
             progressMap={serverProgressMap}
             courseId={course.id}
+            pieceCodes={['R','B','Q','K','N','P']}
+            descriptions={['Движется по прямой','Двигается по диагонали','Ферзь = ладья + слон','Самая важная фигура','Ходит буквой «Г»','Ходит на 1-2 клетки вперёд']}
           />
         </div>
 
-        {/* Остальные уроки — список */}
+        {/* БАЗОВЫЙ УРОВЕНЬ */}
         <div className="mb-4">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Дальше</h2>
-          <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-            {allLessons.slice(6).map((lesson: any) => {
-              const isCompleted = serverProgressMap[lesson.id];
-              return (
-                <Link
-                  key={lesson.id}
-                  href={`/lessons/${lesson.id}?course=${course.id}`}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition"
-                >
-                  <div className="shrink-0">
-                    {isCompleted ? (
-                      <CheckCircle size={20} className="text-green-500" />
-                    ) : (
-                      <Play size={20} className="text-slate-400" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{lesson.title}</p>
-                    <p className="text-xs text-slate-500">{lesson.duration_minutes} мин</p>
-                  </div>
-                </Link>
-              );
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Базовый уровень</h2>
+          <PieceCards
+            lessons={basicLevelLessons.map((l: any, idx: number) => {
+              let levelsCount = 1;
+              try {
+                const config = JSON.parse(l.video_url || '{}');
+                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+              } catch {}
+              return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
             })}
-          </div>
+            progressMap={serverProgressMap}
+            courseId={course.id}
+            descriptions={basicLevelDescriptions}
+          />
         </div>
       </div>
     </div>
