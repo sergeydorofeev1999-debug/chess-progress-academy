@@ -696,26 +696,6 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Check: requireCheck = move must put black king in check
-      if (level.requireCheck) {
-        // Find black king square
-        let blackKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
-            blackKingSq = sq;
-            break;
-          }
-        }
-        // Check if the moved piece on 'to' attacks the black king
-        const isCheck = blackKingSq && isValidMove(fromType, to, blackKingSq, newSquares, 'w');
-        if (!isCheck) {
-          setGameOver(true);
-          setFailed(true);
-          setMsg('Это не шах! Ладья не атакует короля.');
-          return true;
-        }
-      }
-
       // Auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
@@ -763,6 +743,26 @@ export default function CaptureBoard({
         setFailed(true);
         setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
         return true;
+      }
+
+      // Check: requireCheck = move must put black king in check
+      if (level.requireCheck) {
+        // Find black king square
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        // Check if the moved piece on 'to' attacks the black king
+        const isCheck = blackKingSq && isValidMove(fromType, to, blackKingSq, newSquares, 'w');
+        if (!isCheck) {
+          setGameOver(true);
+          setFailed(true);
+          setMsg('Это не шах!');
+          return true;
+        }
       }
 
       // Collect star if target square (only if no auto-capture happened)
