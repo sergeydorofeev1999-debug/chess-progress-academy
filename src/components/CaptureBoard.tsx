@@ -697,60 +697,6 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Check: requireCheck = move must put black king in check
-      if (level.requireCheck) {
-        // Find black king square
-        let blackKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
-            blackKingSq = sq;
-            break;
-          }
-        }
-        // Check if ANY white piece attacks the black king (including discovered check)
-        let isCheck = false;
-        if (blackKingSq) {
-          for (const sq in newSquares) {
-            const p = newSquares[sq];
-            if (p.color !== 'w') continue;
-            if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w')) {
-              isCheck = true;
-              break;
-            }
-          }
-        }
-        if (!isCheck) {
-          setGameOver(true);
-          setFailed(true);
-          setMsg('Это не шах!');
-          return true;
-        }
-        // Check satisfied → complete level immediately (skip auto-capture)
-        const max = level.maxMoves || stars.length + 1;
-        const m = movesRef.current + 1;
-        let earned = 3;
-        if (m <= max) earned = 3;
-        else if (m <= max + 1) earned = 2;
-        else earned = 1;
-        setLevelStars((prevStars) => {
-          const nextStars = { ...prevStars, [currentLevel]: earned };
-          localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
-          return nextStars;
-        });
-        onLevelComplete?.(currentLevel, earned);
-        setTimeout(() => {
-          if (currentLevel + 1 < totalLevels) {
-            setCurrentLevel((l) => l + 1);
-            setMsg('');
-          } else {
-            setAllDone(true);
-            setMsg(`🎉 ${successMessage}`);
-            onAllComplete?.();
-          }
-        }, 600);
-        return true;
-      }
-
       // Auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
@@ -797,6 +743,60 @@ export default function CaptureBoard({
         setGameOver(true);
         setFailed(true);
         setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
+        return true;
+      }
+
+      // Check: requireCheck = move must put black king in check
+      if (level.requireCheck) {
+        // Find black king square
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        // Check if ANY white piece attacks the black king (including discovered check)
+        let isCheck = false;
+        if (blackKingSq) {
+          for (const sq in newSquares) {
+            const p = newSquares[sq];
+            if (p.color !== 'w') continue;
+            if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w')) {
+              isCheck = true;
+              break;
+            }
+          }
+        }
+        if (!isCheck) {
+          setGameOver(true);
+          setFailed(true);
+          setMsg('Это не шах!');
+          return true;
+        }
+        // Check satisfied → complete level
+        const max = level.maxMoves || stars.length + 1;
+        const m = movesRef.current + 1;
+        let earned = 3;
+        if (m <= max) earned = 3;
+        else if (m <= max + 1) earned = 2;
+        else earned = 1;
+        setLevelStars((prevStars) => {
+          const nextStars = { ...prevStars, [currentLevel]: earned };
+          localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
+          return nextStars;
+        });
+        onLevelComplete?.(currentLevel, earned);
+        setTimeout(() => {
+          if (currentLevel + 1 < totalLevels) {
+            setCurrentLevel((l) => l + 1);
+            setMsg('');
+          } else {
+            setAllDone(true);
+            setMsg(`🎉 ${successMessage}`);
+            onAllComplete?.();
+          }
+        }, 600);
         return true;
       }
 
