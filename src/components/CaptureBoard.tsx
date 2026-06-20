@@ -676,15 +676,54 @@ export default function CaptureBoard({
         return false;
       }
       const fromType = parsed.squares[from]?.type || 'p';
-      const moveIsValid = isValidMove(fromType, from, to, parsed.squares, 'w');
+      if (!isValidMove(fromType, from, to, parsed.squares, 'w')) return false;
 
-      if (!moveIsValid) return false;
-
-      const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
+
+      // Preview move to enforce level constraints silently
+      const previewSquares = { ...parsed.squares };
+      delete previewSquares[from];
+      previewSquares[to] = movedPiece;
+
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in previewSquares) {
+          if (previewSquares[sq].type === 'k' && previewSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, previewSquares, 'b')) {
+          return false;
+        }
+      }
+
+      if (level.requireCheck) {
+        let blackKingSq = '';
+        for (const sq in previewSquares) {
+          if (previewSquares[sq].type === 'k' && previewSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        let isCheck = false;
+        if (blackKingSq) {
+          for (const sq in previewSquares) {
+            const p = previewSquares[sq];
+            if (p.color !== 'w') continue;
+            if (isValidMove(p.type, sq, blackKingSq, previewSquares, 'w')) {
+              isCheck = true;
+              break;
+            }
+          }
+        }
+        if (!isCheck) return false;
+      }
+
+      // Apply move
+      const newSquares = { ...parsed.squares };
       delete newSquares[from];
       newSquares[to] = movedPiece;
-
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
@@ -692,105 +731,7 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Check: requireSafeKing = white king must NOT be in check after move
-      if (level.requireSafeKing) {
-        let whiteKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
-            whiteKingSq = sq;
-            break;
-          }
-        }
-        const stillInCheck = whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b');
-        if (stillInCheck) {
-          setGameOver(true);
-          setFailed(true);
-          setMsg('Король под шахом! Нужно уйти от шаха.');
-          return true;
-        }
-      }
-
-      if (failed) return true;
-
-      // Auto-capture: collect all undefended white pieces under attack,
-      // pick the most valuable one, then capture it.
-      function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
-        const testSquares = { ...squares };
-        if (testSquares[targetSq]) {
-          testSquares[targetSq] = { ...testSquares[targetSq], color: 'b' };
-        }
-        for (const sq in squares) {
-          const p = squares[sq];
-          if (p.color !== 'w') continue;
-          if (sq === targetSq) continue;
-          if (isValidMove(p.type, sq, targetSq, testSquares, 'w')) return true;
-        }
-        return false;
-      }
-
-      const pieceValues: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
-      const candidates: { wsq: string; wp: { type: string; color: string }; bsq: string; bp: { type: string; color: string } }[] = [];
-
-      for (const wsq in newSquares) {
-        const wp = newSquares[wsq];
-        if (wp.color !== 'w') continue;
-        if (wp.type === 'k') continue; // King cannot be captured
-        if (isDefended(newSquares, wsq)) continue;
-        for (const bsq in newSquares) {
-          const bp = newSquares[bsq];
-          if (bp.color !== 'b') continue;
-          if (isValidMove(bp.type, bsq, wsq, newSquares, 'b')) {
-            candidates.push({ wsq, wp, bsq, bp });
-            break; // one black attacker is enough per white piece
-          }
-        }
-      }
-
-      if (candidates.length > 0) {
-        // Sort by value descending (highest value first)
-        candidates.sort((a, b) => (pieceValues[b.wp.type] || 0) - (pieceValues[a.wp.type] || 0));
-        const { wsq, wp, bsq, bp } = candidates[0];
-        const attacker = { ...newSquares[bsq] };
-        delete newSquares[bsq];
-        newSquares[wsq] = attacker;
-        const captureFen = squaresToFen(newSquares, 'w');
-        positionRef.current = captureFen;
-        setPosition(captureFen);
-        setGameOver(true);
-        setFailed(true);
-        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
-        return true;
-      }
-
-      // Check: requireCheck = move must put black king in check
       if (level.requireCheck) {
-        // Find black king square
-        let blackKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
-            blackKingSq = sq;
-            break;
-          }
-        }
-        // Check if ANY white piece attacks the black king (including discovered check)
-        let isCheck = false;
-        if (blackKingSq) {
-          for (const sq in newSquares) {
-            const p = newSquares[sq];
-            if (p.color !== 'w') continue;
-            if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w')) {
-              isCheck = true;
-              break;
-            }
-          }
-        }
-        if (!isCheck) {
-          setGameOver(true);
-          setFailed(true);
-          setMsg('Это не шах!');
-          return true;
-        }
-        // Check satisfied → complete level
         const max = level.maxMoves || stars.length + 1;
         const m = movesRef.current + 1;
         let earned = 3;
