@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
+import CaptureBoard from './CaptureBoard';
 
 interface Lesson {
   id: string;
@@ -1057,19 +1058,31 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       <h1 className="text-2xl font-bold mb-2">{lesson.title}</h1>
       <p className="text-sm text-slate-500 mb-6">{lesson.duration_minutes} мин</p>
 
-      {/* Interactive Lesson */}
-      {interactiveConfig ? (
-        <div className="mb-8">
-          <MultiLevelStarBoard
-            config={interactiveConfig}
-            onAllComplete={handleInteractiveComplete}
-            onLevelComplete={handleLevelComplete}
-            nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
-            allLessons={allLessons}
-            courseId={courseId}
-            currentLessonId={lesson.id}
-          />
-        </div>
+      {/* Interactive Lesson */
+      interactiveConfig ? (
+        interactiveConfig.type === 'interactive_capture' ? (
+          <div className="mb-8">
+            <CaptureBoard
+              lessonId={lesson.id}
+              levels={interactiveConfig.levels || []}
+              successMessage={interactiveConfig.successMessage || 'Молодец!'}
+              onAllComplete={handleInteractiveComplete}
+              onLevelComplete={handleLevelComplete}
+            />
+          </div>
+        ) : (
+          <div className="mb-8">
+            <MultiLevelStarBoard
+              config={interactiveConfig}
+              onAllComplete={handleInteractiveComplete}
+              onLevelComplete={handleLevelComplete}
+              nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
+              allLessons={allLessons}
+              courseId={courseId}
+              currentLessonId={lesson.id}
+            />
+          </div>
+        )
       ) : (
         /* Regular video placeholder */
         <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center mb-6">
