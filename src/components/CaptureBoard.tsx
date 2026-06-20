@@ -687,11 +687,16 @@ export default function CaptureBoard({
       // Auto-capture check: any white piece still under attack by any black piece?
       // If a white piece defends the target, black cannot capture it.
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
+        // Temporarily treat target as black so isValidMove allows the attack path
+        const testSquares = { ...squares };
+        if (testSquares[targetSq]) {
+          testSquares[targetSq] = { ...testSquares[targetSq], color: 'b' };
+        }
         for (const sq in squares) {
           const p = squares[sq];
           if (p.color !== 'w') continue;
           if (sq === targetSq) continue;
-          if (isValidMove(p.type, sq, targetSq, squares, 'w')) return true;
+          if (isValidMove(p.type, sq, targetSq, testSquares, 'w')) return true;
         }
         return false;
       }
