@@ -665,11 +665,6 @@ export default function CaptureBoard({
       if (parsed.squares[from]?.color !== 'w') {
         return false;
       }
-      // If level restricts which piece can move, enforce it
-      if (level.movingPiece && parsed.squares[from]?.type !== level.movingPiece) {
-        setMsg('В этом задании ходи только указанной фигурой');
-        return false;
-      }
       const fromType = parsed.squares[from]?.type || 'p';
       if (!isValidMove(fromType, from, to, parsed.squares, 'w')) {
         setMsg('Недопустимый ход');
@@ -689,21 +684,25 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
-      // Auto-capture check FIRST — before awarding stars / completing level
-      for (const sq in newSquares) {
-        const p = newSquares[sq];
-        if (p.color !== 'b') continue;
-        if (isValidMove(p.type, sq, to, newSquares, 'b')) {
-          // Black piece captures the white piece: move black piece to 'to'
-          const attacker = { ...newSquares[sq] };
-          delete newSquares[sq];
-          newSquares[to] = attacker;
-          const captureFen = squaresToFen(newSquares, 'w');
-          positionRef.current = captureFen;
-          setPosition(captureFen);
-          setGameOver(true);
-          setMsg(`💀 ${p.type === 'r' ? 'Ладья' : p.type === 'b' ? 'Слон' : p.type === 'q' ? 'Ферзь' : p.type === 'n' ? 'Конь' : p.type === 'p' ? 'Пешка' : 'Фигура'} съела вашу фигуру! Попробуйте снова.`);
-          return true;
+      // Auto-capture check: any white piece still under attack by any black piece?
+      for (const wsq in newSquares) {
+        const wp = newSquares[wsq];
+        if (wp.color !== 'w') continue;
+        for (const bsq in newSquares) {
+          const bp = newSquares[bsq];
+          if (bp.color !== 'b') continue;
+          if (isValidMove(bp.type, bsq, wsq, newSquares, 'b')) {
+            // Black piece captures the white piece at wsq
+            const attacker = { ...newSquares[bsq] };
+            delete newSquares[bsq];
+            newSquares[wsq] = attacker;
+            const captureFen = squaresToFen(newSquares, 'w');
+            positionRef.current = captureFen;
+            setPosition(captureFen);
+            setGameOver(true);
+            setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}! Попробуйте снова.`);
+            return true;
+          }
         }
       }
 
