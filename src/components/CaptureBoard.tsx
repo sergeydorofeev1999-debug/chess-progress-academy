@@ -335,14 +335,12 @@ function InlineChessBoard({
   whitePieceTypes,
   msg,
   setMsg,
-  onInvalidMove,
 }: {
   fen: string;
   onMove: (from: string, to: string) => boolean;
   whitePieceTypes?: string[];
   msg: string;
   setMsg: (s: string) => void;
-  onInvalidMove?: () => void;
 }) {
   const parsed = parseFen(fen);
   const [squares, setSquares] = useState(parsed.squares);
@@ -418,7 +416,6 @@ function InlineChessBoard({
         }
         const fromType = sqs[sel]?.type || 'p';
         if (!isValidMove(fromType, sel, square, sqs, 'w')) {
-          onInvalidMove?.();
           return;
         }
         const accepted = onMoveRef.current?.(sel, square);
@@ -434,7 +431,7 @@ function InlineChessBoard({
         }
       }
     },
-    [setMsg, onInvalidMove]
+    [setMsg]
   );
 
   // Drag handlers
@@ -469,8 +466,6 @@ function InlineChessBoard({
         const fromType = sqs[start]?.type || 'p';
         if (isValidMove(fromType, start, targetSquare, sqs, 'w')) {
           onMoveRef.current?.(start, targetSquare);
-        } else {
-          onInvalidMove?.();
         }
       }
     }
@@ -683,22 +678,16 @@ export default function CaptureBoard({
       const fromType = parsed.squares[from]?.type || 'p';
       const moveIsValid = isValidMove(fromType, from, to, parsed.squares, 'w');
 
-      // Always move the piece visually (even if invalid — red banner will show)
+      if (!moveIsValid) return false;
+
       const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
       delete newSquares[from];
       newSquares[to] = movedPiece;
 
-      const captured = parsed.squares[to]?.color === 'b';
-
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
-
-      if (!moveIsValid) {
-        setFailed(true);
-        return true;
-      }
 
       setMoves((c) => c + 1);
       setMsg('');
@@ -952,7 +941,7 @@ export default function CaptureBoard({
           {level.instructions}
         </div>
 
-        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} onInvalidMove={() => setFailed(true)} />
+        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
 
         {/* Red fail banner */}
         {failed && (
