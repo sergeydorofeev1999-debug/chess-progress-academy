@@ -192,6 +192,7 @@ function getValidSquares(
       return false;
     }
     valid.push(sq);
+    if (p && p.color !== movingColor) return false; // enemy piece blocks further
     return true;
   };
 
