@@ -325,20 +325,20 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
   if (!isSquareAttackedBy(kingSq, squares, side === 'w' ? 'b' : 'w', true)) return false;
 
   // 2. King must have no legal escape squares
-  const files = ['a','b','c','d','e','f','g','h'];
-  const ranks = ['1','2','3','4','5','6','7','8'];
-  const fi = files.indexOf(kingSq[0]);
-  const ri = ranks.indexOf(kingSq[1]);
+  const squaresWithoutKing = { ...squares };
+  delete squaresWithoutKing[kingSq];
+  const fi = FILES.indexOf(kingSq[0]);
+  const ri = RANKS.indexOf(kingSq[1]);
   for (let df = -1; df <= 1; df++) {
     for (let dr = -1; dr <= 1; dr++) {
       if (df === 0 && dr === 0) continue;
       const nf = fi + df;
       const nr = ri + dr;
       if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) continue;
-      const sq = `${files[nf]}${ranks[nr]}`;
+      const sq = `${FILES[nf]}${RANKS[nr]}`;
       const p = squares[sq];
       if (p && p.color === side) continue; // own piece blocks
-      if (!isSquareAttackedBy(sq, squares, side === 'w' ? 'b' : 'w', true)) return false; // king can escape
+      if (!isSquareAttackedBy(sq, squaresWithoutKing, side === 'w' ? 'b' : 'w', true)) return false; // king can escape
     }
   }
 
@@ -354,8 +354,8 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
   if (attackers.length === 1) {
     const attackerSq = attackers[0];
     const attacker = squares[attackerSq];
-    const af = files.indexOf(attackerSq[0]);
-    const ar = ranks.indexOf(attackerSq[1]);
+    const af = FILES.indexOf(attackerSq[0]);
+    const ar = RANKS.indexOf(attackerSq[1]);
     const kf = fi;
     const kr = ri;
 
@@ -374,7 +374,7 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
       let bf = af + df;
       let br = ar + dr;
       while (bf !== kf || br !== kr) {
-        const blockSq = `${files[bf]}${ranks[br]}`;
+        const blockSq = `${FILES[bf]}${RANKS[br]}`;
         for (const sq in squares) {
           const p = squares[sq];
           if (!p || p.color !== side) continue;
@@ -401,6 +401,9 @@ function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string |
   const fi = FILES.indexOf(kingSq[0]);
   const ri = RANKS.indexOf(kingSq[1]);
   const attackerColor = side === 'w' ? 'b' : 'w';
+  // Temporarily remove king so attackers can "see" through its old square
+  const squaresWithoutKing = { ...squares };
+  delete squaresWithoutKing[kingSq];
   for (let df = -1; df <= 1; df++) {
     for (let dr = -1; dr <= 1; dr++) {
       if (df === 0 && dr === 0) continue;
@@ -410,7 +413,7 @@ function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string |
       const sq = `${FILES[nf]}${RANKS[nr]}`;
       const p = squares[sq];
       if (p && p.color === side) continue;
-      if (isSquareAttackedBy(sq, squares, attackerColor)) continue;
+      if (isSquareAttackedBy(sq, squaresWithoutKing, attackerColor, true)) continue;
       return sq;
     }
   }
