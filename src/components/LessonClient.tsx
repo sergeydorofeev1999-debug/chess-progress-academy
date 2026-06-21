@@ -137,7 +137,12 @@ function isValidMove(pieceType: string, from: string, to: string, squares: Recor
       return true;
     }
     case 'k': { // King
-      return Math.abs(df) <= 1 && Math.abs(dr) <= 1;
+      if (Math.abs(df) > 1 || Math.abs(dr) > 1) return false;
+      // King cannot move into check
+      const tempSquares = { ...squares };
+      delete tempSquares[from];
+      if (isSquareAttackedBy(to, tempSquares, 'b')) return false;
+      return true;
     }
     case 'n': { // Knight — jumps over everything
       return (Math.abs(df) === 2 && Math.abs(dr) === 1) || (Math.abs(df) === 1 && Math.abs(dr) === 2);
@@ -164,6 +169,15 @@ function isValidMove(pieceType: string, from: string, to: string, squares: Recor
     default:
       return false;
   }
+}
+
+function isSquareAttackedBy(square: string, squares: Record<string, any>, attackerColor: 'w' | 'b') {
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (!p || p.color !== attackerColor) continue;
+    if (isValidMove(p.type, sq, square, squares, [])) return true;
+  }
+  return false;
 }
 
 function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[]): string[] {
