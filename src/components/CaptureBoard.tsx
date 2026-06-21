@@ -450,6 +450,9 @@ function InlineChessBoard({
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
     justDraggedRef.current = false;
+    // Select the dragged piece immediately so green dots show for it
+    selectedSquareRef.current = sq;
+    setSelectedSquare(sq);
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
