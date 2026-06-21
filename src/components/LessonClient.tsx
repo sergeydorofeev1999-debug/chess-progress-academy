@@ -335,6 +335,7 @@ interface InlineChessBoardProps {
   onMove?: (from: string, to: string) => boolean;
   pieceType?: string;
   pieceName?: string;
+  guideArrows?: { from: string; to: string }[];
 }
 
 function InlineChessBoard({
@@ -343,6 +344,7 @@ function InlineChessBoard({
   onMove,
   pieceType = 'r',
   pieceName = 'Ладья',
+  guideArrows = [],
 }: InlineChessBoardProps) {
   const pieceErrHint =
     pieceType === 'b' ? 'Слон ходит по диагонали!' :
@@ -383,7 +385,7 @@ function InlineChessBoard({
 
   const parsed = parseFen(fen);
   const squares = parsed.squares;
-  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
+  const isLight = (f: number, r: number) => (f + r) % 2 !== 0;
 
   const getSquareFromPoint = (clientX: number, clientY: number): string | null => {
     const el = document.elementFromPoint(clientX, clientY);
@@ -584,6 +586,29 @@ function InlineChessBoard({
               </div>
             );
           })
+        )}
+        {guideArrows.length > 0 && !selectedSquare && !dragPiece && (
+          <svg className="absolute inset-0 pointer-events-none z-30" style={{ width: 8 * sqSize, height: 8 * sqSize }}>
+            {guideArrows.map((arrow, i) => {
+              const fromF = FILES.indexOf(arrow.from[0]);
+              const fromR = RANKS.indexOf(arrow.from[1]);
+              const toF = FILES.indexOf(arrow.to[0]);
+              const toR = RANKS.indexOf(arrow.to[1]);
+              const x1 = (fromF + 0.5) * sqSize;
+              const y1 = (fromR + 0.5) * sqSize;
+              const x2 = (toF + 0.5) * sqSize;
+              const y2 = (toR + 0.5) * sqSize;
+              return (
+                <line
+                  key={i}
+                  x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke="rgba(93, 144, 64, 0.6)"
+                  strokeWidth={Math.max(4, sqSize * 0.12)}
+                  strokeLinecap="round"
+                />
+              );
+            })}
+          </svg>
         )}
       </div>
       {dragPiece && (
@@ -998,7 +1023,7 @@ function MultiLevelStarBoard({
             </div>
           </div>
         )}
-        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} />
+        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} guideArrows={level.guideArrows || []} />
 
         {/* Red fail banner (Lichess style) */}
         {failed && (
