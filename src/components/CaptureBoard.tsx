@@ -709,6 +709,56 @@ export default function CaptureBoard({
         }
       }
 
+      // Universal auto-capture: collect all undefended white pieces under attack,
+      // pick the most valuable one, then capture it.
+      function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
+        const testSquares = { ...squares };
+        if (testSquares[targetSq]) {
+          testSquares[targetSq] = { ...testSquares[targetSq], color: 'b' };
+        }
+        for (const sq in squares) {
+          const p = squares[sq];
+          if (p.color !== 'w') continue;
+          if (sq === targetSq) continue;
+          if (isValidMove(p.type, sq, targetSq, testSquares, 'w')) return true;
+        }
+        return false;
+      }
+
+      const pieceValues: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1, k: 0 };
+      const candidates: { wsq: string; wp: { type: string; color: string }; bsq: string; bp: { type: string; color: string } }[] = [];
+
+      for (const wsq in newSquares) {
+        const wp = newSquares[wsq];
+        if (wp.color !== 'w') continue;
+        if (wp.type === 'k') continue; // King cannot be captured
+        if (isDefended(newSquares, wsq)) continue;
+        for (const bsq in newSquares) {
+          const bp = newSquares[bsq];
+          if (bp.color !== 'b') continue;
+          if (isValidMove(bp.type, bsq, wsq, newSquares, 'b')) {
+            candidates.push({ wsq, wp, bsq, bp });
+            break; // one black attacker is enough per white piece
+          }
+        }
+      }
+
+      if (candidates.length > 0) {
+        // Sort by value descending (highest value first)
+        candidates.sort((a, b) => (pieceValues[b.wp.type] || 0) - (pieceValues[a.wp.type] || 0));
+        const { wsq, wp, bsq, bp } = candidates[0];
+        const attacker = { ...newSquares[bsq] };
+        delete newSquares[bsq];
+        newSquares[wsq] = attacker;
+        const captureFen = squaresToFen(newSquares, 'w');
+        positionRef.current = captureFen;
+        setPosition(captureFen);
+        setGameOver(true);
+        setFailed(true);
+        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
+        return true;
+      }
+
       // After-move validation: if level constraint violated → fail banner
       if (level.requireSafeKing) {
         let whiteKingSq = '';
