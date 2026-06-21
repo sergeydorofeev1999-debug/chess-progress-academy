@@ -1239,11 +1239,6 @@ export default function CaptureBoard({
           <RotateCcw size={14} /> Заново
         </button>
 
-        {level.hint && (
-          <div className="hidden lg:block text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed">
-            <strong>Подсказка:</strong> {level.hint}
-          </div>
-        )}
       </div>
 
       {/* CENTER COLUMN: Chess board + stats */}
@@ -1310,16 +1305,7 @@ export default function CaptureBoard({
           })}
         </div>
 
-        {/* Mobile hint */}
-        {level.hint && (
-          <div className="lg:hidden text-[12px] text-[#444] bg-[#f8f8f8] p-2 rounded border border-[#ddd] leading-relaxed w-full">
-            <strong>Подсказка:</strong> {level.hint}
-          </div>
-        )}
 
-        <div className="mt-1 text-sm text-gray-600">
-          🎯 Целей: {collectedCount} / {stars.length} | Ходов: {moves} / {level.maxMoves || '-'} | Чёрных: {remainingBlack}
-        </div>
 
         {allDone && (
           <div className="mt-2 text-emerald-700 font-bold text-lg">{successMessage}</div>
