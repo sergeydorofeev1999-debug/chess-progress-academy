@@ -1001,7 +1001,28 @@ export default function CaptureBoard({
 
       if (level.requireMate) {
         if (!isCheckmate(newSquares, 'b')) {
-          // Not checkmate — immediate fail
+          // Not checkmate — check if it's at least a check (show king escape then fail)
+          let blackKingSq = '';
+          for (const sq in newSquares) {
+            if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+              blackKingSq = sq;
+              break;
+            }
+          }
+          let isCheck = false;
+          if (blackKingSq && isSquareAttackedBy(blackKingSq, newSquares, 'w', true)) {
+            isCheck = true;
+          }
+          if (isCheck) {
+            const escapeSq = findKingEscape(newSquares, 'b');
+            if (escapeSq) {
+              newSquares[escapeSq] = newSquares[blackKingSq];
+              delete newSquares[blackKingSq];
+              const escapeFen = squaresToFen(newSquares, 'w');
+              positionRef.current = escapeFen;
+              setPosition(escapeFen);
+            }
+          }
           setFailed(true);
           setGameOver(true);
           return false;
