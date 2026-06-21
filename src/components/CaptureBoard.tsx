@@ -57,10 +57,11 @@ function isValidMove(
   to: string,
   squares: Record<string, any>,
   movingColor: 'w' | 'b',
-  starSquares: string[] = []
+  starSquares: string[] = [],
+  ignoreTargetOccupant: boolean = false
 ) {
   if (squares[from]?.color !== movingColor) return false;
-  if (squares[to]?.color === movingColor) return false;
+  if (!ignoreTargetOccupant && squares[to]?.color === movingColor) return false;
   if (from === to) return false;
 
   const ff = FILES.indexOf(from[0]);
@@ -300,11 +301,11 @@ function isSquareAttackedByBlack(square: string, squares: Record<string, any>) {
   return false;
 }
 
-function isSquareAttackedBy(square: string, squares: Record<string, any>, attackerColor: 'w' | 'b') {
+function isSquareAttackedBy(square: string, squares: Record<string, any>, attackerColor: 'w' | 'b', ignoreTarget: boolean = false) {
   for (const sq in squares) {
     const p = squares[sq];
     if (!p || p.color !== attackerColor) continue;
-    if (isValidMove(p.type, sq, square, squares, attackerColor)) return true;
+    if (isValidMove(p.type, sq, square, squares, attackerColor, [], ignoreTarget)) return true;
   }
   return false;
 }
@@ -321,7 +322,7 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
   if (!kingSq) return false;
 
   // 1. King must be in check
-  if (!isSquareAttackedBy(kingSq, squares, side === 'w' ? 'b' : 'w')) return false;
+  if (!isSquareAttackedBy(kingSq, squares, side === 'w' ? 'b' : 'w', true)) return false;
 
   // 2. King must have no legal escape squares
   const files = ['a','b','c','d','e','f','g','h'];
@@ -337,7 +338,7 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
       const sq = `${files[nf]}${ranks[nr]}`;
       const p = squares[sq];
       if (p && p.color === side) continue; // own piece blocks
-      if (!isSquareAttackedBy(sq, squares, side === 'w' ? 'b' : 'w')) return false; // king can escape
+      if (!isSquareAttackedBy(sq, squares, side === 'w' ? 'b' : 'w', true)) return false; // king can escape
     }
   }
 
@@ -1001,8 +1002,15 @@ export default function CaptureBoard({
       if (level.requireMate) {
         if (!isCheckmate(newSquares, 'b')) {
           // Not checkmate — black king auto-escapes if possible
+          let blackKingSq = '';
+          for (const sq in newSquares) {
+            if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+              blackKingSq = sq;
+              break;
+            }
+          }
           const escapeSq = findKingEscape(newSquares, 'b');
-          if (escapeSq) {
+          if (escapeSq && blackKingSq) {
             const blackKing = newSquares[blackKingSq];
             delete newSquares[blackKingSq];
             newSquares[escapeSq] = blackKing;
