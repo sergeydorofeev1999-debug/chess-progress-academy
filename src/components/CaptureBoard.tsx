@@ -309,6 +309,113 @@ function isSquareAttackedBy(square: string, squares: Record<string, any>, attack
   return false;
 }
 
+function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
+  // Find king
+  let kingSq = '';
+  for (const sq in squares) {
+    if (squares[sq].type === 'k' && squares[sq].color === side) {
+      kingSq = sq;
+      break;
+    }
+  }
+  if (!kingSq) return false;
+
+  // 1. King must be in check
+  if (!isSquareAttackedBy(kingSq, squares, side === 'w' ? 'b' : 'w')) return false;
+
+  // 2. King must have no legal escape squares
+  const files = ['a','b','c','d','e','f','g','h'];
+  const ranks = ['1','2','3','4','5','6','7','8'];
+  const fi = files.indexOf(kingSq[0]);
+  const ri = ranks.indexOf(kingSq[1]);
+  for (let df = -1; df <= 1; df++) {
+    for (let dr = -1; dr <= 1; dr++) {
+      if (df === 0 && dr === 0) continue;
+      const nf = fi + df;
+      const nr = ri + dr;
+      if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) continue;
+      const sq = `${files[nf]}${ranks[nr]}`;
+      const p = squares[sq];
+      if (p && p.color === side) continue; // own piece blocks
+      if (!isSquareAttackedBy(sq, squares, side === 'w' ? 'b' : 'w')) return false; // king can escape
+    }
+  }
+
+  // 3. Can any piece capture the attacker or block the attack?
+  const attackers: string[] = [];
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (!p || p.color === side) continue;
+    if (isValidMove(p.type, sq, kingSq, squares, p.color)) attackers.push(sq);
+  }
+
+  // If exactly 1 attacker, check capture or block
+  if (attackers.length === 1) {
+    const attackerSq = attackers[0];
+    const attacker = squares[attackerSq];
+    const af = files.indexOf(attackerSq[0]);
+    const ar = ranks.indexOf(attackerSq[1]);
+    const kf = fi;
+    const kr = ri;
+
+    // Can any defender capture the attacker?
+    for (const sq in squares) {
+      const p = squares[sq];
+      if (!p || p.color !== side) continue;
+      if (p.type === 'k') continue;
+      if (isValidMove(p.type, sq, attackerSq, squares, side)) return false;
+    }
+
+    // Can any defender block (for sliding pieces only: r, b, q)?
+    if (attacker.type === 'r' || attacker.type === 'b' || attacker.type === 'q') {
+      const df = af === kf ? 0 : (af > kf ? -1 : 1);
+      const dr = ar === kr ? 0 : (ar > kr ? -1 : 1);
+      let bf = af + df;
+      let br = ar + dr;
+      while (bf !== kf || br !== kr) {
+        const blockSq = `${files[bf]}${ranks[br]}`;
+        for (const sq in squares) {
+          const p = squares[sq];
+          if (!p || p.color !== side) continue;
+          if (isValidMove(p.type, sq, blockSq, squares, side)) return false;
+        }
+        bf += df;
+        br += dr;
+      }
+    }
+  }
+
+  return true;
+}
+
+function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string | null {
+  let kingSq = '';
+  for (const sq in squares) {
+    if (squares[sq].type === 'k' && squares[sq].color === side) {
+      kingSq = sq;
+      break;
+    }
+  }
+  if (!kingSq) return null;
+  const fi = FILES.indexOf(kingSq[0]);
+  const ri = RANKS.indexOf(kingSq[1]);
+  const attackerColor = side === 'w' ? 'b' : 'w';
+  for (let df = -1; df <= 1; df++) {
+    for (let dr = -1; dr <= 1; dr++) {
+      if (df === 0 && dr === 0) continue;
+      const nf = fi + df;
+      const nr = ri + dr;
+      if (nf < 0 || nf >= 8 || nr < 0 || nr >= 8) continue;
+      const sq = `${FILES[nf]}${RANKS[nr]}`;
+      const p = squares[sq];
+      if (p && p.color === side) continue;
+      if (isSquareAttackedBy(sq, squares, attackerColor)) continue;
+      return sq;
+    }
+  }
+  return null;
+}
+
 /* ====== SVG Chess Pieces ====== */
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -651,6 +758,7 @@ interface CaptureLevel {
   maxMoves: number;
   requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
   requireCheck?: boolean; // if true, every move must put black king in check
+  requireMate?: boolean; // if true, move must deliver checkmate
   requireSafeKing?: boolean; // if true, white king must NOT be in check after move
   autoCaptures?: { blackFrom: string; captureSquare: string }[];
   forbiddenSquares?: string[]; // squares that should never show as valid targets
@@ -865,6 +973,48 @@ export default function CaptureBoard({
           return false;
         }
         // Success path for requireCheck
+        const max = level.maxMoves || stars.length + 1;
+        const m = movesRef.current + 1;
+        let earned = 3;
+        if (m <= max) earned = 3;
+        else if (m <= max + 1) earned = 2;
+        else earned = 1;
+        setLevelStars((prevStars) => {
+          const nextStars = { ...prevStars, [currentLevel]: earned };
+          localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
+          return nextStars;
+        });
+        onLevelComplete?.(currentLevel, earned);
+        setTimeout(() => {
+          if (currentLevel + 1 < totalLevels) {
+            setCurrentLevel((l) => l + 1);
+            setMsg('');
+          } else {
+            setAllDone(true);
+            setMsg(`🎉 ${successMessage}`);
+            onAllComplete?.();
+          }
+        }, 600);
+        return true;
+      }
+
+      if (level.requireMate) {
+        if (!isCheckmate(newSquares, 'b')) {
+          // Not checkmate — black king auto-escapes if possible
+          const escapeSq = findKingEscape(newSquares, 'b');
+          if (escapeSq) {
+            const blackKing = newSquares[blackKingSq];
+            delete newSquares[blackKingSq];
+            newSquares[escapeSq] = blackKing;
+            const fenAfterEscape = squaresToFen(newSquares, 'w');
+            positionRef.current = fenAfterEscape;
+            setPosition(fenAfterEscape);
+          }
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+        // Success path for requireMate
         const max = level.maxMoves || stars.length + 1;
         const m = movesRef.current + 1;
         let earned = 3;
