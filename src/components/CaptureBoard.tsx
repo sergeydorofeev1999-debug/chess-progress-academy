@@ -1095,7 +1095,7 @@ export default function CaptureBoard({
             const earned = levelStars[i];
             const isCurrent = i === currentLevel;
             const isDone = earned != null;
-            const isFuture = !isCurrent && !isDone && i > currentLevel;
+            const isFuture = false;
             return (
               <button
                 key={i}
@@ -1180,7 +1180,7 @@ export default function CaptureBoard({
             const earned = levelStars[i];
             const isCurrent = i === currentLevel;
             const isDone = earned != null;
-            const isFuture = !isCurrent && !isDone && i > currentLevel;
+            const isFuture = false;
             return (
               <button
                 key={i}
