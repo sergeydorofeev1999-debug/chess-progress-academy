@@ -378,6 +378,7 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
         for (const sq in squares) {
           const p = squares[sq];
           if (!p || p.color !== side) continue;
+          if (p.type === 'k') continue; // king cannot block an attack on itself
           if (isValidMove(p.type, sq, blockSq, squares, side)) return false;
         }
         bf += df;
