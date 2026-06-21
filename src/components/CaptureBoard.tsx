@@ -321,8 +321,10 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
   }
   if (!kingSq) return false;
 
+  const attackerColor = side === 'w' ? 'b' : 'w';
+
   // 1. King must be in check
-  if (!isSquareAttackedBy(kingSq, squares, side === 'w' ? 'b' : 'w', true)) return false;
+  if (!isSquareAttackedBy(kingSq, squares, attackerColor, true)) return false;
 
   // 2. King must have no legal escape squares
   const squaresWithoutKing = { ...squares };
@@ -338,7 +340,7 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
       const sq = `${FILES[nf]}${RANKS[nr]}`;
       const p = squares[sq];
       if (p && p.color === side) continue; // own piece blocks
-      if (!isSquareAttackedBy(sq, squaresWithoutKing, side === 'w' ? 'b' : 'w', true)) return false; // king can escape
+      if (!isSquareAttackedBy(sq, squaresWithoutKing, attackerColor, true)) return false; // king can escape
     }
   }
 
@@ -364,7 +366,13 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
       const p = squares[sq];
       if (!p || p.color !== side) continue;
       if (p.type === 'k') continue;
-      if (isValidMove(p.type, sq, attackerSq, squares, side)) return false;
+      if (isValidMove(p.type, sq, attackerSq, squares, side)) {
+        // Simulate capture and verify king is safe after capture (pinned defenders can't save)
+        const sim = { ...squares };
+        delete sim[sq];
+        sim[attackerSq] = p;
+        if (!isSquareAttackedBy(kingSq, sim, attackerColor, true)) return false;
+      }
     }
 
     // Can any defender block (for sliding pieces only: r, b, q)?
@@ -379,7 +387,13 @@ function isCheckmate(squares: Record<string, any>, side: 'w' | 'b') {
           const p = squares[sq];
           if (!p || p.color !== side) continue;
           if (p.type === 'k') continue; // king cannot block an attack on itself
-          if (isValidMove(p.type, sq, blockSq, squares, side)) return false;
+          if (isValidMove(p.type, sq, blockSq, squares, side)) {
+            // Simulate block and verify king is safe after block (pinned defenders can't save)
+            const sim = { ...squares };
+            delete sim[sq];
+            sim[blockSq] = p;
+            if (!isSquareAttackedBy(kingSq, sim, attackerColor, true)) return false;
+          }
         }
         bf += df;
         br += dr;
