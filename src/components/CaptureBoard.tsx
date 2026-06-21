@@ -138,11 +138,7 @@ function isValidMove(
     }
     case 'k': {
       if (!(Math.abs(df) <= 1 && Math.abs(dr) <= 1)) return false;
-      // King cannot move into check
-      const tempSquares = { ...squares };
-      delete tempSquares[from];
-      const attackerColor = movingColor === 'w' ? 'b' : 'w';
-      if (isSquareAttackedBy(to, tempSquares, attackerColor)) return false;
+      // Basic king validation only (distance). Safety checks are after move apply.
       return true;
     }
     case 'n': {

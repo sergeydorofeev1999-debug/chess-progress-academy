@@ -138,10 +138,8 @@ function isValidMove(pieceType: string, from: string, to: string, squares: Recor
     }
     case 'k': { // King
       if (Math.abs(df) > 1 || Math.abs(dr) > 1) return false;
-      // King cannot move into check
-      const tempSquares = { ...squares };
-      delete tempSquares[from];
-      if (isSquareAttackedBy(to, tempSquares, 'b')) return false;
+      // King basic validation: only reject totally impossible (out of range).
+      // Level constraints (safe king) are checked after visual move in handleMove.
       return true;
     }
     case 'n': { // Knight — jumps over everything
