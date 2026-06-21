@@ -352,6 +352,8 @@ function InlineChessBoard({
     color: string;
     x: number;
     y: number;
+    offsetX: number;
+    offsetY: number;
   } | null>(null);
   const dragStateRef = useRef(dragState);
   const pointerStartRef = useRef<string | null>(null);
@@ -458,16 +460,20 @@ function InlineChessBoard({
     const ri = RANKS.indexOf(sq[1]);
     const centerX = fi * sqSize + sqSize / 2;
     const centerY = ri * sqSize + sqSize / 2;
+    // Offset = where inside the square the finger is (relative to center)
     const offsetX = e.clientX - rect.left - centerX;
     const offsetY = e.clientY - rect.top - centerY;
-    setDragState({
+    const initState = {
       square: sq,
       type: piece.type,
       color: piece.color,
-      x: centerX + offsetX,
-      y: centerY + offsetY,
-    });
-    dragStateRef.current = { square: sq, type: piece.type, color: piece.color, x: centerX + offsetX, y: centerY + offsetY };
+      x: centerX,
+      y: centerY,
+      offsetX,
+      offsetY,
+    };
+    setDragState(initState);
+    dragStateRef.current = initState;
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
@@ -478,15 +484,9 @@ function InlineChessBoard({
     setSelectedSquare(dragStateRef.current.square);
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    // Reconstruct where the pointer is relative to container, preserving the grab offset
-    const fi = FILES.indexOf(dragStateRef.current.square[0]);
-    const ri = RANKS.indexOf(dragStateRef.current.square[1]);
-    const centerX = fi * sqSize + sqSize / 2;
-    const centerY = ri * sqSize + sqSize / 2;
-    const offsetX = dragStateRef.current.x - centerX;
-    const offsetY = dragStateRef.current.y - centerY;
-    const x = e.clientX - rect.left - offsetX;
-    const y = e.clientY - rect.top - offsetY;
+    // Use the fixed grab offset recorded at pointerDown
+    const x = e.clientX - rect.left - dragStateRef.current.offsetX;
+    const y = e.clientY - rect.top - dragStateRef.current.offsetY;
     const newState = { ...dragStateRef.current, x, y };
     setDragState(newState);
     dragStateRef.current = newState;
