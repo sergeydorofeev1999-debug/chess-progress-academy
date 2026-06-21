@@ -1001,23 +1001,7 @@ export default function CaptureBoard({
 
       if (level.requireMate) {
         if (!isCheckmate(newSquares, 'b')) {
-          // Not checkmate — black king auto-escapes if possible
-          let blackKingSq = '';
-          for (const sq in newSquares) {
-            if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
-              blackKingSq = sq;
-              break;
-            }
-          }
-          const escapeSq = findKingEscape(newSquares, 'b');
-          if (escapeSq && blackKingSq) {
-            const blackKing = newSquares[blackKingSq];
-            delete newSquares[blackKingSq];
-            newSquares[escapeSq] = blackKing;
-            const fenAfterEscape = squaresToFen(newSquares, 'w');
-            positionRef.current = fenAfterEscape;
-            setPosition(fenAfterEscape);
-          }
+          // Not checkmate — immediate fail
           setFailed(true);
           setGameOver(true);
           return false;
