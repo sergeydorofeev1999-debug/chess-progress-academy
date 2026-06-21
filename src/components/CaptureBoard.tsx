@@ -711,6 +711,8 @@ export default function CaptureBoard({
 
       // Universal auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
+      // Skip if level has explicit autoCaptures config (e.g. Lesson 10 ex4 escape check)
+      if (!level.autoCaptures || level.autoCaptures.length === 0) {
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
         const testSquares = { ...squares };
         if (testSquares[targetSq]) {
@@ -758,6 +760,7 @@ export default function CaptureBoard({
         setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
         return true;
       }
+      } // end if (!level.autoCaptures || level.autoCaptures.length === 0)
 
       // After-move validation: if level constraint violated → fail banner
       if (level.requireSafeKing) {
