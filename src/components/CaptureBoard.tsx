@@ -331,12 +331,14 @@ function InlineChessBoard({
   whitePieceTypes,
   msg,
   setMsg,
+  forbiddenSquares = [],
 }: {
   fen: string;
   onMove: (from: string, to: string) => boolean;
   whitePieceTypes?: string[];
   msg: string;
   setMsg: (s: string) => void;
+  forbiddenSquares?: string[];
 }) {
   const parsed = parseFen(fen);
   const [squares, setSquares] = useState(parsed.squares);
@@ -388,14 +390,14 @@ function InlineChessBoard({
         selectedSquare,
         squares,
         'w'
-      )
+      ).filter(sq => !forbiddenSquares.includes(sq))
     : dragPiece
     ? getValidSquares(
         squares[dragPiece.square]?.type || 'p',
         dragPiece.square,
         squares,
         'w'
-      )
+      ).filter(sq => !forbiddenSquares.includes(sq))
     : [];
 
   const click = useCallback(
@@ -406,6 +408,12 @@ function InlineChessBoard({
       const piece = sqs[square];
       if (sel) {
         if (sel === square) {
+          selectedSquareRef.current = null;
+          setSelectedSquare(null);
+          return;
+        }
+        // Reject moves into forbidden squares at UI level
+        if (forbiddenSquares.includes(square)) {
           selectedSquareRef.current = null;
           setSelectedSquare(null);
           return;
@@ -592,6 +600,7 @@ interface CaptureLevel {
   requireCheck?: boolean; // if true, every move must put black king in check
   requireSafeKing?: boolean; // if true, white king must NOT be in check after move
   autoCaptures?: { blackFrom: string; captureSquare: string }[];
+  forbiddenSquares?: string[]; // squares that should never show as valid targets
 }
 
 interface Props {
@@ -953,7 +962,7 @@ export default function CaptureBoard({
           {level.instructions}
         </div>
 
-        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} />
+        <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} forbiddenSquares={level.forbiddenSquares || []} />
 
         {/* Red fail banner */}
         {failed && (
