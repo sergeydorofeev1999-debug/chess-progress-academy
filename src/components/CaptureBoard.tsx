@@ -412,6 +412,12 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
+        // Click on another white piece → select it immediately (no double-click needed)
+        if (piece && piece.color === 'w') {
+          selectedSquareRef.current = square;
+          setSelectedSquare(square);
+          return;
+        }
         // Reject moves into forbidden squares at UI level
         if (forbiddenSquares.includes(square)) {
           selectedSquareRef.current = null;
