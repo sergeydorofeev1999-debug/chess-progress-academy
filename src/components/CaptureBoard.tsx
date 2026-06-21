@@ -696,6 +696,9 @@ export default function CaptureBoard({
               return false;
             }
             delete newSquares[ac.captureSquare];
+            // Move the black attacker to the capture square
+            newSquares[ac.captureSquare] = newSquares[ac.blackFrom];
+            delete newSquares[ac.blackFrom];
             const fenAfterCapture = squaresToFen(newSquares, 'w');
             positionRef.current = fenAfterCapture;
             setPosition(fenAfterCapture);
