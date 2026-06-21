@@ -447,7 +447,7 @@ function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
 }
 
 function isLight(fi: number, ri: number) {
-  return (fi + ri) % 2 === 0;
+  return (fi + ri) % 2 !== 0;
 }
 
 /* ====== Inline Chess Board (white + black pieces, click & drag) ====== */

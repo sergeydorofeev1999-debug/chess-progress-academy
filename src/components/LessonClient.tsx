@@ -1015,7 +1015,6 @@ function MultiLevelStarBoard({
           </div>
         )}
 
-        <span className="text-xs text-gray-500">Ходов: {moves}</span>
 
         {/* Mobile stars — horizontal bar under board */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
