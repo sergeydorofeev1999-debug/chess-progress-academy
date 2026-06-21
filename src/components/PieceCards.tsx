@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 interface Lesson {
   id: string;
@@ -31,14 +32,25 @@ function getLessonDetail(lessonId: string): Record<number, number> {
 }
 
 export default function PieceCards({ lessons, progressMap, courseId, pieceCodes, descriptions }: Props) {
+  const [clientDetails, setClientDetails] = useState<Record<string, Record<number, number>>>({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const details: Record<string, Record<number, number>> = {};
+    for (const lesson of lessons) {
+      details[lesson.id] = getLessonDetail(lesson.id);
+    }
+    setClientDetails(details);
+  }, [lessons]);
+
   return (
     <div className="space-y-2">
       {lessons.map((lesson, i) => {
         const isServerCompleted = progressMap[lesson.id];
-        const detail = getLessonDetail(lesson.id);
+        const detail = mounted ? clientDetails[lesson.id] || {} : {};
         const totalLevels = lesson.levelsCount || 1;
         const levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
-        const hasDetail = levelsDone > 0;
         const allStars = Object.values(detail) as number[];
         const minStars = allStars.length > 0 ? Math.min(...allStars) : 0;
 
