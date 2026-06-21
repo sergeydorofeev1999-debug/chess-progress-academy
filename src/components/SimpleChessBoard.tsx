@@ -127,7 +127,7 @@ export default function SimpleChessBoard({
     return { type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' };
   };
 
-  const isLightSquare = (file: number, rank: number) => (file + rank) % 2 !== 0;
+  const isLightSquare = (file: number, rank: number) => (file + rank) % 2 === 0;
 
   const handleSquareClick = useCallback(
     (square: string) => {

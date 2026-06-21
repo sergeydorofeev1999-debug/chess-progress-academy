@@ -385,7 +385,7 @@ function InlineChessBoard({
 
   const parsed = parseFen(fen);
   const squares = parsed.squares;
-  const isLight = (f: number, r: number) => (f + r) % 2 !== 0;
+  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
   const getSquareFromPoint = (clientX: number, clientY: number): string | null => {
     const el = document.elementFromPoint(clientX, clientY);
