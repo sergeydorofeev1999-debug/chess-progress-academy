@@ -36,10 +36,11 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
       {lessons.map((lesson, i) => {
         const isServerCompleted = progressMap[lesson.id];
         const detail = getLessonDetail(lesson.id);
-        const levelsDone = Object.keys(detail).length;
         const totalLevels = lesson.levelsCount || 1;
+        const levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
         const hasDetail = levelsDone > 0;
-        const minStars = hasDetail ? Math.min(...Object.values(detail)) : 0;
+        const allStars = Object.values(detail) as number[];
+        const minStars = allStars.length > 0 ? Math.min(...allStars) : 0;
 
         const isCompleted = isServerCompleted || (levelsDone >= totalLevels);
         const isStarted = !isCompleted && levelsDone > 0;
