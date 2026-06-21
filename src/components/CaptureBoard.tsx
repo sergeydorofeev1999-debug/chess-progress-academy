@@ -591,6 +591,7 @@ interface CaptureLevel {
   requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
   requireCheck?: boolean; // if true, every move must put black king in check
   requireSafeKing?: boolean; // if true, white king must NOT be in check after move
+  autoCaptures?: { blackFrom: string; captureSquare: string }[];
 }
 
 interface Props {
@@ -682,6 +683,28 @@ export default function CaptureBoard({
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
+
+      // Auto-capture: specified black pieces eat white pieces that land on certain squares
+      if (level.autoCaptures && level.autoCaptures.length > 0) {
+        for (const ac of level.autoCaptures) {
+          const victim = newSquares[ac.captureSquare];
+          if (victim && victim.color === 'w') {
+            if (victim.type === 'k') {
+              // King cannot be auto-captured; just fail
+              setFailed(true);
+              setGameOver(true);
+              return false;
+            }
+            delete newSquares[ac.captureSquare];
+            const fenAfterCapture = squaresToFen(newSquares, 'w');
+            positionRef.current = fenAfterCapture;
+            setPosition(fenAfterCapture);
+            setFailed(true);
+            setGameOver(true);
+            return false;
+          }
+        }
+      }
 
       // After-move validation: if level constraint violated → fail banner
       if (level.requireSafeKing) {
