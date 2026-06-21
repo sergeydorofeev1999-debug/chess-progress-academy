@@ -198,12 +198,11 @@ export default function SimpleChessBoard({
                 className={`
                   flex items-center justify-center relative cursor-pointer
                   select-none
-                  ${isLight ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}
                   ${isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}
                   ${isHighlighted ? 'ring-2 ring-green-500 ring-inset' : ''}
                   hover:opacity-90 transition
                 `}
-                style={{ width: 52, height: 52 }}
+                style={{ width: 52, height: 52, backgroundColor: isLight ? '#f0d9b5' : '#b58863' }}
               >
                 {/* Coordinate labels */}
                 {fileIdx === 0 && (

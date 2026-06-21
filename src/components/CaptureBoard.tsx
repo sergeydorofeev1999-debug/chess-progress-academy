@@ -685,14 +685,13 @@ function InlineChessBoard({
               <div
                 key={sq}
                 data-square={sq}
-                className={`flex items-center justify-center relative select-none ${
-                  light ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'
-                } ${isSource ? 'opacity-50' : ''}`}
+                className={`flex items-center justify-center relative select-none ${isSource ? 'opacity-50' : ''}`}
                 style={{
                   width: sqSize,
                   height: sqSize,
                   cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default',
                   touchAction: 'none',
+                  backgroundColor: light ? '#f0d9b5' : '#b58863',
                 }}
                 onPointerDown={(e) => handlePointerDown(e, sq)}
                 onClick={() => click(sq)}
