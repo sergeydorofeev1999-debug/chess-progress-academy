@@ -1018,6 +1018,42 @@ export default function CaptureBoard({
             isCheck = true;
           }
           if (isCheck) {
+            // Find the attacker(s) of the black king
+            const attackers: string[] = [];
+            for (const sq in newSquares) {
+              const p = newSquares[sq];
+              if (!p || p.color !== 'w') continue;
+              if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w', [], true)) attackers.push(sq);
+            }
+            // If a black piece can capture the attacker — capture it!
+            if (attackers.length === 1) {
+              const attackerSq = attackers[0];
+              let defenderSq = '';
+              for (const sq in newSquares) {
+                const p = newSquares[sq];
+                if (!p || p.color !== 'b') continue;
+                if (p.type === 'k') {
+                  // King can capture only if destination is not attacked
+                  if (isSquareAttackedBy(attackerSq, newSquares, 'w', true)) continue;
+                }
+                if (isValidMove(p.type, sq, attackerSq, newSquares, 'b')) {
+                  defenderSq = sq;
+                  break;
+                }
+              }
+              if (defenderSq) {
+                const defender = { ...newSquares[defenderSq] };
+                delete newSquares[defenderSq];
+                newSquares[attackerSq] = defender;
+                const captureFen = squaresToFen(newSquares, 'w');
+                positionRef.current = captureFen;
+                setPosition(captureFen);
+                setFailed(true);
+                setGameOver(true);
+                return false;
+              }
+            }
+            // Can't capture — try king escape
             const escapeSq = findKingEscape(newSquares, 'b');
             if (escapeSq) {
               newSquares[escapeSq] = newSquares[blackKingSq];
