@@ -346,8 +346,14 @@ function InlineChessBoard({
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const selectedSquareRef = useRef(selectedSquare);
   const [hoveredSquare, setHoveredSquare] = useState<string | null>(null);
-  const [dragPiece, setDragPiece] = useState<{ square: string; type: string } | null>(null);
-  const dragPieceRef = useRef(dragPiece);
+  const [dragState, setDragState] = useState<{
+    square: string;
+    type: string;
+    color: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const dragStateRef = useRef(dragState);
   const pointerStartRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const justDraggedRef = useRef(false);
@@ -378,8 +384,8 @@ function InlineChessBoard({
     selectedSquareRef.current = selectedSquare;
   }, [selectedSquare]);
   useEffect(() => {
-    dragPieceRef.current = dragPiece;
-  }, [dragPiece]);
+    dragStateRef.current = dragState;
+  }, [dragState]);
   useEffect(() => {
     onMoveRef.current = onMove;
   }, [onMove]);
@@ -391,10 +397,10 @@ function InlineChessBoard({
         squares,
         'w'
       ).filter(sq => !forbiddenSquares.includes(sq))
-    : dragPiece
+    : dragState
     ? getValidSquares(
-        squares[dragPiece.square]?.type || 'p',
-        dragPiece.square,
+        squares[dragState.square]?.type || 'p',
+        dragState.square,
         squares,
         'w'
       ).filter(sq => !forbiddenSquares.includes(sq))
@@ -412,13 +418,11 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        // Click on another white piece → select it immediately (no double-click needed)
         if (piece && piece.color === 'w') {
           selectedSquareRef.current = square;
           setSelectedSquare(square);
           return;
         }
-        // Reject moves into forbidden squares at UI level
         if (forbiddenSquares.includes(square)) {
           selectedSquareRef.current = null;
           setSelectedSquare(null);
@@ -440,31 +444,47 @@ function InlineChessBoard({
         }
       }
     },
-    [setMsg]
+    [setMsg, forbiddenSquares]
   );
 
-  // Drag handlers
   const handlePointerDown = (e: React.PointerEvent, sq: string) => {
     if (!containerRef.current) return;
     const piece = squares[sq];
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
     justDraggedRef.current = false;
+    setDragState({
+      square: sq,
+      type: piece.type,
+      color: piece.color,
+      x: 0,
+      y: 0,
+    });
+    dragStateRef.current = { square: sq, type: piece.type, color: piece.color, x: 0, y: 0 };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
   const handleGlobalMove = (e: PointerEvent) => {
-    if (!pointerStartRef.current) return;
+    if (!dragStateRef.current) return;
     justDraggedRef.current = true;
-    // Select the dragged piece immediately so green dots show for it
-    selectedSquareRef.current = pointerStartRef.current;
-    setSelectedSquare(pointerStartRef.current);
-    setDragPiece({ square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' });
-    dragPieceRef.current = { square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' };
+    selectedSquareRef.current = dragStateRef.current.square;
+    setSelectedSquare(dragStateRef.current.square);
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const newState = { ...dragStateRef.current, x, y };
+    setDragState(newState);
+    dragStateRef.current = newState;
   };
 
   const handleGlobalUp = (e: PointerEvent) => {
-    if (!pointerStartRef.current || !containerRef.current) return;
+    if (!dragStateRef.current || !containerRef.current) {
+      pointerStartRef.current = null;
+      setDragState(null);
+      dragStateRef.current = null;
+      return;
+    }
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -472,23 +492,20 @@ function InlineChessBoard({
     const ri = Math.floor(y / sqSize);
     if (fi >= 0 && fi < 8 && ri >= 0 && ri < 8) {
       const targetSquare = `${FILES[fi]}${RANKS[ri]}`;
-      const start = pointerStartRef.current;
+      const start = dragStateRef.current.square;
       if (start && targetSquare !== start) {
-        const sqs = squaresRef.current;
-        const fromType = sqs[start]?.type || 'p';
-        // Always call onMove — parent decides validity and shows fail banner
         onMoveRef.current?.(start, targetSquare);
       }
     }
     pointerStartRef.current = null;
-    setDragPiece(null);
-    dragPieceRef.current = null;
+    setDragState(null);
+    dragStateRef.current = null;
   };
 
   const handleGlobalCancel = () => {
     pointerStartRef.current = null;
-    setDragPiece(null);
-    dragPieceRef.current = null;
+    setDragState(null);
+    dragStateRef.current = null;
   };
 
   useEffect(() => {
@@ -521,7 +538,7 @@ function InlineChessBoard({
             const pieceObj = squares[sq];
             const light = isLight(fi, ri);
             const sel = selectedSquare === sq;
-            const isSource = dragPiece?.square === sq;
+            const isSource = dragState?.square === sq;
             const isValid = validMoves.includes(sq);
             const hover = hoveredSquare === sq;
             return (
@@ -573,7 +590,6 @@ function InlineChessBoard({
                     {file}
                   </span>
                 )}
-                {/* Green dot on valid squares */}
                 {isValid && !squares[sq] && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                     <div
@@ -587,10 +603,24 @@ function InlineChessBoard({
                     />
                   </div>
                 )}
-                {pieceObj && <PieceImg type={pieceObj.type} color={pieceObj.color} />}
+                {pieceObj && !isSource && <PieceImg type={pieceObj.type} color={pieceObj.color} />}
               </div>
             );
           })
+        )}
+        {/* Floating dragged piece */}
+        {dragState && (
+          <div
+            className="absolute pointer-events-none z-50"
+            style={{
+              width: sqSize,
+              height: sqSize,
+              left: dragState.x - sqSize / 2,
+              top: dragState.y - sqSize / 2,
+            }}
+          >
+            <PieceImg type={dragState.type} color={dragState.color as 'w' | 'b'} />
+          </div>
         )}
       </div>
       {msg && <div className="text-red-500 text-sm mt-1">{msg}</div>}
