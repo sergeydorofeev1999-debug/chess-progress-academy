@@ -450,15 +450,15 @@ function InlineChessBoard({
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
     justDraggedRef.current = false;
-    // Select the dragged piece immediately so green dots show for it
-    selectedSquareRef.current = sq;
-    setSelectedSquare(sq);
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
   const handleGlobalMove = (e: PointerEvent) => {
     if (!pointerStartRef.current) return;
     justDraggedRef.current = true;
+    // Select the dragged piece immediately so green dots show for it
+    selectedSquareRef.current = pointerStartRef.current;
+    setSelectedSquare(pointerStartRef.current);
     setDragPiece({ square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' });
     dragPieceRef.current = { square: pointerStartRef.current, type: squares[pointerStartRef.current]?.type || 'p' };
   };
