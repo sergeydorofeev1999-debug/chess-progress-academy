@@ -693,6 +693,22 @@ export default function CaptureBoard({
       setMoves((c) => c + 1);
       setMsg('');
 
+      // Guard: if requireSafeKing and king is in check after move → immediate fail
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b')) {
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+      }
+
       // Auto-capture: specified black pieces eat white pieces that land on certain squares
       if (level.autoCaptures && level.autoCaptures.length > 0) {
         for (const ac of level.autoCaptures) {
@@ -770,22 +786,6 @@ export default function CaptureBoard({
         return true;
       }
       } // end if (!level.autoCaptures || level.autoCaptures.length === 0)
-
-      // After-move validation: if level constraint violated → fail banner
-      if (level.requireSafeKing) {
-        let whiteKingSq = '';
-        for (const sq in newSquares) {
-          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
-            whiteKingSq = sq;
-            break;
-          }
-        }
-        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b')) {
-          setFailed(true);
-          setGameOver(true);
-          return false;
-        }
-      }
 
       if (level.requireCheck) {
         let blackKingSq = '';
