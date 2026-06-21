@@ -902,7 +902,8 @@ export default function CaptureBoard({
       // Universal auto-capture: collect all undefended white pieces under attack,
       // pick the most valuable one, then capture it.
       // Skip if level has explicit autoCaptures config (e.g. Lesson 10 ex4 escape check)
-      if (!level.autoCaptures || level.autoCaptures.length === 0) {
+      // Skip if level is requireMate or requireCheck (king reaction takes priority)
+      if ((!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireMate && !level.requireCheck) {
       function isDefended(squares: Record<string, { type: string; color: 'w' | 'b' }>, targetSq: string) {
         const testSquares = { ...squares };
         if (testSquares[targetSq]) {
