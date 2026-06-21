@@ -414,15 +414,14 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        const fromType = sqs[sel]?.type || 'p';
-        if (!isValidMove(fromType, sel, square, sqs, 'w')) {
-          return;
-        }
         const accepted = onMoveRef.current?.(sel, square);
         if (accepted !== false) {
           selectedSquareRef.current = null;
           setSelectedSquare(null);
           setMsg('');
+        } else {
+          selectedSquareRef.current = null;
+          setSelectedSquare(null);
         }
       } else {
         if (piece && piece.color === 'w') {
@@ -464,9 +463,8 @@ function InlineChessBoard({
       if (start && targetSquare !== start) {
         const sqs = squaresRef.current;
         const fromType = sqs[start]?.type || 'p';
-        if (isValidMove(fromType, start, targetSquare, sqs, 'w')) {
-          onMoveRef.current?.(start, targetSquare);
-        }
+        // Always call onMove — parent decides validity and shows fail banner
+        onMoveRef.current?.(start, targetSquare);
       }
     }
     pointerStartRef.current = null;
@@ -672,66 +670,64 @@ export default function CaptureBoard({
     (from: string, to: string) => {
       if (gameOver) return false;
       const parsed = parseFen(positionRef.current);
-      if (parsed.squares[from]?.color !== 'w') {
-        return false;
-      }
+      if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || 'p';
+      // Only reject obviously illegal moves (wrong piece mechanics, self-capture)
       if (!isValidMove(fromType, from, to, parsed.squares, 'w')) return false;
 
       const movedPiece = parsed.squares[from];
 
-      // Preview move to enforce level constraints silently
-      const previewSquares = { ...parsed.squares };
-      delete previewSquares[from];
-      previewSquares[to] = movedPiece;
-
-      if (level.requireSafeKing) {
-        let whiteKingSq = '';
-        for (const sq in previewSquares) {
-          if (previewSquares[sq].type === 'k' && previewSquares[sq].color === 'w') {
-            whiteKingSq = sq;
-            break;
-          }
-        }
-        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, previewSquares, 'b')) {
-          return false;
-        }
-      }
-
-      if (level.requireCheck) {
-        let blackKingSq = '';
-        for (const sq in previewSquares) {
-          if (previewSquares[sq].type === 'k' && previewSquares[sq].color === 'b') {
-            blackKingSq = sq;
-            break;
-          }
-        }
-        let isCheck = false;
-        if (blackKingSq) {
-          for (const sq in previewSquares) {
-            const p = previewSquares[sq];
-            if (p.color !== 'w') continue;
-            if (isValidMove(p.type, sq, blackKingSq, previewSquares, 'w')) {
-              isCheck = true;
-              break;
-            }
-          }
-        }
-        if (!isCheck) return false;
-      }
-
-      // Apply move
+      // Apply move immediately (visual first, like Lichess)
       const newSquares = { ...parsed.squares };
       delete newSquares[from];
       newSquares[to] = movedPiece;
       const newFen = squaresToFen(newSquares, 'w');
       positionRef.current = newFen;
       setPosition(newFen);
-
       setMoves((c) => c + 1);
       setMsg('');
 
+      // After-move validation: if level constraint violated → fail banner
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b')) {
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+      }
+
       if (level.requireCheck) {
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        let isCheck = false;
+        if (blackKingSq) {
+          for (const sq in newSquares) {
+            const p = newSquares[sq];
+            if (p.color !== 'w') continue;
+            if (isValidMove(p.type, sq, blackKingSq, newSquares, 'w')) {
+              isCheck = true;
+              break;
+            }
+          }
+        }
+        if (!isCheck) {
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+        // Success path for requireCheck
         const max = level.maxMoves || stars.length + 1;
         const m = movesRef.current + 1;
         let earned = 3;
@@ -757,7 +753,7 @@ export default function CaptureBoard({
         return true;
       }
 
-      // Collect star if target square (only if no auto-capture happened)
+      // Collect star if target square
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
           const next = [...prev, to];
@@ -794,7 +790,7 @@ export default function CaptureBoard({
 
       return true;
     },
-    [stars, collected, currentLevel, totalLevels, onAllComplete, gameOver, level.maxMoves, successMessage]
+    [stars, collected, currentLevel, totalLevels, onAllComplete, gameOver, level.maxMoves, successMessage, setFailed, setGameOver]
   );
 
   const collectedCount = stars.filter((s: string) => collected.includes(s)).length;

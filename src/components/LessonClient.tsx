@@ -405,25 +405,15 @@ function InlineChessBoard({
           setSelectedSquare(null);
           return;
         }
-        // Use actual piece type on the selected square
-        const fromType = sqs[sel]?.type || pieceType;
-        if (isValidMove(fromType, sel, square, sqs, starsRef.current)) {
-          const accepted = onMoveRef.current?.(sel, square);
-          if (accepted !== false) {
-            selectedSquareRef.current = null;
-            setSelectedSquare(null);
-            setMsg('');
-          }
+        // Always call onMove — parent decides validity and shows fail banner
+        const accepted = onMoveRef.current?.(sel, square);
+        if (accepted !== false) {
+          selectedSquareRef.current = null;
+          setSelectedSquare(null);
+          setMsg('');
         } else {
-          if (piece && piece.color === 'w') {
-            selectedSquareRef.current = square;
-            setSelectedSquare(square);
-            setMsg('');
-          } else {
-            selectedSquareRef.current = null;
-            setSelectedSquare(null);
-            setMsg(`Недопустимый ход. ${pieceErrHint}`);
-          }
+          selectedSquareRef.current = null;
+          setSelectedSquare(null);
         }
       } else {
         if (piece && piece.color === 'w') {
@@ -498,11 +488,7 @@ function InlineChessBoard({
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          if (isValidMove(squaresRef.current[start.square]?.type || pieceType, start.square, targetSquare, squaresRef.current, starsRef.current)) {
-            onMoveRef.current?.(start.square, targetSquare);
-          } else {
-            setMsg(`Недопустимый ход. ${pieceErrHint}`);
-          }
+          onMoveRef.current?.(start.square, targetSquare);
         }
         setDragPiece(null);
 
@@ -695,6 +681,8 @@ function MultiLevelStarBoard({
   const [moves, setMoves] = useState(0);
   const [msg, setMsg] = useState('');
   const [allDone, setAllDone] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [promotionPending, setPromotionPending] = useState<{from: string, to: string} | null>(null);
   const [levelStars, setLevelStars] = useState<Record<number, number>>(() => savedProgress);
   const movesRef = useRef(moves);
@@ -710,6 +698,8 @@ function MultiLevelStarBoard({
     setCollected([]);
     setMoves(0);
     setMsg('');
+    setFailed(false);
+    setGameOver(false);
   }, [level]);
 
   useEffect(() => {
@@ -722,15 +712,10 @@ function MultiLevelStarBoard({
   const handleMove = useCallback(
     (from: string, to: string) => {
       const parsed = parseFen(positionRef.current);
-      if (parsed.squares[from]?.color !== 'w') {
-        return false;
-      }
-      // Use actual piece type on the board
+      if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || pieceType;
-      if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) {
-        setMsg('Недопустимый ход');
-        return false;
-      }
+      // Only reject wrong-piece mechanics / self-capture
+      if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) return false;
 
       // Promotion: pawn reaching rank 8
       if (fromType === 'p' && to[1] === '8') {
@@ -738,6 +723,7 @@ function MultiLevelStarBoard({
         return false; // wait for piece choice
       }
 
+      // Apply move immediately (visual first, like Lichess)
       const newSquares = { ...parsed.squares };
       const movedPiece = parsed.squares[from];
       const movedType = movedPiece?.type || pieceType;
@@ -748,6 +734,72 @@ function MultiLevelStarBoard({
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
+
+      // After-move validation: if level constraint violated → fail banner
+      if (level.requireSafeKing) {
+        let whiteKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'w') {
+            whiteKingSq = sq;
+            break;
+          }
+        }
+        if (whiteKingSq && isSquareAttackedBy(whiteKingSq, newSquares, 'b')) {
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+      }
+
+      if (level.requireCheck) {
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        let isCheck = false;
+        if (blackKingSq) {
+          for (const sq in newSquares) {
+            const p = newSquares[sq];
+            if (p.color !== 'w') continue;
+            if (isValidMove(p.type, sq, blackKingSq, newSquares, [])) {
+              isCheck = true;
+              break;
+            }
+          }
+        }
+        if (!isCheck) {
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+        // Success path for requireCheck
+        const max = level.maxMoves || stars.length + 1;
+        const m = movesRef.current + 1;
+        let earned = 3;
+        if (m <= max) earned = 3;
+        else if (m <= max + 1) earned = 2;
+        else earned = 1;
+        setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
+        onLevelComplete?.(currentLevel, earned);
+        setTimeout(() => {
+          if (currentLevel + 1 < totalLevels) {
+            setCurrentLevel((l) => {
+              const next = l + 1;
+              localStorage.setItem(`${savedKey}_level`, String(next));
+              return next;
+            });
+            setMsg('');
+          } else {
+            setAllDone(true);
+            setMsg('🎉 Все позиции пройдены! Урок завершён!');
+            onAllComplete?.();
+          }
+        }, 600);
+        return true;
+      }
 
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
@@ -949,6 +1001,22 @@ function MultiLevelStarBoard({
           </div>
         )}
         <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} />
+
+        {/* Red fail banner (Lichess style) */}
+        {failed && (
+          <div className="w-full">
+            <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
+              <p className="text-white font-bold text-lg">Задание провалено!</p>
+              <button
+                onClick={reset}
+                className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
+              >
+                ЕЩЁ РАЗ
+              </button>
+            </div>
+          </div>
+        )}
+
         <span className="text-xs text-gray-500">Ходов: {moves}</span>
 
         {/* Mobile stars — horizontal bar under board */}
