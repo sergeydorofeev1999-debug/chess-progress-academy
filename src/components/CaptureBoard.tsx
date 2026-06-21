@@ -453,14 +453,21 @@ function InlineChessBoard({
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
     justDraggedRef.current = false;
+    const rect = containerRef.current.getBoundingClientRect();
+    const fi = FILES.indexOf(sq[0]);
+    const ri = RANKS.indexOf(sq[1]);
+    const centerX = fi * sqSize + sqSize / 2;
+    const centerY = ri * sqSize + sqSize / 2;
+    const offsetX = e.clientX - rect.left - centerX;
+    const offsetY = e.clientY - rect.top - centerY;
     setDragState({
       square: sq,
       type: piece.type,
       color: piece.color,
-      x: 0,
-      y: 0,
+      x: centerX + offsetX,
+      y: centerY + offsetY,
     });
-    dragStateRef.current = { square: sq, type: piece.type, color: piece.color, x: 0, y: 0 };
+    dragStateRef.current = { square: sq, type: piece.type, color: piece.color, x: centerX + offsetX, y: centerY + offsetY };
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
@@ -471,8 +478,15 @@ function InlineChessBoard({
     setSelectedSquare(dragStateRef.current.square);
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    // Reconstruct where the pointer is relative to container, preserving the grab offset
+    const fi = FILES.indexOf(dragStateRef.current.square[0]);
+    const ri = RANKS.indexOf(dragStateRef.current.square[1]);
+    const centerX = fi * sqSize + sqSize / 2;
+    const centerY = ri * sqSize + sqSize / 2;
+    const offsetX = dragStateRef.current.x - centerX;
+    const offsetY = dragStateRef.current.y - centerY;
+    const x = e.clientX - rect.left - offsetX;
+    const y = e.clientY - rect.top - offsetY;
     const newState = { ...dragStateRef.current, x, y };
     setDragState(newState);
     dragStateRef.current = newState;
