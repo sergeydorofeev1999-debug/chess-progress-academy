@@ -736,7 +736,7 @@ function MultiLevelStarBoard({
       if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || pieceType;
       
-      // Level-specific allowedPieces constraint
+      // Level-specific allowedPieces constraint — enforced per level config
       if (level.allowedPieces && level.allowedPieces.length > 0) {
         if (!level.allowedPieces.includes(fromType)) {
           setMsg(`Используйте только ${getAllowedPieceName(level.allowedPieces[0])}!`);
