@@ -82,7 +82,8 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
       if (move === null) return false;
 
       if (config.allowedPieces && config.allowedPieces.length > 0) {
-        const piece = move.piece;
+        // Normalize piece type (strip color prefix, lowercase)
+        const piece = move.piece.toLowerCase().replace(/^[wb]/, '');
         if (!config.allowedPieces.includes(piece)) {
           game.undo();
           setMessage(
