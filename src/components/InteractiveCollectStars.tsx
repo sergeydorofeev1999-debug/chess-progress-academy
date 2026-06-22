@@ -210,7 +210,15 @@ function StarOverlay({ square, color = 'yellow' }: { square: string; color?: str
         className="pointer-events-none absolute z-10"
         style={{ left, top, transform: 'translate(-50%, -50%)' }}
       >
-        <div className="w-5 h-5 rounded-full bg-green-400/80 shadow-lg animate-pulse" />
+        <div 
+          style={{
+            width: '20px',
+            height: '20px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(74,222,128,0.8)',
+            boxShadow: '0 0 8px rgba(74,222,128,0.5)',
+          }}
+        />
       </div>
     );
   }
