@@ -530,14 +530,18 @@ function InlineChessBoard({
         squares[selectedSquare]?.type || 'p',
         selectedSquare,
         squares,
-        'w'
+        'w',
+        [],
+        parsed.enPassant
       ).filter(sq => !forbiddenSquares.includes(sq))
     : dragState
     ? getValidSquares(
         squares[dragState.square]?.type || 'p',
         dragState.square,
         squares,
-        'w'
+        'w',
+        [],
+        parsed.enPassant
       ).filter(sq => !forbiddenSquares.includes(sq))
     : [];
 
