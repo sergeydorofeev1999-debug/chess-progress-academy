@@ -178,7 +178,7 @@ function isSquareAttackedBy(square: string, squares: Record<string, any>, attack
   return false;
 }
 
-function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[]): string[] {
+function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[], movedPieces?: Set<string>): string[] {
   if (squares[from]?.color !== 'w') return [];
   const ff = FILES.indexOf(from[0]);
   const fr = RANKS.indexOf(from[1]);
@@ -243,17 +243,21 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           }
         }
       }
-      // Short castling: show g1 as valid if e1→g1 is legal
+      // Short castling: show g1 as valid only if king and h1 rook have NOT moved
       if (from === 'e1') {
+        const kingHasMoved = movedPieces?.has('e1') || movedPieces?.has('k') || false;
         const rook = squares['h1'];
-        if (rook && rook.type === 'r' && rook.color === 'w' && !squares['f1'] && !squares['g1']) {
+        const rookHasMoved = movedPieces?.has('h1') || movedPieces?.has('rh1') || false;
+        if (!kingHasMoved && !rookHasMoved && rook && rook.type === 'r' && rook.color === 'w' && !squares['f1'] && !squares['g1']) {
           valid.push('g1');
         }
       }
-      // Long castling: show c1 as valid if e1→c1 is legal
+      // Long castling: show c1 as valid only if king and a1 rook have NOT moved
       if (from === 'e1') {
+        const kingHasMoved = movedPieces?.has('e1') || movedPieces?.has('k') || false;
         const rook = squares['a1'];
-        if (rook && rook.type === 'r' && rook.color === 'w' && !squares['d1'] && !squares['c1'] && !squares['b1']) {
+        const rookHasMoved = movedPieces?.has('a1') || movedPieces?.has('ra1') || false;
+        if (!kingHasMoved && !rookHasMoved && rook && rook.type === 'r' && rook.color === 'w' && !squares['d1'] && !squares['c1'] && !squares['b1']) {
           valid.push('c1');
         }
       }
@@ -376,6 +380,18 @@ function InlineChessBoard({
   const processLockRef = useRef(false);
   const [sqSize, setSqSize] = useState(44);
 
+  // Track moved pieces for castling rights
+  const [movedPieces, setMovedPieces] = useState<Set<string>>(new Set());
+
+  // Reset moved pieces when level changes (fen changes)
+  const fenRef = useRef(fen);
+  useEffect(() => {
+    if (fenRef.current !== fen) {
+      fenRef.current = fen;
+      setMovedPieces(new Set());
+    }
+  }, [fen]);
+
   // Stable refs to avoid re-subscribing window events on every state change
   const squaresRef = useRef<Record<string, any>>({});
   const clickRef = useRef<(square: string) => void>(() => {});
@@ -425,6 +441,20 @@ function InlineChessBoard({
           selectedSquareRef.current = null;
           setSelectedSquare(null);
           setMsg('');
+          // Track moved pieces for castling rights
+          const movedPiece = sqs[sel];
+          if (movedPiece) {
+            setMovedPieces((prev) => {
+              const next = new Set(prev);
+              next.add(sel);
+              if (movedPiece.type === 'k') next.add('k');
+              if (movedPiece.type === 'r') {
+                if (sel === 'a1') next.add('ra1');
+                if (sel === 'h1') next.add('rh1');
+              }
+              return next;
+            });
+          }
         } else {
           selectedSquareRef.current = null;
           setSelectedSquare(null);
@@ -502,7 +532,22 @@ function InlineChessBoard({
         // Drag drop
         const targetSquare = getSquareFromPoint(e.clientX, e.clientY);
         if (targetSquare && targetSquare !== start.square) {
-          onMoveRef.current?.(start.square, targetSquare);
+          const accepted = onMoveRef.current?.(start.square, targetSquare);
+          if (accepted !== false) {
+            const movedPiece = squaresRef.current[start.square];
+            if (movedPiece) {
+              setMovedPieces((prev) => {
+                const next = new Set(prev);
+                next.add(start.square);
+                if (movedPiece.type === 'k') next.add('k');
+                if (movedPiece.type === 'r') {
+                  if (start.square === 'a1') next.add('ra1');
+                  if (start.square === 'h1') next.add('rh1');
+                }
+                return next;
+              });
+            }
+          }
         }
         setDragPiece(null);
 
@@ -530,9 +575,9 @@ function InlineChessBoard({
 
   // Valid move indicators (green dots like Lichess)
   const validMoves = selectedSquare
-    ? getValidSquares(squares[selectedSquare]?.type || pieceType, selectedSquare, squares, stars)
+    ? getValidSquares(squares[selectedSquare]?.type || pieceType, selectedSquare, squares, stars, movedPieces)
     : dragPiece
-      ? getValidSquares(squares[dragPiece.square]?.type || pieceType, dragPiece.square, squares, stars)
+      ? getValidSquares(squares[dragPiece.square]?.type || pieceType, dragPiece.square, squares, stars, movedPieces)
       : [];
 
   return (
