@@ -822,6 +822,33 @@ function MultiLevelStarBoard({
         return true;
       }
 
+      if (stars.length === 0) {
+        // No stars - any valid move completes the level (demo/exploration level)
+        const max = level.maxMoves || 1;
+        const m = movesRef.current + 1;
+        let earned = 3;
+        if (m <= max) earned = 3;
+        else if (m <= max + 1) earned = 2;
+        else earned = 1;
+        setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
+        onLevelComplete?.(currentLevel, earned);
+        setTimeout(() => {
+          if (currentLevel + 1 < totalLevels) {
+            setCurrentLevel((l) => {
+              const next = l + 1;
+              localStorage.setItem(`${savedKey}_level`, String(next));
+              return next;
+            });
+            setMsg('');
+          } else {
+            setAllDone(true);
+            setMsg('🎉 Все позиции пройдены! Урок завершён!');
+            onAllComplete?.();
+          }
+        }, 600);
+        return true;
+      }
+
       if (stars.includes(to) && !collected.includes(to)) {
         setCollected((prev) => {
           const next = [...prev, to];
