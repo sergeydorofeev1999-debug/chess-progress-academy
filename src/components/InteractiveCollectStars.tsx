@@ -61,10 +61,17 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
     const styles: Record<string, React.CSSProperties> = {};
     stars.forEach(star => {
       if (!star.collected) {
-        styles[star.square] = {
-          background: 'radial-gradient(circle, rgba(251,191,36,0.6) 30%, transparent 70%)',
-          borderRadius: '4px',
-        };
+        if (star.color === 'green') {
+          styles[star.square] = {
+            background: 'radial-gradient(circle, rgba(74,222,128,0.8) 30%, transparent 70%)',
+            borderRadius: '50%',
+          };
+        } else {
+          styles[star.square] = {
+            background: 'radial-gradient(circle, rgba(251,191,36,0.6) 30%, transparent 70%)',
+            borderRadius: '4px',
+          };
+        }
       }
     });
     return styles;
