@@ -165,13 +165,11 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
       <div className="flex justify-center">
         <div className="relative inline-block">
           <Chessboard
-            options={{
-              position: game.fen(),
-              onPieceDrop: handlePieceDrop,
-              squareStyles: getSquareStyles(),
-              boardStyle: { borderRadius: '8px' },
-              animationDurationInMs: 200,
-            }}
+            position={game.fen()}
+            onPieceDrop={handlePieceDrop}
+            customSquareStyles={getSquareStyles()}
+            boardStyle={{ borderRadius: '8px' }}
+            animationDurationInMs={200}
           />
           {stars.filter(s => !s.collected).map(star => (
             <StarOverlay key={star.square} square={star.square} color={star.color} />
