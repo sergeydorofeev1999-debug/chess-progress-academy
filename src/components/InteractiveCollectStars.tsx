@@ -7,6 +7,7 @@ import { Star, CheckCircle, RotateCcw } from 'lucide-react';
 interface StarData {
   square: string;
   collected?: boolean;
+  color?: string;
 }
 
 interface InteractiveConfig {
@@ -80,6 +81,11 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
       });
 
       if (move === null) return false;
+
+      // Handle short castling: king e1→g1, rook h1→f1
+      if (move.piece.toLowerCase() === 'k' && sourceSquare === 'e1' && targetSquare === 'g1') {
+        game.move({ from: 'h1', to: 'f1' });
+      }
 
       if (config.allowedPieces && config.allowedPieces.length > 0) {
         // Normalize piece type (strip color prefix, lowercase)
@@ -161,7 +167,7 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
             }}
           />
           {stars.filter(s => !s.collected).map(star => (
-            <StarOverlay key={star.square} square={star.square} />
+            <StarOverlay key={star.square} square={star.square} color={star.color} />
           ))}
         </div>
       </div>
@@ -185,11 +191,22 @@ function InteractiveBoard({ Chessboard, config, onComplete }: Props & { Chessboa
   );
 }
 
-function StarOverlay({ square }: { square: string }) {
+function StarOverlay({ square, color = 'yellow' }: { square: string; color?: string }) {
   const file = square.charCodeAt(0) - 97;
   const rank = 8 - parseInt(square[1]);
   const left = `${(file / 8) * 100 + 50}%`;
   const top = `${(rank / 8) * 100 + 15}%`;
+
+  if (color === 'green') {
+    return (
+      <div
+        className="pointer-events-none absolute z-10"
+        style={{ left, top, transform: 'translate(-50%, -50%)' }}
+      >
+        <div className="w-5 h-5 rounded-full bg-green-400/80 shadow-lg animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div
