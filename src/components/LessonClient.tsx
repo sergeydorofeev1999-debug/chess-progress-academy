@@ -354,6 +354,7 @@ interface InlineChessBoardProps {
   pieceType?: string;
   pieceName?: string;
   guideArrows?: { from: string; to: string }[];
+  movedPieces?: Set<string>;
 }
 
 function InlineChessBoard({
@@ -363,6 +364,7 @@ function InlineChessBoard({
   pieceType = 'r',
   pieceName = 'Ладья',
   guideArrows = [],
+  movedPieces: externalMovedPieces,
 }: InlineChessBoardProps) {
   const pieceErrHint =
     pieceType === 'b' ? 'Слон ходит по диагонали!' :
@@ -380,17 +382,19 @@ function InlineChessBoard({
   const processLockRef = useRef(false);
   const [sqSize, setSqSize] = useState(44);
 
-  // Track moved pieces for castling rights
-  const [movedPieces, setMovedPieces] = useState<Set<string>>(new Set());
+  // Track moved pieces for castling rights — use external if provided
+  const [internalMovedPieces, setInternalMovedPieces] = useState<Set<string>>(new Set());
+  const movedPieces = externalMovedPieces ?? internalMovedPieces;
+  const setMovedPieces = externalMovedPieces ? undefined : setInternalMovedPieces;
 
-  // Reset moved pieces when level changes (fen changes)
+  // Reset moved pieces when level changes (fen changes) — only for internal mode
   const fenRef = useRef(fen);
   useEffect(() => {
-    if (fenRef.current !== fen) {
+    if (!externalMovedPieces && fenRef.current !== fen) {
       fenRef.current = fen;
-      setMovedPieces(new Set());
+      setInternalMovedPieces(new Set());
     }
-  }, [fen]);
+  }, [fen, externalMovedPieces]);
 
   // Stable refs to avoid re-subscribing window events on every state change
   const squaresRef = useRef<Record<string, any>>({});
@@ -443,7 +447,7 @@ function InlineChessBoard({
           setMsg('');
           // Track moved pieces for castling rights
           const movedPiece = sqs[sel];
-          if (movedPiece) {
+          if (movedPiece && setMovedPieces) {
             setMovedPieces((prev) => {
               const next = new Set(prev);
               next.add(sel);
@@ -535,7 +539,7 @@ function InlineChessBoard({
           const accepted = onMoveRef.current?.(start.square, targetSquare);
           if (accepted !== false) {
             const movedPiece = squaresRef.current[start.square];
-            if (movedPiece) {
+            if (movedPiece && setMovedPieces) {
               setMovedPieces((prev) => {
                 const next = new Set(prev);
                 next.add(start.square);
@@ -780,6 +784,14 @@ function MultiLevelStarBoard({
   const movesRef = useRef(moves);
   useEffect(() => { movesRef.current = moves; }, [moves]);
 
+  // Track moved pieces for castling rights across the whole lesson
+  const [movedPieces, setMovedPieces] = useState<Set<string>>(new Set());
+
+  // Reset moved pieces when level changes
+  useEffect(() => {
+    setMovedPieces(new Set());
+  }, [currentLevel]);
+
   const level = levels[currentLevel];
   const stars = useMemo(() => level.stars?.map((s: any) => typeof s === 'string' ? s : s?.square).filter(Boolean) || [], [level.stars]);
   const visibleStars = useMemo(() => stars.filter((s: string) => !collected.includes(s)), [stars, collected]);
@@ -910,6 +922,18 @@ function MultiLevelStarBoard({
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
+
+      // Track moved pieces for castling rights
+      setMovedPieces((prev) => {
+        const next = new Set(prev);
+        next.add(from);
+        if (movedType === 'k') next.add('k');
+        if (movedType === 'r') {
+          if (from === 'a1') next.add('ra1');
+          if (from === 'h1') next.add('rh1');
+        }
+        return next;
+      });
 
       // After-move validation: if level constraint violated → fail banner
       if (level.requireSafeKing) {
@@ -1203,7 +1227,7 @@ function MultiLevelStarBoard({
             </div>
           </div>
         )}
-        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} guideArrows={level.guideArrows || []} />
+        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} guideArrows={level.guideArrows || []} movedPieces={movedPieces} />
 
         {/* Red fail banner (Lichess style) */}
         {failed && (
