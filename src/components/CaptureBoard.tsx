@@ -781,17 +781,18 @@ function InlineChessBoard({
 /* ====== CaptureBoard main component ====== */
 interface CaptureLevel {
   initialFen: string;
-  stars?: string[]; // target squares to capture (contains black pieces)
-  targets?: string[]; // alias for stars (used in en passant lessons)
+  stars?: string[];
+  targets?: string[];
   instructions: string;
   hint: string;
   maxMoves: number;
-  requireAll?: boolean; // if true, collect ALL stars; if false, any one star completes
-  requireCheck?: boolean; // if true, every move must put black king in check
-  requireMate?: boolean; // if true, move must deliver checkmate
-  requireSafeKing?: boolean; // if true, white king must NOT be in check after move
+  requireAll?: boolean;
+  requireCheck?: boolean;
+  requireMate?: boolean;
+  requireSafeKing?: boolean;
   autoCaptures?: { blackFrom: string; captureSquare: string }[];
-  forbiddenSquares?: string[]; // squares that should never show as valid targets
+  forbiddenSquares?: string[];
+  blackAutoCapture?: boolean; // default true; set false to disable universal black auto-capture
 }
 
 interface Props {
@@ -946,7 +947,7 @@ export default function CaptureBoard({
       // pick the most valuable one, then capture it.
       // Skip if level has explicit autoCaptures config (e.g. Lesson 10 ex4 escape check)
       // Skip if level is requireCheck (king reaction takes priority)
-      if ((!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck) {
+      if ((!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck && level.blackAutoCapture !== false) {
         // For requireMate levels: skip auto-capture if black king is in check — king must react first
         let skipAutoCapture = false;
         if (level.requireMate) {
