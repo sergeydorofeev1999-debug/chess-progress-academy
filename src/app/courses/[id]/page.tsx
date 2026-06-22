@@ -31,13 +31,19 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
     return <div className="max-w-6xl mx-auto px-4 py-12">Курс не найден</div>;
   }
 
-  const basicLevelLessons = allLessons.slice(6);
+  const basicLevelLessons = allLessons.slice(6, 11);
+  const advancedLevelLessons = allLessons.slice(11);
+
   const basicLevelDescriptions = [
     'Съешь чёрную фигуру',
     'Защити свою фигуру',
     'Поставь шах королю',
     'Выведи короля из шаха',
     'Поставь мат королю',
+  ];
+
+  const advancedLevelDescriptions = [
+    'Расстановка фигур в начале партии',
   ];
 
   return (
@@ -85,6 +91,23 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             progressMap={serverProgressMap}
             courseId={course.id}
             descriptions={basicLevelDescriptions}
+          />
+        </div>
+        {/* СРЕДНИЙ УРОВЕНЬ */}
+        <div className="mb-4">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Средний уровень</h2>
+          <PieceCards
+            lessons={advancedLevelLessons.map((l: any, idx: number) => {
+              let levelsCount = 1;
+              try {
+                const config = JSON.parse(l.video_url || '{}');
+                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+              } catch {}
+              return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
+            })}
+            progressMap={serverProgressMap}
+            courseId={course.id}
+            descriptions={advancedLevelDescriptions}
           />
         </div>
       </div>
