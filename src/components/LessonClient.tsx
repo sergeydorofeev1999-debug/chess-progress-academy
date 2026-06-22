@@ -250,6 +250,13 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           valid.push('g1');
         }
       }
+      // Long castling: show c1 as valid if e1→c1 is legal
+      if (from === 'e1') {
+        const rook = squares['a1'];
+        if (rook && rook.type === 'r' && rook.color === 'w' && !squares['d1'] && !squares['c1'] && !squares['b1']) {
+          valid.push('c1');
+        }
+      }
       break;
     }
     case 'n': { // Knight jumps over obstacles
@@ -786,6 +793,41 @@ function MultiLevelStarBoard({
               setCollected((prev) => [...prev, 'g1']);
             }
             // Handle level completion for castling
+            setTimeout(() => {
+              setLevelStars((prev) => ({ ...prev, [currentLevel]: 3 }));
+              onLevelComplete?.(currentLevel, 3);
+              if (currentLevel + 1 < totalLevels) {
+                setCurrentLevel((l) => l + 1);
+                setMsg('');
+              } else {
+                setAllDone(true);
+                setMsg('🎉 Урок завершён!');
+                onAllComplete?.();
+              }
+            }, 800);
+            return true;
+          }
+        }
+      }
+
+      // Long castling: king e1→c1, rook a1→d1
+      if (fromType === 'k' && from === 'e1' && to === 'c1') {
+        const rook = parsed.squares['a1'];
+        if (rook && rook.type === 'r' && rook.color === 'w') {
+          // Check squares between e1 and c1 are empty
+          if (!parsed.squares['d1'] && !parsed.squares['c1'] && !parsed.squares['b1']) {
+            // Move king
+            const castlingSquares = { ...parsed.squares };
+            delete castlingSquares['e1'];
+            castlingSquares['c1'] = { type: 'k', color: 'w' };
+            // Move rook
+            delete castlingSquares['a1'];
+            castlingSquares['d1'] = { type: 'r', color: 'w' };
+            const castlingFen = squaresToFen(castlingSquares, 'w');
+            positionRef.current = castlingFen;
+            setPosition(castlingFen);
+            setMoves((c) => c + 1);
+            setMsg('🏰 Рокировка!');
             setTimeout(() => {
               setLevelStars((prev) => ({ ...prev, [currentLevel]: 3 }));
               onLevelComplete?.(currentLevel, 3);
