@@ -777,7 +777,8 @@ function InlineChessBoard({
 /* ====== CaptureBoard main component ====== */
 interface CaptureLevel {
   initialFen: string;
-  stars: string[]; // target squares to capture (contains black pieces)
+  stars?: string[]; // target squares to capture (contains black pieces)
+  targets?: string[]; // alias for stars (used in en passant lessons)
   instructions: string;
   hint: string;
   maxMoves: number;
@@ -822,7 +823,7 @@ export default function CaptureBoard({
   const movesRef = useRef(moves);
 
   const level = levels[currentLevel];
-  const stars = level.stars;
+  const stars = level.stars || level.targets || [];
   const totalLevels = levels.length;
 
   useEffect(() => {
