@@ -22,3 +22,4 @@ export default function RootLayout({
   );
 }
 // force rebuild
+const FORCE_REBUILD = Date.now();
