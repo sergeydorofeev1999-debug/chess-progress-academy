@@ -243,6 +243,13 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           }
         }
       }
+      // Short castling: show g1 as valid if e1→g1 is legal
+      if (from === 'e1') {
+        const rook = squares['h1'];
+        if (rook && rook.type === 'r' && rook.color === 'w' && !squares['f1'] && !squares['g1']) {
+          valid.push('g1');
+        }
+      }
       break;
     }
     case 'n': { // Knight jumps over obstacles
@@ -744,6 +751,46 @@ function MultiLevelStarBoard({
         }
       }
       
+      // Short castling: king e1→g1, rook h1→f1
+      if (fromType === 'k' && from === 'e1' && to === 'g1') {
+        const rook = parsed.squares['h1'];
+        if (rook && rook.type === 'r' && rook.color === 'w') {
+          // Check squares between e1 and g1 are empty
+          if (!parsed.squares['f1'] && !parsed.squares['g1']) {
+            // Move king
+            const castlingSquares = { ...parsed.squares };
+            delete castlingSquares['e1'];
+            castlingSquares['g1'] = { type: 'k', color: 'w' };
+            // Move rook
+            delete castlingSquares['h1'];
+            castlingSquares['f1'] = { type: 'r', color: 'w' };
+            const castlingFen = squaresToFen(castlingSquares, 'w');
+            positionRef.current = castlingFen;
+            setPosition(castlingFen);
+            setMoves((c) => c + 1);
+            setMsg('🏰 Рокировка!');
+            // Level complete check for castling lessons
+            if (stars.includes('g1') && !collected.includes('g1')) {
+              setCollected((prev) => [...prev, 'g1']);
+            }
+            // Handle level completion for castling
+            setTimeout(() => {
+              setLevelStars((prev) => ({ ...prev, [currentLevel]: 3 }));
+              onLevelComplete?.(currentLevel, 3);
+              if (currentLevel + 1 < totalLevels) {
+                setCurrentLevel((l) => l + 1);
+                setMsg('');
+              } else {
+                setAllDone(true);
+                setMsg('🎉 Урок завершён!');
+                onAllComplete?.();
+              }
+            }, 800);
+            return true;
+          }
+        }
+      }
+
       // Only reject wrong-piece mechanics / self-capture
       if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) return false;
 

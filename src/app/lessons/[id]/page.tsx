@@ -18,6 +18,8 @@ export default async function LessonPage({
 
   const lesson = await getLesson(id);
   if (!lesson) return notFound();
+  
+  console.log('Fetched lesson', id, 'levels count:', lesson?.video_url ? JSON.parse(lesson.video_url).levels?.length : 0);
 
   const allLessons = await getCourseLessons(lesson.course_id);
 
