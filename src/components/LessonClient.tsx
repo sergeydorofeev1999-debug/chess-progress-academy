@@ -735,6 +735,15 @@ function MultiLevelStarBoard({
       const parsed = parseFen(positionRef.current);
       if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || pieceType;
+      
+      // Level-specific allowedPieces constraint
+      if (level.allowedPieces && level.allowedPieces.length > 0) {
+        if (!level.allowedPieces.includes(fromType)) {
+          setMsg(`Используйте только ${getAllowedPieceName(level.allowedPieces[0])}!`);
+          return false;
+        }
+      }
+      
       // Only reject wrong-piece mechanics / self-capture
       if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) return false;
 
@@ -1258,4 +1267,16 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       </div>
     </div>
   );
+}
+
+function getAllowedPieceName(piece: string): string {
+  const names: Record<string, string> = {
+    r: 'ладью',
+    n: 'коня',
+    b: 'слона',
+    q: 'ферзя',
+    k: 'короля',
+    p: 'пешку',
+  };
+  return names[piece] || piece;
 }
