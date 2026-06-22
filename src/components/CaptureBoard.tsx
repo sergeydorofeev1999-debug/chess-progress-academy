@@ -11,7 +11,8 @@ const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
 function parseFen(fen: string) {
   const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
-  const [placement] = fen.split(' ');
+  const parts = fen.split(' ');
+  const placement = parts[0];
   const rows = placement.split('/');
   for (let ri = 0; ri < 8; ri++) {
     let fi = 0;
@@ -26,7 +27,9 @@ function parseFen(fen: string) {
       }
     }
   }
-  return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
+  const turn = parts[1] === 'b' ? 'b' : 'w';
+  const enPassant = parts[3] !== '-' ? parts[3] : null;
+  return { squares, turn, enPassant };
 }
 
 function squaresToFen(squares: Record<string, { type: string; color: 'w' | 'b' }>, turn: 'w' | 'b' = 'w') {
@@ -58,7 +61,8 @@ function isValidMove(
   squares: Record<string, any>,
   movingColor: 'w' | 'b',
   starSquares: string[] = [],
-  ignoreTargetOccupant: boolean = false
+  ignoreTargetOccupant: boolean = false,
+  enPassantTarget: string | null = null
 ) {
   if (squares[from]?.color !== movingColor) return false;
   if (!ignoreTargetOccupant && squares[to]?.color === movingColor) return false;
@@ -160,10 +164,11 @@ function isValidMove(
         if (squares[middleSq] || starSquares.includes(middleSq)) return false;
         return !squares[to] && !starSquares.includes(to);
       }
-      // Diagonal capture
+      // Diagonal capture + en passant
       if (Math.abs(df) === 1 && dr === forwardDir) {
         if (squares[to] && squares[to].color !== movingColor) return true;
         if (starSquares.includes(to)) return true;
+        if (enPassantTarget && to === enPassantTarget && movingColor === 'w') return true;
         return false;
       }
       return false;
@@ -178,7 +183,8 @@ function getValidSquares(
   from: string,
   squares: Record<string, any>,
   movingColor: 'w' | 'b',
-  starSquares: string[] = []
+  starSquares: string[] = [],
+  enPassantTarget: string | null = null
 ): string[] {
   if (squares[from]?.color !== movingColor) return [];
   const ff = FILES.indexOf(from[0]);
@@ -283,6 +289,7 @@ function getValidSquares(
           const sq = `${FILES[fd]}${RANKS[rd]}`;
           const p = squares[sq];
           if ((p && p.color !== movingColor) || starSquares.includes(sq)) valid.push(sq);
+          if (enPassantTarget && sq === enPassantTarget && movingColor === 'w') valid.push(sq);
         }
       }
       break;
@@ -858,7 +865,7 @@ export default function CaptureBoard({
       if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || 'p';
       // Only reject obviously illegal moves (wrong piece mechanics, self-capture)
-      if (!isValidMove(fromType, from, to, parsed.squares, 'w')) return false;
+      if (!isValidMove(fromType, from, to, parsed.squares, 'w', [], false, parsed.enPassant)) return false;
 
       const movedPiece = parsed.squares[from];
 
@@ -866,7 +873,24 @@ export default function CaptureBoard({
       const newSquares = { ...parsed.squares };
       delete newSquares[from];
       newSquares[to] = movedPiece;
-      const newFen = squaresToFen(newSquares, 'w');
+      // En passant capture: remove the passed pawn
+      if (fromType === 'p' && parsed.enPassant && to === parsed.enPassant) {
+        const capturedFile = to[0];
+        const capturedRank = from[1];
+        const capturedSq = `${capturedFile}${capturedRank}`;
+        delete newSquares[capturedSq];
+      }
+      // Track en passant after pawn double-step
+      let nextEnPassant: string | null = null;
+      if (fromType === 'p' && from[1] === '2' && to[1] === '4') {
+        nextEnPassant = `${from[0]}3`;
+      }
+      let newFen = squaresToFen(newSquares, 'w');
+      if (nextEnPassant) {
+        const fenParts = newFen.split(' ');
+        fenParts[3] = nextEnPassant;
+        newFen = fenParts.join(' ');
+      }
       positionRef.current = newFen;
       setPosition(newFen);
       setMoves((c) => c + 1);

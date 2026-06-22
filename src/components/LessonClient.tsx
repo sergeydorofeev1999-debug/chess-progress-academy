@@ -40,7 +40,8 @@ const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
 function parseFen(fen: string) {
   const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
-  const [placement] = fen.split(' ');
+  const parts = fen.split(' ');
+  const placement = parts[0];
   const rows = placement.split('/');
   for (let ri = 0; ri < 8; ri++) {
     let fi = 0;
@@ -55,10 +56,12 @@ function parseFen(fen: string) {
       }
     }
   }
-  return { squares, turn: fen.includes(' w ') ? 'w' : 'b' };
+  const turn = parts[1] === 'b' ? 'b' : 'w';
+  const enPassant = parts[3] !== '-' ? parts[3] : null;
+  return { squares, turn, enPassant };
 }
 
-function isValidMove(pieceType: string, from: string, to: string, squares: Record<string, any>, starSquares: string[] = []) {
+function isValidMove(pieceType: string, from: string, to: string, squares: Record<string, any>, starSquares: string[] = [], enPassantTarget: string | null = null) {
   if (squares[from]?.color !== 'w') return false;
   if (squares[to]?.color === 'w') return false;
   if (from === to) return false;
@@ -156,10 +159,12 @@ function isValidMove(pieceType: string, from: string, to: string, squares: Recor
         if (squares[middleSq] || starSquares.includes(middleSq)) return false;
         return !squares[to] && !starSquares.includes(to);
       }
-      // Diagonal capture (stars only — no enemies in our lessons)
+      // Diagonal capture (stars, enemies, or en passant)
       if (Math.abs(df) === 1 && dr === forwardDir) {
         if (starSquares.includes(to)) return true;
         if (squares[to] && squares[to].color !== 'w') return true;
+        // En passant
+        if (enPassantTarget && to === enPassantTarget) return true;
         return false;
       }
       return false;
@@ -178,7 +183,7 @@ function isSquareAttackedBy(square: string, squares: Record<string, any>, attack
   return false;
 }
 
-function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[], movedPieces?: Set<string>): string[] {
+function getValidSquares(pieceType: string, from: string, squares: Record<string, any>, starSquares: string[], movedPieces?: Set<string>, enPassantTarget?: string | null): string[] {
   if (squares[from]?.color !== 'w') return [];
   const ff = FILES.indexOf(from[0]);
   const fr = RANKS.indexOf(from[1]);
@@ -293,7 +298,7 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           }
         }
       }
-      // Diagonal captures only
+      // Diagonal captures + en passant
       for (const df of [-1, 1]) {
         const fd = ff + df;
         const rd = fr + forwardDir;
@@ -301,6 +306,8 @@ function getValidSquares(pieceType: string, from: string, squares: Record<string
           const sq = `${FILES[fd]}${RANKS[rd]}`;
           const p = squares[sq];
           if ((p && p.color !== 'w') || starSquares.includes(sq)) valid.push(sq);
+          // En passant target
+          if (enPassantTarget && sq === enPassantTarget) valid.push(sq);
         }
       }
       break;
@@ -355,6 +362,7 @@ interface InlineChessBoardProps {
   pieceName?: string;
   guideArrows?: { from: string; to: string }[];
   movedPieces?: Set<string>;
+  enPassantTarget?: string | null;
 }
 
 function InlineChessBoard({
@@ -365,6 +373,7 @@ function InlineChessBoard({
   pieceName = 'Ладья',
   guideArrows = [],
   movedPieces: externalMovedPieces,
+  enPassantTarget,
 }: InlineChessBoardProps) {
   const pieceErrHint =
     pieceType === 'b' ? 'Слон ходит по диагонали!' :
@@ -903,7 +912,7 @@ function MultiLevelStarBoard({
       }
 
       // Only reject wrong-piece mechanics / self-capture
-      if (!isValidMove(fromType, from, to, parsed.squares, visibleStars)) return false;
+      if (!isValidMove(fromType, from, to, parsed.squares, visibleStars, parsed.enPassant)) return false;
 
       // Promotion: pawn reaching rank 8
       if (fromType === 'p' && to[1] === '8') {
@@ -917,7 +926,25 @@ function MultiLevelStarBoard({
       const movedType = movedPiece?.type || pieceType;
       delete newSquares[from];
       newSquares[to] = { type: movedType, color: 'w' };
-      const newFen = squaresToFen(newSquares, 'w');
+      // En passant capture: remove the pawn that was passed
+      if (movedType === 'p' && parsed.enPassant && to === parsed.enPassant) {
+        const capturedFile = to[0];
+        const capturedRank = from[1]; // the rank where the black pawn sits
+        const capturedSq = `${capturedFile}${capturedRank}`;
+        delete newSquares[capturedSq];
+      }
+      // After any pawn double-step, compute en passant target for next turn
+      let nextEnPassant: string | null = null;
+      if (movedType === 'p' && from[1] === '2' && to[1] === '4') {
+        nextEnPassant = `${from[0]}3`;
+      }
+      // Build FEN with updated en passant field
+      let newFen = squaresToFen(newSquares, 'w');
+      if (nextEnPassant) {
+        const fenParts = newFen.split(' ');
+        fenParts[3] = nextEnPassant;
+        newFen = fenParts.join(' ');
+      }
       positionRef.current = newFen;
       setPosition(newFen);
       setMoves((c) => c + 1);
