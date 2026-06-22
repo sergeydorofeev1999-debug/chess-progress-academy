@@ -44,6 +44,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
 
   const advancedLevelDescriptions = [
     'Расстановка фигур в начале партии',
+    'Особый ход короля и ладьи',
   ];
 
   return (
