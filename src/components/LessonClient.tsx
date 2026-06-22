@@ -24,14 +24,17 @@ interface Props {
   userId: string | null;
 }
 
-function parseInteractiveConfig(videoUrl: string | null) {
+function parseInteractiveConfig(videoUrl: string | null | object) {
   if (!videoUrl) return null;
-  if (!videoUrl.startsWith('{')) return null;
-  try {
-    return JSON.parse(videoUrl);
-  } catch {
-    return null;
+  if (typeof videoUrl === 'object') return videoUrl;
+  if (typeof videoUrl === 'string' && videoUrl.startsWith('{')) {
+    try {
+      return JSON.parse(videoUrl);
+    } catch {
+      return null;
+    }
   }
+  return null;
 }
 
 /* ====== ВСТРОЕННАЯ ШАХМАТНАЯ ДОСКА (без chess.js — pure JS) ====== */
