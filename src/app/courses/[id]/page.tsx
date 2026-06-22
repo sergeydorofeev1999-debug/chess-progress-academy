@@ -115,4 +115,3 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
     </div>
   );
 }
-export const dynamic = 'force-dynamic';
