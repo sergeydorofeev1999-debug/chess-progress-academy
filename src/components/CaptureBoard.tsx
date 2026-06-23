@@ -442,6 +442,45 @@ function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string |
   return null;
 }
 
+function hasAnyLegalMove(squares: Record<string, any>, side: 'w' | 'b'): boolean {
+  const attackerColor = side === 'w' ? 'b' : 'w';
+  // 1. Can king escape?
+  if (findKingEscape(squares, side)) return true;
+
+  // 2. Can any other piece move legally?
+  for (const fromSq in squares) {
+    const piece = squares[fromSq];
+    if (!piece || piece.color !== side) continue;
+    if (piece.type === 'k') continue; // king already checked above
+
+    for (let fi = 0; fi < 8; fi++) {
+      for (let ri = 0; ri < 8; ri++) {
+        const toSq = `${FILES[fi]}${RANKS[ri]}`;
+        if (fromSq === toSq) continue;
+        if (!isValidMove(piece.type, fromSq, toSq, squares, side)) continue;
+        const target = squares[toSq];
+        if (target && target.color === side) continue;
+
+        // Simulate move
+        const sim = { ...squares };
+        delete sim[fromSq];
+        sim[toSq] = piece;
+
+        let kingSq = '';
+        for (const sq in sim) {
+          if (sim[sq].type === 'k' && sim[sq].color === side) {
+            kingSq = sq;
+            break;
+          }
+        }
+        if (!kingSq) continue;
+        if (!isSquareAttackedBy(kingSq, sim, attackerColor, true)) return true;
+      }
+    }
+  }
+  return false;
+}
+
 /* ====== SVG Chess Pieces ====== */
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -789,6 +828,7 @@ interface CaptureLevel {
   requireAll?: boolean;
   requireCheck?: boolean;
   requireMate?: boolean;
+  requireStalemate?: boolean;
   requireSafeKing?: boolean;
   autoCaptures?: { blackFrom: string; captureSquare: string }[];
   forbiddenSquares?: string[];
@@ -1204,6 +1244,56 @@ export default function CaptureBoard({
           return false;
         }
         // Success path for requireMate
+        const max = level.maxMoves || stars.length + 1;
+        const m = movesRef.current + 1;
+        let earned = 3;
+        if (m <= max) earned = 3;
+        else if (m <= max + 1) earned = 2;
+        else earned = 1;
+        setLevelStars((prevStars) => {
+          const nextStars = { ...prevStars, [currentLevel]: earned };
+          localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
+          return nextStars;
+        });
+        onLevelComplete?.(currentLevel, earned);
+        setTimeout(() => {
+          if (currentLevel + 1 < totalLevels) {
+            setCurrentLevel((l) => l + 1);
+            setMsg('');
+          } else {
+            setAllDone(true);
+            setMsg(`🎉 ${successMessage}`);
+            onAllComplete?.();
+          }
+        }, 600);
+        return true;
+      }
+
+      if (level.requireStalemate) {
+        let blackKingSq = '';
+        for (const sq in newSquares) {
+          if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
+            blackKingSq = sq;
+            break;
+          }
+        }
+        let isCheck = false;
+        if (blackKingSq && isSquareAttackedBy(blackKingSq, newSquares, 'w', true)) {
+          isCheck = true;
+        }
+        if (isCheck) {
+          setFailed(true);
+          setGameOver(true);
+          setMsg('Ещё раз. Провалено.');
+          return false;
+        }
+        if (hasAnyLegalMove(newSquares, 'b')) {
+          setFailed(true);
+          setGameOver(true);
+          setMsg('Ещё раз. Провалено.');
+          return false;
+        }
+        // Stalemate! Success
         const max = level.maxMoves || stars.length + 1;
         const m = movesRef.current + 1;
         let earned = 3;
