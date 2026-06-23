@@ -793,7 +793,7 @@ interface CaptureLevel {
   autoCaptures?: { blackFrom: string; captureSquare: string }[];
   forbiddenSquares?: string[];
   blackAutoCapture?: boolean; // default true; set false to disable universal black auto-capture
-  autoMove?: { from: string; to: string; delayMs: number };
+  autoMove?: { from: string; to: string; delayMs: number } | { from: string; to: string; delayMs: number }[];
 }
 
 interface Props {
@@ -869,30 +869,37 @@ export default function CaptureBoard({
   useEffect(() => {
     const lvl = levels[currentLevel];
     if (!lvl.autoMove) return;
-    const { from, to, delayMs } = lvl.autoMove;
-    const timer = setTimeout(() => {
-      if (gameOver) return;
-      const parsed = parseFen(positionRef.current);
-      const piece = parsed.squares[from];
-      if (!piece) return;
-      const newSquares = { ...parsed.squares };
-      delete newSquares[from];
-      newSquares[to] = piece;
-      // If pawn moved two squares, set en passant target
-      let nextEnPassant: string | null = null;
-      if (piece.type === 'p' && from[1] === '7' && to[1] === '5') {
-        nextEnPassant = `${from[0]}6`;
-      }
-      let newFen = squaresToFen(newSquares, 'w');
-      if (nextEnPassant) {
-        const fenParts = newFen.split(' ');
-        fenParts[3] = nextEnPassant;
-        newFen = fenParts.join(' ');
-      }
-      positionRef.current = newFen;
-      setPosition(newFen);
-    }, delayMs);
-    return () => clearTimeout(timer);
+    const moves: { from: string; to: string; delayMs: number }[] = Array.isArray(lvl.autoMove) ? lvl.autoMove : [lvl.autoMove];
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    moves.forEach((move, idx) => {
+      const { from, to, delayMs } = move;
+      const timer = setTimeout(() => {
+        if (gameOver) return;
+        const parsed = parseFen(positionRef.current);
+        const piece = parsed.squares[from];
+        if (!piece) return;
+        const newSquares = { ...parsed.squares };
+        delete newSquares[from];
+        newSquares[to] = piece;
+        // If pawn moved two squares, set en passant target
+        let nextEnPassant: string | null = null;
+        if (piece.type === 'p' && from[1] === '7' && to[1] === '5') {
+          nextEnPassant = `${from[0]}6`;
+        }
+        let newFen = squaresToFen(newSquares, 'w');
+        if (nextEnPassant) {
+          const fenParts = newFen.split(' ');
+          fenParts[3] = nextEnPassant;
+          newFen = fenParts.join(' ');
+        }
+        positionRef.current = newFen;
+        setPosition(newFen);
+      }, delayMs);
+      timers.push(timer);
+    });
+
+    return () => timers.forEach(clearTimeout);
   }, [currentLevel, levels, gameOver]);
 
   const handleMove = useCallback(
