@@ -794,6 +794,7 @@ interface CaptureLevel {
   forbiddenSquares?: string[];
   blackAutoCapture?: boolean; // default true; set false to disable universal black auto-capture
   autoMove?: { from: string; to: string; delayMs: number } | { from: string; to: string; delayMs: number }[];
+  triggerAutoMove?: { from: string; to: string }[];
 }
 
 interface Props {
@@ -827,6 +828,7 @@ export default function CaptureBoard({
 
   const positionRef = useRef(position);
   const movesRef = useRef(moves);
+  const nextTriggerIdxRef = useRef(0);
 
   const level = levels[currentLevel];
   const stars = level.stars || level.targets || [];
@@ -862,6 +864,7 @@ export default function CaptureBoard({
     setFailed(false);
     setMsg('');
     movesRef.current = 0;
+    nextTriggerIdxRef.current = 0;
     positionRef.current = lvl.initialFen;
   }, [currentLevel, levels]);
 
@@ -939,6 +942,35 @@ export default function CaptureBoard({
       setPosition(newFen);
       setMoves((c) => c + 1);
       setMsg('');
+
+      // Trigger auto moves after white makes a target move (e.g. en passant capture)
+      if (level.triggerAutoMove && level.triggerAutoMove.length > 0) {
+        const idx = nextTriggerIdxRef.current;
+        if (idx < level.triggerAutoMove.length) {
+          const trigger = level.triggerAutoMove[idx];
+          // Check if white moved the expected piece for this trigger
+          const parsedAfter = parseFen(positionRef.current);
+          const piece = parsedAfter.squares[trigger.from];
+          if (piece) {
+            const newSquares2 = { ...parsedAfter.squares };
+            delete newSquares2[trigger.from];
+            newSquares2[trigger.to] = piece;
+            let nextEp: string | null = null;
+            if (piece.type === 'p' && trigger.from[1] === '7' && trigger.to[1] === '5') {
+              nextEp = `${trigger.from[0]}6`;
+            }
+            let newFen2 = squaresToFen(newSquares2, 'w');
+            if (nextEp) {
+              const fp = newFen2.split(' ');
+              fp[3] = nextEp;
+              newFen2 = fp.join(' ');
+            }
+            positionRef.current = newFen2;
+            setPosition(newFen2);
+          }
+          nextTriggerIdxRef.current = idx + 1;
+        }
+      }
 
       // Guard: if requireSafeKing and king is in check after move → immediate fail
       if (level.requireSafeKing) {
