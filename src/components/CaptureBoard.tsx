@@ -794,7 +794,7 @@ interface CaptureLevel {
   forbiddenSquares?: string[];
   blackAutoCapture?: boolean; // default true; set false to disable universal black auto-capture
   autoMove?: { from: string; to: string; delayMs: number } | { from: string; to: string; delayMs: number }[];
-  triggerAutoMove?: { from: string; to: string }[];
+  triggerAutoMove?: { from: string; to: string; delayMs?: number }[];
 }
 
 interface Props {
@@ -948,27 +948,30 @@ export default function CaptureBoard({
         const idx = nextTriggerIdxRef.current;
         if (idx < level.triggerAutoMove.length) {
           const trigger = level.triggerAutoMove[idx];
-          // Check if white moved the expected piece for this trigger
-          const parsedAfter = parseFen(positionRef.current);
-          const piece = parsedAfter.squares[trigger.from];
-          if (piece) {
-            const newSquares2 = { ...parsedAfter.squares };
-            delete newSquares2[trigger.from];
-            newSquares2[trigger.to] = piece;
-            let nextEp: string | null = null;
-            if (piece.type === 'p' && trigger.from[1] === '7' && trigger.to[1] === '5') {
-              nextEp = `${trigger.from[0]}6`;
+          const delayMs = (trigger as any).delayMs || 0;
+          setTimeout(() => {
+            // Check if white moved the expected piece for this trigger
+            const parsedAfter = parseFen(positionRef.current);
+            const piece = parsedAfter.squares[trigger.from];
+            if (piece) {
+              const newSquares2 = { ...parsedAfter.squares };
+              delete newSquares2[trigger.from];
+              newSquares2[trigger.to] = piece;
+              let nextEp: string | null = null;
+              if (piece.type === 'p' && trigger.from[1] === '7' && trigger.to[1] === '5') {
+                nextEp = `${trigger.from[0]}6`;
+              }
+              let newFen2 = squaresToFen(newSquares2, 'w');
+              if (nextEp) {
+                const fp = newFen2.split(' ');
+                fp[3] = nextEp;
+                newFen2 = fp.join(' ');
+              }
+              positionRef.current = newFen2;
+              setPosition(newFen2);
             }
-            let newFen2 = squaresToFen(newSquares2, 'w');
-            if (nextEp) {
-              const fp = newFen2.split(' ');
-              fp[3] = nextEp;
-              newFen2 = fp.join(' ');
-            }
-            positionRef.current = newFen2;
-            setPosition(newFen2);
-          }
-          nextTriggerIdxRef.current = idx + 1;
+            nextTriggerIdxRef.current = idx + 1;
+          }, delayMs);
         }
       }
 
