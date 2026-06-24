@@ -475,9 +475,9 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
           {/* Back button */}
           <button
             onClick={() => goToLevel(currentLevel - 1)}
-            disabled={currentLevel <= 1}
+            disabled={currentLevel <= 0}
             className={`flex items-center gap-1 px-4 py-3 rounded-xl font-semibold transition
-              ${currentLevel <= 1 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
+              ${currentLevel <= 0 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
             `}
           >
             <ChevronLeft size={18} /> Назад
