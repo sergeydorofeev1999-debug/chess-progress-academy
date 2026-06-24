@@ -34,7 +34,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
-  const [message, setMessage] = useState('Ваш ход! Съешь 5 пешек соперника или проведи пешку до последней линии.');
   const [computerThinking, setComputerThinking] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
@@ -46,7 +45,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
     setWhiteCaptured(0);
     setBlackCaptured(0);
     setWinner(null);
-    setMessage('Ваш ход! Съешь 5 пешек соперника или проведи пешку до последней линии.');
     setComputerThinking(false);
     setSelectedSquare(null);
   }, []);
@@ -81,8 +79,7 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
 
   /* ---- Computer move (black) ---- */
   useEffect(() => {
-    if (winner) return;
-    if (game.turn() !== 'b') return;
+    if (winner || game.turn() !== 'b') return;
 
     setComputerThinking(true);
     setSelectedSquare(null);
@@ -93,7 +90,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
       const moves = game.moves({ verbose: true }).filter((m: any) => m.piece === 'p' && m.color === 'b');
       if (moves.length === 0) {
         setWinner('Белые победили!');
-        setMessage('Белые победили! У чёрных нет ходов.');
         setComputerThinking(false);
         return;
       }
@@ -110,38 +106,36 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
       else chosen = moves[Math.floor(Math.random() * moves.length)];
 
       const g = new Chess(game.fen());
-      const move = g.move({ from: chosen.from, to: chosen.to, promotion: 'q' });
+      g.move({ from: chosen.from, to: chosen.to, promotion: 'q' });
 
-      if (move) {
-        let wCap = whiteCaptured;
-        if (move.captured === 'p') {
-          wCap = whiteCaptured + 1;
-          setWhiteCaptured(wCap);
-        }
-
-        const win = checkWin(g, wCap, blackCaptured);
-        if (win) {
-          setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-          setMessage(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-          setGame(g);
-          setComputerThinking(false);
-          if (win === 'white') onComplete();
-          return;
-        }
-
-        setGame(g);
-        setMessage('Ваш ход!');
+      let wCap = whiteCaptured;
+      if (chosen.captured === 'p') {
+        wCap = whiteCaptured + 1;
+        setWhiteCaptured(wCap);
       }
+
+      const win = checkWin(g, wCap, blackCaptured);
+      if (win) {
+        setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+        setGame(g);
+        setComputerThinking(false);
+        if (win === 'white') onComplete();
+        return;
+      }
+
+      setGame(g);
       setComputerThinking(false);
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [game, winner, checkWin, whiteCaptured, blackCaptured, onComplete]);
 
-  /* ---- Click-to-move ---- */
+  /* ---- Click handler ---- */
   const handleSquareClick = useCallback(
     (square: string) => {
       if (winner || computerThinking || game.turn() !== 'w') return;
+
+      const piece = game.get(square as any);
 
       if (selectedSquare) {
         if (selectedSquare === square) {
@@ -151,6 +145,7 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
 
         const g = new Chess(game.fen());
         const move = g.move({ from: selectedSquare, to: square, promotion: 'q' });
+
         if (move && move.piece === 'p' && move.color === 'w') {
           let bCap = blackCaptured;
           if (move.captured === 'p') {
@@ -161,7 +156,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
           const win = checkWin(g, whiteCaptured, bCap);
           if (win) {
             setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-            setMessage(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
             setGame(g);
             setSelectedSquare(null);
             if (win === 'white') onComplete();
@@ -170,12 +164,14 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
 
           setGame(g);
           setSelectedSquare(null);
-          setMessage('Ход компьютера...');
         } else {
-          setSelectedSquare(null);
+          if (piece && piece.type === 'p' && piece.color === 'w') {
+            setSelectedSquare(square);
+          } else {
+            setSelectedSquare(null);
+          }
         }
       } else {
-        const piece = game.get(square as any);
         if (piece && piece.type === 'p' && piece.color === 'w') {
           setSelectedSquare(square);
         }
@@ -184,10 +180,11 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
     [game, selectedSquare, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete]
   );
 
-  /* ---- Hint dots ---- */
+  /* ---- Square styles (highlight selected + legal moves) ---- */
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   if (selectedSquare) {
     customSquareStyles[selectedSquare] = { backgroundColor: 'rgba(59,130,246,0.45)' };
+
     const moves = game.moves({ verbose: true, square: selectedSquare });
     for (const m of moves) {
       if (m.piece === 'p' && m.color === 'w') {
@@ -222,7 +219,7 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
         </div>
       )}
 
-      {/* Board */}
+      {/* Board — responsive, no fixed width */}
       <div className="w-full max-w-[480px]">
         <Chessboard
           position={game.fen()}
@@ -230,9 +227,8 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
           customDarkSquareStyle={{ backgroundColor: '#b58863' }}
           customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
           customSquareStyles={customSquareStyles}
-          boardWidth={480}
           arePiecesDraggable={false}
-          animationDuration={300}
+          animationDuration={200}
         />
       </div>
 
