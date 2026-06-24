@@ -423,6 +423,14 @@ function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string |
   const fi = FILES.indexOf(kingSq[0]);
   const ri = RANKS.indexOf(kingSq[1]);
   const attackerColor = side === 'w' ? 'b' : 'w';
+  // Find enemy king square
+  let enemyKingSq = '';
+  for (const sq in squares) {
+    if (squares[sq].type === 'k' && squares[sq].color === attackerColor) {
+      enemyKingSq = sq;
+      break;
+    }
+  }
   // Temporarily remove king so attackers can "see" through its old square
   const squaresWithoutKing = { ...squares };
   delete squaresWithoutKing[kingSq];
@@ -436,6 +444,12 @@ function findKingEscape(squares: Record<string, any>, side: 'w' | 'b'): string |
       const p = squares[sq];
       if (p && p.color === side) continue;
       if (isSquareAttackedBy(sq, squaresWithoutKing, attackerColor, true)) continue;
+      // Kings cannot be adjacent
+      if (enemyKingSq) {
+        const ekf = FILES.indexOf(enemyKingSq[0]);
+        const ekr = RANKS.indexOf(enemyKingSq[1]);
+        if (Math.abs(nf - ekf) <= 1 && Math.abs(nr - ekr) <= 1) continue;
+      }
       return sq;
     }
   }
