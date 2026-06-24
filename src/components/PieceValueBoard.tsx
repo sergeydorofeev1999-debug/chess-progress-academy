@@ -120,6 +120,24 @@ const LEVELS: LevelConfig[] = [
     leftSum: 12,
     rightSum: 12,
   },
+  {
+    id: 5,
+    title: 'Упражнение 6',
+    instructions:
+      'Ладья + Слон + Пешка = Слон + Конь + Конь. Или Ладья + Конь + Пешка = Слон + Слон + Конь. Расставь фигуры так, чтобы равенство выполнялось.',
+    pieces: [
+      { id: 'rook', type: 'r', label: 'Ладья', value: 5 },
+      { id: 'bishop1', type: 'b', label: 'Слон', value: 3 },
+      { id: 'bishop2', type: 'b', label: 'Слон', value: 3 },
+      { id: 'knight1', type: 'n', label: 'Конь', value: 3 },
+      { id: 'knight2', type: 'n', label: 'Конь', value: 3 },
+      { id: 'pawn', type: 'p', label: 'Пешка', value: 1 },
+    ],
+    leftSlots: 3,
+    rightSlots: 3,
+    leftSum: 9,
+    rightSum: 9,
+  },
 ];
 
 interface Props {
