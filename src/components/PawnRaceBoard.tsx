@@ -35,7 +35,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
   const [blackCaptured, setBlackCaptured] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [computerThinking, setComputerThinking] = useState(false);
-  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -46,7 +45,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
     setBlackCaptured(0);
     setWinner(null);
     setComputerThinking(false);
-    setSelectedSquare(null);
   }, []);
 
   const checkWin = useCallback((g: Chess, wCap: number, bCap: number): string | null => {
@@ -82,7 +80,6 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
     if (winner || game.turn() !== 'b') return;
 
     setComputerThinking(true);
-    setSelectedSquare(null);
 
     const timer = setTimeout(() => {
       if (!mountedRef.current) return;
@@ -130,73 +127,35 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
     return () => clearTimeout(timer);
   }, [game, winner, checkWin, whiteCaptured, blackCaptured, onComplete]);
 
-  /* ---- Click handler ---- */
-  const handleSquareClick = useCallback(
-    (square: string) => {
-      if (winner || computerThinking || game.turn() !== 'w') return;
+  /* ---- Drag-and-drop ---- */
+  const handlePieceDrop = useCallback(
+    ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string }) => {
+      if (winner || computerThinking || game.turn() !== 'w') return false;
 
-      const piece = game.get(square as any);
+      const g = new Chess(game.fen());
+      const move = g.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
 
-      if (selectedSquare) {
-        if (selectedSquare === square) {
-          setSelectedSquare(null);
-          return;
-        }
+      if (!move || move.piece !== 'p' || move.color !== 'w') return false;
 
-        const g = new Chess(game.fen());
-        const move = g.move({ from: selectedSquare, to: square, promotion: 'q' });
-
-        if (move && move.piece === 'p' && move.color === 'w') {
-          let bCap = blackCaptured;
-          if (move.captured === 'p') {
-            bCap = blackCaptured + 1;
-            setBlackCaptured(bCap);
-          }
-
-          const win = checkWin(g, whiteCaptured, bCap);
-          if (win) {
-            setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-            setGame(g);
-            setSelectedSquare(null);
-            if (win === 'white') onComplete();
-            return;
-          }
-
-          setGame(g);
-          setSelectedSquare(null);
-        } else {
-          if (piece && piece.type === 'p' && piece.color === 'w') {
-            setSelectedSquare(square);
-          } else {
-            setSelectedSquare(null);
-          }
-        }
-      } else {
-        if (piece && piece.type === 'p' && piece.color === 'w') {
-          setSelectedSquare(square);
-        }
+      let bCap = blackCaptured;
+      if (move.captured === 'p') {
+        bCap = blackCaptured + 1;
+        setBlackCaptured(bCap);
       }
+
+      const win = checkWin(g, whiteCaptured, bCap);
+      if (win) {
+        setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+        setGame(g);
+        if (win === 'white') onComplete();
+        return true;
+      }
+
+      setGame(g);
+      return true;
     },
-    [game, selectedSquare, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete]
+    [game, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete]
   );
-
-  /* ---- Square styles (highlight selected + legal moves) ---- */
-  const customSquareStyles: Record<string, React.CSSProperties> = {};
-  if (selectedSquare) {
-    customSquareStyles[selectedSquare] = { backgroundColor: 'rgba(59,130,246,0.45)' };
-
-    const moves = game.moves({ verbose: true, square: selectedSquare });
-    for (const m of moves) {
-      if (m.piece === 'p' && m.color === 'w') {
-        const target = game.get(m.to as any);
-        if (target) {
-          customSquareStyles[m.to] = { background: 'radial-gradient(circle, rgba(255,0,0,0.5) 30%, transparent 70%)' };
-        } else {
-          customSquareStyles[m.to] = { background: 'radial-gradient(circle, rgba(74,222,128,0.6) 25%, transparent 70%)' };
-        }
-      }
-    }
-  }
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
@@ -219,17 +178,16 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
         </div>
       )}
 
-      {/* Board — responsive, no fixed width */}
-      <div className="w-full max-w-[480px]">
-        <Chessboard
-          position={game.fen()}
-          onSquareClick={handleSquareClick}
-          customDarkSquareStyle={{ backgroundColor: '#b58863' }}
-          customLightSquareStyle={{ backgroundColor: '#f0d9b5' }}
-          customSquareStyles={customSquareStyles}
-          arePiecesDraggable={false}
-          animationDuration={200}
-        />
+      {/* Board — NO highlights, NO dots, drag-and-drop enabled */}
+      <div className="flex justify-center w-full">
+        <div className="relative inline-block">
+          <Chessboard
+            position={game.fen()}
+            onPieceDrop={handlePieceDrop}
+            boardStyle={{ borderRadius: '8px' }}
+            animationDurationInMs={200}
+          />
+        </div>
       </div>
 
       {/* Info */}
