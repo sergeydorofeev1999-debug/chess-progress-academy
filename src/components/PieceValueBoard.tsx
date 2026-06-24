@@ -109,9 +109,9 @@ const LEVELS: LevelConfig[] = [
     instructions: 'Расставь фигуры так, чтобы равенство выполнялось.',
     pieces: [
       { id: 'queen', type: 'q', label: 'Ферзь', value: 9 },
-      { id: 'knight', type: 'n', label: 'Конь', value: 3 },
       { id: 'rook1', type: 'r', label: 'Ладья', value: 5 },
       { id: 'rook2', type: 'r', label: 'Ладья', value: 5 },
+      { id: 'knight', type: 'n', label: 'Конь', value: 3 },
       { id: 'pawn1', type: 'p', label: 'Пешка', value: 1 },
       { id: 'pawn2', type: 'p', label: 'Пешка', value: 1 },
     ],
