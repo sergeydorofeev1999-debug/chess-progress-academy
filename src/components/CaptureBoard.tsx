@@ -835,6 +835,7 @@ interface CaptureLevel {
   blackAutoCapture?: boolean; // default true; set false to disable universal black auto-capture
   autoMove?: { from: string; to: string; delayMs: number } | { from: string; to: string; delayMs: number }[];
   triggerAutoMove?: { from: string; to: string; delayMs?: number }[];
+  allowedPieces?: string[];
 }
 
 interface Props {
@@ -951,6 +952,15 @@ export default function CaptureBoard({
       const parsed = parseFen(positionRef.current);
       if (parsed.squares[from]?.color !== 'w') return false;
       const fromType = parsed.squares[from]?.type || 'p';
+
+      // Level-specific allowedPieces constraint
+      if (level.allowedPieces && level.allowedPieces.length > 0) {
+        if (!level.allowedPieces.includes(fromType)) {
+          setMsg(`Используйте только ${getAllowedPieceName(level.allowedPieces[0])}!`);
+          return false;
+        }
+      }
+
       // Only reject obviously illegal moves (wrong piece mechanics, self-capture)
       if (!isValidMove(fromType, from, to, parsed.squares, 'w', [], false, parsed.enPassant)) return false;
 
@@ -1505,4 +1515,16 @@ export default function CaptureBoard({
       </div>
     </div>
   );
+}
+
+function getAllowedPieceName(piece: string): string {
+  const names: Record<string, string> = {
+    r: 'ладью',
+    n: 'коня',
+    b: 'слона',
+    q: 'ферзя',
+    k: 'короля',
+    p: 'пешку',
+  };
+  return names[piece] || piece;
 }
