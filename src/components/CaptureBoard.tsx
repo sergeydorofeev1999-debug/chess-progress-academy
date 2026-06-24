@@ -169,6 +169,7 @@ function isValidMove(
         if (squares[to] && squares[to].color !== movingColor) return true;
         if (starSquares.includes(to)) return true;
         if (enPassantTarget && to === enPassantTarget && movingColor === 'w') return true;
+        if (ignoreTargetOccupant) return true;
         return false;
       }
       return false;
