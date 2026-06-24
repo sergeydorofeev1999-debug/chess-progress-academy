@@ -289,7 +289,7 @@ function getValidSquares(
         if (fd >= 0 && fd < 8 && rd >= 0 && rd < 8) {
           const sq = `${FILES[fd]}${RANKS[rd]}`;
           const p = squares[sq];
-          if (ignoreTarget || (p && p.color !== movingColor) || starSquares.includes(sq)) valid.push(sq);
+          if ((p && p.color !== movingColor) || starSquares.includes(sq)) valid.push(sq);
           if (enPassantTarget && sq === enPassantTarget && movingColor === 'w') valid.push(sq);
         }
       }
