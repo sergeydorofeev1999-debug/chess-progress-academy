@@ -299,7 +299,8 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
                 >
-                  {idx}
+                  <span className="hidden sm:inline">{idx}</span>
+                  <span className="sm:hidden w-2 h-2 rounded-full bg-current opacity-60"></span>
                 </button>
               );
             })}
@@ -365,7 +366,8 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
-                {idx}
+                <span className="hidden sm:inline">{idx}</span>
+                <span className="sm:hidden w-2 h-2 rounded-full bg-current opacity-60"></span>
               </button>
             );
           })}
