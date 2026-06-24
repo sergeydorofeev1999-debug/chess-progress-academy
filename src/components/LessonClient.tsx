@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
 import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
-import PawnRaceBoard from './PawnRaceBoard';
+import dynamic from 'next/dynamic';
+
+const PawnRaceBoard = dynamic(() => import('./PawnRaceBoard'), { ssr: false });
 
 interface Lesson {
   id: string;
