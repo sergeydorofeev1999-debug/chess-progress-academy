@@ -57,6 +57,7 @@ export default function PieceValueBoard({ onComplete }: Props) {
   const [selectedPiece, setSelectedPiece] = useState<EquationPiece | null>(null);
   const [error, setError] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [starsCollected, setStarsCollected] = useState(false);
 
   const slotSize = 'w-20 h-20 sm:w-24 sm:h-24';
 
@@ -141,6 +142,7 @@ export default function PieceValueBoard({ onComplete }: Props) {
 
     if (leftSum === rightSum) {
       setSuccess(true);
+      setStarsCollected(true);
       setTimeout(onComplete, 1500);
     } else {
       setError(true);
@@ -154,6 +156,7 @@ export default function PieceValueBoard({ onComplete }: Props) {
     setSelectedPiece(null);
     setError(false);
     setSuccess(false);
+    setStarsCollected(false);
   }, []);
 
   // ====== STAGE 1: INTRO ======
@@ -311,6 +314,24 @@ export default function PieceValueBoard({ onComplete }: Props) {
           </span>
         ))}
       </div>
+
+      {/* Stars collected */}
+      {starsCollected && (
+        <div className="flex items-center gap-3 mt-4">
+          {[1, 2, 3].map((s) => (
+            <img
+              key={s}
+              src="/images/learn/star.png"
+              alt=""
+              className="w-8 h-8"
+              style={{
+                filter: 'brightness(1.2) drop-shadow(0 0 2px rgba(255,255,255,0.6))',
+              }}
+              draggable={false}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
