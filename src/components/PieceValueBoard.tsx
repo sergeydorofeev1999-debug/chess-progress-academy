@@ -295,23 +295,11 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                   key={idx}
                   onClick={() => !isFuture && goToLevel(idx)}
                   disabled={isFuture}
-                  className={`flex items-center justify-center px-2 py-1.5 transition ${
+                  className={`flex items-center justify-center px-2 py-1.5 transition font-medium text-sm ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
                 >
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3].map((s) => (
-                      <img
-                        key={s}
-                        src="/images/learn/star.png"
-                        className={`w-3.5 h-3.5 ${
-                          isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                        }`}
-                        draggable={false}
-                        alt=""
-                      />
-                    ))}
-                  </div>
+                  {idx}
                 </button>
               );
             })}
@@ -373,23 +361,11 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                 key={idx}
                 onClick={() => !isFuture && goToLevel(idx)}
                 disabled={isFuture}
-                className={`flex items-center justify-center px-2 py-1.5 transition ${
+                className={`flex items-center justify-center px-2 py-1.5 transition font-medium text-sm ${
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
-                <div className="flex gap-0.5">
-                  {[1, 2, 3].map((s) => (
-                    <img
-                      key={s}
-                      src="/images/learn/star.png"
-                      className={`w-3.5 h-3.5 ${
-                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                      }`}
-                      draggable={false}
-                      alt=""
-                    />
-                  ))}
-                </div>
+                {idx}
               </button>
             );
           })}
@@ -527,24 +503,6 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
             >
               Попробовать снова
             </button>
-          </div>
-        )}
-
-        {/* Stars on success */}
-        {success && (
-          <div className="flex items-center gap-3">
-            {[1, 2, 3].map((s) => (
-              <img
-                key={s}
-                src="/images/learn/star.png"
-                alt=""
-                className="w-10 h-10"
-                style={{
-                  filter: 'brightness(1.2) drop-shadow(0 0 2px rgba(255,255,255,0.6))',
-                }}
-                draggable={false}
-              />
-            ))}
           </div>
         )}
       </div>
