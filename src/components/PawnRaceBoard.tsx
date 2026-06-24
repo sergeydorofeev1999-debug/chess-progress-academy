@@ -3,33 +3,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { RotateCcw } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const Chessboard = dynamic(() => import('react-chessboard').then((mod) => mod.Chessboard), {
+  ssr: false,
+  loading: () => (
+    <div className="text-center py-12">
+      <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
+      <p className="text-slate-500">Загрузка доски...</p>
+    </div>
+  ),
+});
 
 const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
 
 export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
-  const [isClient, setIsClient] = useState(false);
-  const [Chessboard, setChessboard] = useState<any>(null);
-
-  useEffect(() => {
-    setIsClient(true);
-    import('react-chessboard').then((mod) => {
-      setChessboard(() => mod.Chessboard);
-    });
-  }, []);
-
-  if (!isClient || !Chessboard) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
-        <p className="text-slate-500">Загрузка доски...</p>
-      </div>
-    );
-  }
-
-  return <PawnRaceGame Chessboard={Chessboard} onComplete={onComplete} />;
-}
-
-function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete: () => void }) {
   const [game, setGame] = useState(() => new Chess(START_FEN));
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
@@ -182,12 +170,10 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
       <div className="flex justify-center w-full">
         <div className="relative inline-block">
           <Chessboard
-            options={{
-              position: game.fen(),
-              onPieceDrop: handlePieceDrop,
-              boardStyle: { borderRadius: '8px' },
-              animationDurationInMs: 200,
-            }}
+            position={game.fen()}
+            onPieceDrop={handlePieceDrop}
+            boardStyle={{ borderRadius: '8px' }}
+            animationDurationInMs={200}
           />
         </div>
       </div>
