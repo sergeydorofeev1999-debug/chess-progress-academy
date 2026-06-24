@@ -2,10 +2,45 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
 import { RotateCcw } from 'lucide-react';
 
 const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
+
+function parseFen(fen: string) {
+  const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
+  const parts = fen.split(' ');
+  const placement = parts[0];
+  const rows = placement.split('/');
+  const FILES = ['a','b','c','d','e','f','g','h'];
+  const RANKS = ['8','7','6','5','4','3','2','1'];
+  for (let ri = 0; ri < 8; ri++) {
+    let fi = 0;
+    for (const ch of rows[ri]) {
+      if (ch >= '1' && ch <= '8') {
+        fi += parseInt(ch);
+      } else {
+        const color = ch === ch.toUpperCase() ? 'w' : 'b';
+        const type = ch.toLowerCase();
+        squares[`${FILES[fi]}${RANKS[ri]}`] = { type, color };
+        fi++;
+      }
+    }
+  }
+  return squares;
+}
+
+function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
+  const pieceKey = `${color}${type.toUpperCase()}`;
+  return (
+    <img
+      src={`/pieces/cburnett/${pieceKey}.svg`}
+      alt=""
+      className="w-full h-full"
+      draggable={false}
+      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}
+    />
+  );
+}
 
 export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
   const [game, setGame] = useState(() => new Chess(START_FEN));
@@ -13,6 +48,8 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
   const [blackCaptured, setBlackCaptured] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [computerThinking, setComputerThinking] = useState(false);
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [validSquares, setValidSquares] = useState<string[]>([]);
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -23,6 +60,8 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
     setBlackCaptured(0);
     setWinner(null);
     setComputerThinking(false);
+    setSelectedSquare(null);
+    setValidSquares([]);
   }, []);
 
   const checkWin = useCallback((g: Chess, wCap: number, bCap: number): string | null => {
@@ -53,10 +92,14 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
     return null;
   }, []);
 
+  function getValidSquaresForPawn(from: string, g: Chess): string[] {
+    const moves = g.moves({ verbose: true }).filter((m: any) => m.from === from);
+    return moves.map((m: any) => m.to);
+  }
+
   /* ---- Computer move (black) ---- */
   useEffect(() => {
     if (winner || game.turn() !== 'b') return;
-
     setComputerThinking(true);
 
     const timer = setTimeout(() => {
@@ -80,8 +123,8 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       else if (captures.length > 0) chosen = captures[Math.floor(Math.random() * captures.length)];
       else chosen = moves[Math.floor(Math.random() * moves.length)];
 
-      const g = new Chess(game.fen());
-      g.move({ from: chosen.from, to: chosen.to, promotion: 'q' });
+      const newGame = new Chess(game.fen());
+      newGame.move({ from: chosen.from, to: chosen.to, promotion: 'q' });
 
       let wCap = whiteCaptured;
       if (chosen.captured === 'p') {
@@ -89,51 +132,84 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         setWhiteCaptured(wCap);
       }
 
-      const win = checkWin(g, wCap, blackCaptured);
+      const win = checkWin(newGame, wCap, blackCaptured);
       if (win) {
         setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-        setGame(g);
+        setGame(newGame);
         setComputerThinking(false);
         if (win === 'white') onComplete();
         return;
       }
 
-      setGame(g);
+      setGame(newGame);
       setComputerThinking(false);
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [game, winner, checkWin, whiteCaptured, blackCaptured, onComplete]);
 
-  /* ---- Drag-and-drop ---- */
-  const handlePieceDrop = useCallback(
-    ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
-      if (winner || computerThinking || game.turn() !== 'w' || !targetSquare) return false;
+  const handleSquareClick = useCallback(
+    (square: string) => {
+      if (winner || computerThinking || game.turn() !== 'w') return;
 
-      const g = new Chess(game.fen());
-      const move = g.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+      const piece = game.get(square as any);
 
-      if (!move || move.piece !== 'p' || move.color !== 'w') return false;
+      if (selectedSquare) {
+        if (selectedSquare === square) {
+          setSelectedSquare(null);
+          setValidSquares([]);
+          return;
+        }
 
-      let bCap = blackCaptured;
-      if (move.captured === 'p') {
-        bCap = blackCaptured + 1;
-        setBlackCaptured(bCap);
+        // Try move
+        const g = new Chess(game.fen());
+        const move = g.move({ from: selectedSquare, to: square, promotion: 'q' });
+
+        if (move && move.piece === 'p' && move.color === 'w') {
+          let bCap = blackCaptured;
+          if (move.captured === 'p') {
+            bCap = blackCaptured + 1;
+            setBlackCaptured(bCap);
+          }
+
+          const win = checkWin(g, whiteCaptured, bCap);
+          if (win) {
+            setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+            setGame(g);
+            setSelectedSquare(null);
+            setValidSquares([]);
+            if (win === 'white') onComplete();
+            return;
+          }
+
+          setGame(g);
+          setSelectedSquare(null);
+          setValidSquares([]);
+          return;
+        }
+
+        // If clicked another white pawn, select it
+        if (piece && piece.color === 'w' && piece.type === 'p') {
+          setSelectedSquare(square);
+          setValidSquares(getValidSquaresForPawn(square, game));
+          return;
+        }
+
+        setSelectedSquare(null);
+        setValidSquares([]);
+      } else {
+        if (piece && piece.color === 'w' && piece.type === 'p') {
+          setSelectedSquare(square);
+          setValidSquares(getValidSquaresForPawn(square, game));
+        }
       }
-
-      const win = checkWin(g, whiteCaptured, bCap);
-      if (win) {
-        setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-        setGame(g);
-        if (win === 'white') onComplete();
-        return true;
-      }
-
-      setGame(g);
-      return true;
     },
-    [game, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete]
+    [game, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete, selectedSquare]
   );
+
+  const squares = parseFen(game.fen());
+  const FILES = ['a','b','c','d','e','f','g','h'];
+  const RANKS = ['8','7','6','5','4','3','2','1'];
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
@@ -158,15 +234,42 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
 
       {/* Board */}
       <div className="flex justify-center w-full">
-        <div className="relative inline-block">
-          <Chessboard
-            options={{
-              position: game.fen(),
-              onPieceDrop: handlePieceDrop,
-              boardStyle: { borderRadius: '8px' },
-              animationDurationInMs: 200,
-            }}
-          />
+        <div
+          className="grid grid-cols-8 border-2 border-slate-800 rounded-lg overflow-hidden"
+          style={{ width: 'min(100%, 480px)', aspectRatio: '1' }}
+        >
+          {RANKS.map((rank) =>
+            FILES.map((file, fi) => {
+              const sq = `${file}${rank}`;
+              const piece = squares[sq];
+              const isLight = ((FILES.indexOf(file) + RANKS.indexOf(rank)) % 2 === 0);
+              const isSelected = selectedSquare === sq;
+              const isValid = validSquares.includes(sq);
+
+              return (
+                <button
+                  key={sq}
+                  onClick={() => handleSquareClick(sq)}
+                  className={`relative flex items-center justify-center transition ${
+                    isSelected
+                      ? 'ring-2 ring-amber-400 z-10'
+                      : isValid
+                        ? 'ring-2 ring-green-400 z-10'
+                        : ''
+                  }`}
+                  style={{
+                    backgroundColor: isLight ? '#f0d9b5' : '#b58863',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {piece && <PieceImg type={piece.type} color={piece.color} />}
+                  {isValid && !piece && (
+                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                  )}
+                </button>
+              );
+            })
+          )}
         </div>
       </div>
 
