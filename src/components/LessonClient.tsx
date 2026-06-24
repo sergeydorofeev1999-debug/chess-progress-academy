@@ -1411,7 +1411,10 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           </div>
         ) : interactiveConfig.type === 'interactive_piece_value' ? (
           <div className="mb-8">
-            <PieceValueBoard onComplete={handleInteractiveComplete} />
+            <PieceValueBoard
+              onComplete={handleInteractiveComplete}
+              onLevelComplete={handleLevelComplete}
+            />
           </div>
         ) : (
           <div className="mb-8">
