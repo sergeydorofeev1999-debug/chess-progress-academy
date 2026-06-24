@@ -836,6 +836,7 @@ interface CaptureLevel {
   autoMove?: { from: string; to: string; delayMs: number } | { from: string; to: string; delayMs: number }[];
   triggerAutoMove?: { from: string; to: string; delayMs?: number }[];
   allowedPieces?: string[];
+  checkOnMove?: number;
 }
 
 interface Props {
@@ -1070,7 +1071,7 @@ export default function CaptureBoard({
       // pick the most valuable one, then capture it.
       // Skip if level has explicit autoCaptures config (e.g. Lesson 10 ex4 escape check)
       // Skip if level is requireCheck (king reaction takes priority)
-      if ((!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck && level.blackAutoCapture !== false) {
+      if ((!level.autoCaptures || level.autoCaptures.length === 0) && (!level.requireCheck || level.checkOnMove) && level.blackAutoCapture !== false) {
         // For requireMate levels: skip auto-capture if black king is in check — king must react first
         let skipAutoCapture = false;
         if (level.requireMate) {
@@ -1140,6 +1141,9 @@ export default function CaptureBoard({
       } // end if (!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck
 
       if (level.requireCheck) {
+        const checkMoveNum = level.checkOnMove || 1;
+        const currentMoveNum = movesRef.current + 1;
+
         let blackKingSq = '';
         for (const sq in newSquares) {
           if (newSquares[sq].type === 'k' && newSquares[sq].color === 'b') {
@@ -1158,35 +1162,47 @@ export default function CaptureBoard({
             }
           }
         }
-        if (!isCheck) {
-          setFailed(true);
-          setGameOver(true);
-          return false;
-        }
-        // Success path for requireCheck
-        const max = level.maxMoves || stars.length + 1;
-        const m = movesRef.current + 1;
-        let earned = 3;
-        if (m <= max) earned = 3;
-        else if (m <= max + 1) earned = 2;
-        else earned = 1;
-        setLevelStars((prevStars) => {
-          const nextStars = { ...prevStars, [currentLevel]: earned };
-          localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
-          return nextStars;
-        });
-        onLevelComplete?.(currentLevel, earned);
-        setTimeout(() => {
-          if (currentLevel + 1 < totalLevels) {
-            setCurrentLevel((l) => l + 1);
-            setMsg('');
-          } else {
-            setAllDone(true);
-            setMsg(`🎉 ${successMessage}`);
-            onAllComplete?.();
+
+        if (currentMoveNum === checkMoveNum) {
+          // This is the required move — must give check
+          if (!isCheck) {
+            setFailed(true);
+            setGameOver(true);
+            return false;
           }
-        }, 600);
-        return true;
+          // Success path for requireCheck
+          const max = level.maxMoves || stars.length + 1;
+          const m = movesRef.current + 1;
+          let earned = 3;
+          if (m <= max) earned = 3;
+          else if (m <= max + 1) earned = 2;
+          else earned = 1;
+          setLevelStars((prevStars) => {
+            const nextStars = { ...prevStars, [currentLevel]: earned };
+            localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
+            return nextStars;
+          });
+          onLevelComplete?.(currentLevel, earned);
+          setTimeout(() => {
+            if (currentLevel + 1 < totalLevels) {
+              setCurrentLevel((l) => l + 1);
+              setMsg('');
+            } else {
+              setAllDone(true);
+              setMsg(`🎉 ${successMessage}`);
+              onAllComplete?.();
+            }
+          }, 600);
+          return true;
+        } else {
+          // Not the required move yet
+          if (isCheck) {
+            setFailed(true);
+            setGameOver(true);
+            return false;
+          }
+          return true;
+        }
       }
 
       if (level.requireMate) {
