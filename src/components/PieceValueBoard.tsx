@@ -247,7 +247,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
       <div className="flex flex-col lg:flex-row gap-4 w-full">
         {/* LEFT: Level nav */}
         <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-          <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
+          <div className="flex flex-col rounded overflow-hidden border border-gray-200">
             {LEVELS.slice(1).map((_, i) => {
               const idx = i + 1;
               const earned = levelStars[idx];
@@ -361,7 +361,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
 
         <button
           onClick={reset}
-          className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
+          className="flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
         >
           <RotateCcw size={14} /> Заново
         </button>
