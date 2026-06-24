@@ -283,7 +283,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
       <div className="flex flex-col lg:flex-row gap-4 w-full">
         {/* LEFT: Level nav */}
         <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-          <div className="flex flex-col rounded overflow-hidden border border-gray-200">
+          <div className="hidden sm:flex flex-col rounded overflow-hidden border border-gray-200">
             {LEVELS.slice(1).map((_, i) => {
               const idx = i + 1;
               const earned = levelStars[idx];
@@ -300,7 +300,6 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                   } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
                 >
                   <span className="hidden sm:inline">{idx}</span>
-                  <span className="sm:hidden w-2 h-2 rounded-full bg-current opacity-60"></span>
                 </button>
               );
             })}
@@ -367,7 +366,6 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
                 } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
               >
                 <span className="hidden sm:inline">{idx}</span>
-                <span className="sm:hidden w-2 h-2 rounded-full bg-current opacity-60"></span>
               </button>
             );
           })}
