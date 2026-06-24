@@ -2,26 +2,12 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
+import { Chessboard } from 'react-chessboard';
 import { RotateCcw } from 'lucide-react';
-import dynamic from 'next/dynamic';
-
-const Chessboard = dynamic(
-  () => import('react-chessboard').then((mod) => mod.Chessboard),
-  { ssr: false }
-);
 
 const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
 
 export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
-  return (
-    <PawnRaceGame
-      Chessboard={Chessboard}
-      onComplete={onComplete}
-    />
-  );
-}
-
-function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete: () => void }) {
   const [game, setGame] = useState(() => new Chess(START_FEN));
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
@@ -170,7 +156,7 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
         </div>
       )}
 
-      {/* Board — NO highlights, NO dots, drag-and-drop enabled */}
+      {/* Board */}
       <div className="flex justify-center w-full">
         <div className="relative inline-block">
           <Chessboard
