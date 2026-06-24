@@ -129,8 +129,8 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
 
   /* ---- Drag-and-drop ---- */
   const handlePieceDrop = useCallback(
-    ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string }) => {
-      if (winner || computerThinking || game.turn() !== 'w') return false;
+    ({ sourceSquare, targetSquare }: { sourceSquare: string; targetSquare: string | null }) => {
+      if (winner || computerThinking || game.turn() !== 'w' || !targetSquare) return false;
 
       const g = new Chess(game.fen());
       const move = g.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
@@ -182,10 +182,12 @@ function PawnRaceGame({ Chessboard, onComplete }: { Chessboard: any; onComplete:
       <div className="flex justify-center w-full">
         <div className="relative inline-block">
           <Chessboard
-            position={game.fen()}
-            onPieceDrop={handlePieceDrop}
-            boardStyle={{ borderRadius: '8px' }}
-            animationDurationInMs={200}
+            options={{
+              position: game.fen(),
+              onPieceDrop: handlePieceDrop,
+              boardStyle: { borderRadius: '8px' },
+              animationDurationInMs: 200,
+            }}
           />
         </div>
       </div>
