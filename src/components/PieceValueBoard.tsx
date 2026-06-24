@@ -355,7 +355,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
     );
   }
 
-  // ====== LEVELS 1-2: EQUATIONS ======
+  // ====== LEVELS 1-5: EQUATIONS ======
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full">
       {/* LEFT: Level nav */}
@@ -470,19 +470,8 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          {/* Back button */}
-          <button
-            onClick={() => goToLevel(currentLevel - 1)}
-            disabled={currentLevel <= 0}
-            className={`flex items-center gap-1 px-4 py-3 rounded-xl font-semibold transition
-              ${currentLevel <= 0 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
-            `}
-          >
-            <ChevronLeft size={18} /> Назад
-          </button>
-
+        {/* Actions: Check + Reset (above) */}
+        <div className="flex items-center justify-center gap-3">
           <button
             onClick={checkSolution}
             disabled={success}
@@ -493,23 +482,35 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
             {success ? 'Правильно! 🎉' : 'Проверить'}
           </button>
 
-          {/* Next button */}
-          <button
-            onClick={() => goToLevel(currentLevel + 1)}
-            disabled={currentLevel >= LEVELS.length - 1}
-            className={`flex items-center gap-1 px-4 py-3 rounded-xl font-semibold transition
-              ${currentLevel >= LEVELS.length - 1 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
-            `}
-          >
-            Вперёд <ChevronRight size={18} />
-          </button>
-
           <button
             onClick={reset}
             className="px-4 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-2"
           >
             <RotateCcw size={16} />
             Сначала
+          </button>
+        </div>
+
+        {/* Navigation: Back + Forward (below) */}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => goToLevel(currentLevel - 1)}
+            disabled={currentLevel <= 0}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition
+              ${currentLevel <= 0 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
+            `}
+          >
+            <ChevronLeft size={18} /> Назад
+          </button>
+
+          <button
+            onClick={() => goToLevel(currentLevel + 1)}
+            disabled={currentLevel >= LEVELS.length - 1}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg font-medium transition
+              ${currentLevel >= LEVELS.length - 1 ? 'text-gray-300 bg-gray-100 cursor-not-allowed' : 'text-slate-600 bg-slate-100 hover:bg-slate-200'}
+            `}
+          >
+            Вперёд <ChevronRight size={18} />
           </button>
         </div>
 
