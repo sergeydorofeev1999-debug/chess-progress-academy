@@ -2,12 +2,34 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { Chessboard } from 'react-chessboard';
 import { RotateCcw } from 'lucide-react';
 
 const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
 
 export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
+  const [isClient, setIsClient] = useState(false);
+  const [BoardComponent, setBoardComponent] = useState<any>(null);
+
+  useEffect(() => {
+    setIsClient(true);
+    import('react-chessboard').then((mod) => {
+      setBoardComponent(() => mod.Chessboard);
+    });
+  }, []);
+
+  if (!isClient || !BoardComponent) {
+    return (
+      <div className="text-center py-12">
+        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-4" />
+        <p className="text-slate-500">Загрузка доски...</p>
+      </div>
+    );
+  }
+
+  return <PawnRaceGame BoardComponent={BoardComponent} onComplete={onComplete} />;
+}
+
+function PawnRaceGame({ BoardComponent, onComplete }: { BoardComponent: any; onComplete: () => void }) {
   const [game, setGame] = useState(() => new Chess(START_FEN));
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
@@ -159,7 +181,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       {/* Board */}
       <div className="flex justify-center w-full">
         <div className="relative inline-block">
-          <Chessboard
+          <BoardComponent
             options={{
               position: game.fen(),
               onPieceDrop: handlePieceDrop,
