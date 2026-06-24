@@ -88,6 +88,21 @@ const LEVELS: LevelConfig[] = [
     leftSum: 9,
     rightSum: 9,
   },
+  {
+    id: 3,
+    title: 'Уравнение 3',
+    instructions: 'Расставь фигуры так, чтобы равенство выполнялось.',
+    pieces: [
+      { id: 'queen', type: 'q', label: 'Ферзь', value: 9 },
+      { id: 'rook1', type: 'r', label: 'Ладья', value: 5 },
+      { id: 'rook2', type: 'r', label: 'Ладья', value: 5 },
+      { id: 'pawn', type: 'p', label: 'Пешка', value: 1 },
+    ],
+    leftSlots: 2,
+    rightSlots: 2,
+    leftSum: 10,
+    rightSum: 10,
+  },
 ];
 
 interface Props {
