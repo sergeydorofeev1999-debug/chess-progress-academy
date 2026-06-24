@@ -159,7 +159,8 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
   const [success, setSuccess] = useState(false);
 
   const level = LEVELS[currentLevel];
-  const slotSize = 'w-20 h-20 sm:w-24 sm:h-24';
+  const totalSlots = level.leftSlots + level.rightSlots;
+  const slotSize = totalSlots >= 6 ? 'w-14 h-14 sm:w-16 sm:h-16' : 'w-20 h-20 sm:w-24 sm:h-24';
 
   const initLevel = useCallback((levelIndex: number) => {
     const cfg = LEVELS[levelIndex];
