@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
 import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
-import PawnRaceBoard from './PawnRaceBoard';
+import PawnRaceBoardClientOnly from './PawnRaceBoardClientOnly';
 
 interface Lesson {
   id: string;
@@ -1419,7 +1419,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           </div>
         ) : interactiveConfig.type === 'interactive_pawn_race' ? (
           <div className="mb-8">
-            <PawnRaceBoard
+            <PawnRaceBoardClientOnly
               onComplete={handleInteractiveComplete}
             />
           </div>
