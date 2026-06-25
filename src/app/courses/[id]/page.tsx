@@ -126,6 +126,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               // Rook pawn (lesson 19) has 3 difficulty levels
               if (l.id === 'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4') {
                 levelsCount = 3;
+              }
+              // Bishop pawn (lesson 20) has 3 difficulty levels
+              if (l.id === '2976cdff-d622-45a6-9ce4-fbcc33fa9528') {
+                levelsCount = 3;
               } else {
                 try {
                   const config = JSON.parse(l.video_url || '{}');

@@ -8,6 +8,7 @@ import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
 import PawnRaceBoard from './PawnRaceBoard';
 import RookPawnBoard from './RookPawnBoard';
+import BishopPawnBoard from './BishopPawnBoard';
 
 interface Lesson {
   id: string;
@@ -1428,6 +1429,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_rook_pawn' ? (
           <div className="mb-8">
             <RookPawnBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_bishop_pawn' ? (
+          <div className="mb-8">
+            <BishopPawnBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
