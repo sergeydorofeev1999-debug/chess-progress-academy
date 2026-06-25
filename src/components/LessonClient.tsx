@@ -1421,6 +1421,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           <div className="mb-8">
             <PawnRaceBoard
               onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
             />
           </div>
         ) : (
