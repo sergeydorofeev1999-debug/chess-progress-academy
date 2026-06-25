@@ -7,6 +7,7 @@ import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } fro
 import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
 import PawnRaceBoard from './PawnRaceBoard';
+import RookPawnBoard from './RookPawnBoard';
 
 interface Lesson {
   id: string;
@@ -1420,6 +1421,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_pawn_race' ? (
           <div className="mb-8">
             <PawnRaceBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_rook_pawn' ? (
+          <div className="mb-8">
+            <RookPawnBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />

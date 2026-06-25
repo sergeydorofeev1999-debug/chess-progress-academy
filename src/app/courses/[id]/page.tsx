@@ -122,6 +122,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               // Pawn race (lesson 18) has 3 difficulty levels
               if (l.id === 'af74a851-e308-411d-82e1-fafdc5bd390a') {
                 levelsCount = 3;
+              }
+              // Rook pawn (lesson 19) has 3 difficulty levels
+              if (l.id === 'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4') {
+                levelsCount = 3;
               } else {
                 try {
                   const config = JSON.parse(l.video_url || '{}');

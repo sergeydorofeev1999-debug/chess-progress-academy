@@ -51,14 +51,21 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const detail = mounted ? clientDetails[lesson.id] || {} : {};
         const totalLevels = lesson.levelsCount || 1;
 
-        // Special handling for pawn race (lesson 18)
+        // Special handling for interactive lessons with difficulty levels
         const isPawnRace = lesson.id === 'af74a851-e308-411d-82e1-fafdc5bd390a';
+        const isRookPawn = lesson.id === 'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4';
         let levelsDone = 0;
         let minStars = 0;
         if (isPawnRace && mounted) {
           try {
             const pawnRace = JSON.parse(localStorage.getItem(`pawnrace_progress_${lesson.id}`) || '{}');
             levelsDone = Object.values(pawnRace).filter(Boolean).length;
+            minStars = levelsDone;
+          } catch {}
+        } else if (isRookPawn && mounted) {
+          try {
+            const rookPawn = JSON.parse(localStorage.getItem(`rookpawn_progress_${lesson.id}`) || '{}');
+            levelsDone = Object.values(rookPawn).filter(Boolean).length;
             minStars = levelsDone;
           } catch {}
         } else {
@@ -72,7 +79,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted || (isPawnRace && hasProgress)) {
+        if (isCompleted || ((isPawnRace || isRookPawn) && hasProgress)) {
           bgColor = 'bg-[#ebf5d8]';
           borderColor = 'border-[#c5e0a5]';
         } else if (hasProgress) {
@@ -105,12 +112,12 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
-            {(isCompleted || (isPawnRace && hasProgress)) && (
+            {(isCompleted || ((isPawnRace || isRookPawn) && hasProgress)) && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {'★'.repeat(minStars || 1)}
               </div>
             )}
-            {hasProgress && !isCompleted && !(isPawnRace && hasProgress) && (
+            {hasProgress && !isCompleted && !((isPawnRace || isRookPawn) && hasProgress) && (
               <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {levelsDone}/{totalLevels}
               </div>
