@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { RotateCcw, Star, Trophy } from 'lucide-react';
+import { RotateCcw, Star, Trophy, ChevronRight } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['1','2','3','4','5','6','7','8'];
@@ -657,28 +657,29 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
           <p className="text-slate-600 max-w-xs mx-auto">Дойди королём до противоположной линии и забей 3 гола. Пешки блокируют ходы королям. Чёрный король ходит автоматически.</p>
         </div>
 
-        <div className="flex gap-4">
-          {LEVELS.map(lvl => {
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          {LEVELS.map((lvl, idx) => {
             const isDone = completedLevels[lvl.id];
             return (
               <button
                 key={lvl.id}
                 onClick={() => startLevel(lvl.id)}
-                className={`flex flex-col items-center gap-2 px-6 py-4 rounded-xl border-2 transition-all ${
+                className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all text-left ${
                   isDone ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${lvl.color}`}>
-                  {lvl.id.toUpperCase()}
-                </span>
-                <span className="text-sm font-medium">{lvl.label}</span>
-                <span className="text-xs text-slate-500">{lvl.description}</span>
-                {isDone && (
-                  <div className="flex items-center gap-1 text-green-600">
-                    <Star className="w-4 h-4 fill-current" />
-                    <span className="text-xs font-medium">Пройдено</span>
-                  </div>
-                )}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${lvl.color}`}>
+                  {isDone ? (
+                    <Trophy className="w-5 h-5" />
+                  ) : (
+                    idx + 1
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm">{lvl.label}</div>
+                  <div className="text-xs text-slate-500">{lvl.description}</div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
               </button>
             );
           })}
