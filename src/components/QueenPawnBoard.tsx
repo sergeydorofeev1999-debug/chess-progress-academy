@@ -194,8 +194,9 @@ function hasPieces(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
   return Object.values(squares).some(p => p.color === color);
 }
 
-function hasQueen(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
-  return Object.values(squares).some(p => p.type === 'q' && p.color === color);
+function hasExtraQueen(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
+  // Check if there's more than 1 queen of this color (promotion happened)
+  return Object.values(squares).filter(p => p.type === 'q' && p.color === color).length > 1;
 }
 
 /* ═════════════════════════════════════════════════════════════════
@@ -229,6 +230,10 @@ function evaluatePosition(squares: Record<string, Piece>): number {
       }
     }
   }
+
+  // Extra queen = promotion happened
+  if (hasExtraQueen(squares, 'w')) score -= 5000;
+  if (hasExtraQueen(squares, 'b')) score += 5000;
 
   const blackMoves = getAllMoves(squares, 'b', null).length;
   const whiteMoves = getAllMoves(squares, 'w', null).length;
@@ -429,9 +434,9 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
   }, [reset]);
 
   const checkGameOver = useCallback((sqs: Record<string, Piece>, ep: string | null, currentTurn: 'w' | 'b'): string | null => {
-    // Win by capturing all opponent pieces (queen already exists)
-    if (!hasPieces(sqs, 'b')) return 'Белые победили!';
-    if (!hasPieces(sqs, 'w')) return 'Чёрные победили!';
+    // Win by capturing all opponent pieces OR promotion (extra queen)
+    if (!hasPieces(sqs, 'b') || hasExtraQueen(sqs, 'w')) return 'Белые победили!';
+    if (!hasPieces(sqs, 'w') || hasExtraQueen(sqs, 'b')) return 'Чёрные победили!';
     if (hasNoMoves(sqs, currentTurn, ep)) return 'Ничья';
     return null;
   }, []);
