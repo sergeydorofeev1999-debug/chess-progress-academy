@@ -433,10 +433,10 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
     reset();
   }, [reset]);
 
-  const checkGameOver = useCallback((sqs: Record<string, Piece>, ep: string | null, currentTurn: 'w' | 'b'): string | null => {
-    // Win by capturing all opponent pieces OR promotion (extra queen)
-    if (!hasPieces(sqs, 'b') || hasExtraQueen(sqs, 'w')) return 'Белые победили!';
-    if (!hasPieces(sqs, 'w') || hasExtraQueen(sqs, 'b')) return 'Чёрные победили!';
+  const checkGameOver = useCallback((sqs: Record<string, Piece>, ep: string | null, currentTurn: 'w' | 'b', justPromoted: boolean = false): string | null => {
+    // Win by capturing all opponent pieces OR promotion (new queen from pawn)
+    if (!hasPieces(sqs, 'b') || justPromoted) return 'Белые победили!';
+    if (!hasPieces(sqs, 'w')) return 'Чёрные победили!';
     if (hasNoMoves(sqs, currentTurn, ep)) return 'Ничья';
     return null;
   }, []);
@@ -462,7 +462,7 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
 
       const result = makeMove(sqs, enPassantRef.current, chosen.from, chosen.to);
 
-      const win = checkGameOver(result.squares, result.enPassant, 'w');
+      const win = checkGameOver(result.squares, result.enPassant, 'w', result.promoted);
       if (win) {
         setWinner(win);
         setSquares(result.squares);
@@ -512,7 +512,7 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
       if (validSquaresRef.current.includes(square)) {
         const result = makeMove(sqs, enPassantRef.current, sel, square);
 
-        const win = checkGameOver(result.squares, result.enPassant, 'b');
+        const win = checkGameOver(result.squares, result.enPassant, 'b', result.promoted);
         if (win) {
           setWinner(win);
           setSquares(result.squares);
@@ -617,7 +617,7 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
           const valid = getPieceMoves(start.square, squaresRef.current, 'w', enPassantRef.current);
           if (valid.includes(targetSquare)) {
             const result = makeMove(squaresRef.current, enPassantRef.current, start.square, targetSquare);
-            const win = checkGameOver(result.squares, result.enPassant, 'b');
+            const win = checkGameOver(result.squares, result.enPassant, 'b', result.promoted);
             if (win) {
               setWinner(win);
               setSquares(result.squares);
