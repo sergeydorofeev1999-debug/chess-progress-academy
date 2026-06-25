@@ -203,8 +203,6 @@ function hasQueen(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
    ═════════════════════════════════════════════════════════════════ */
 
 function evaluatePosition(squares: Record<string, Piece>): number {
-  if (hasQueen(squares, 'w')) return -10000;
-  if (hasQueen(squares, 'b')) return 10000;
   if (!hasPieces(squares, 'w')) return 10000;
   if (!hasPieces(squares, 'b')) return -10000;
 
@@ -431,8 +429,9 @@ export default function QueenPawnBoard({ onComplete, lessonId }: { onComplete: (
   }, [reset]);
 
   const checkGameOver = useCallback((sqs: Record<string, Piece>, ep: string | null, currentTurn: 'w' | 'b'): string | null => {
-    if (hasQueen(sqs, 'w') || !hasPieces(sqs, 'b')) return 'Белые победили!';
-    if (hasQueen(sqs, 'b') || !hasPieces(sqs, 'w')) return 'Чёрные победили!';
+    // Win by capturing all opponent pieces (queen already exists)
+    if (!hasPieces(sqs, 'b')) return 'Белые победили!';
+    if (!hasPieces(sqs, 'w')) return 'Чёрные победили!';
     if (hasNoMoves(sqs, currentTurn, ep)) return 'Ничья';
     return null;
   }, []);
