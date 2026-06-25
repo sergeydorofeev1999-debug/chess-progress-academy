@@ -504,6 +504,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
                     backgroundColor: light ? '#f0d9b5' : '#b58863',
                   }}
                   onPointerDown={(e) => handlePointerDown(e, sq)}
+                  onClick={() => click(sq)}
                   onDragStart={(e) => e.preventDefault()}
                 >
                   {/* Selected square highlight */}
