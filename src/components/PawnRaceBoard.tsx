@@ -1,18 +1,17 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Chess } from 'chess.js';
 import { RotateCcw } from 'lucide-react';
 
-const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
+const FILES = ['a','b','c','d','e','f','g','h'];
+const RANKS = ['8','7','6','5','4','3','2','1'];
 
-function parseFen(fen: string) {
-  const squares: Record<string, { type: string; color: 'w' | 'b' }> = {};
+type Piece = { type: string; color: 'w' | 'b' };
+
+function fenToSquares(fen: string): Record<string, Piece> {
+  const squares: Record<string, Piece> = {};
   const parts = fen.split(' ');
-  const placement = parts[0];
-  const rows = placement.split('/');
-  const FILES = ['a','b','c','d','e','f','g','h'];
-  const RANKS = ['8','7','6','5','4','3','2','1'];
+  const rows = parts[0].split('/');
   for (let ri = 0; ri < 8; ri++) {
     let fi = 0;
     for (const ch of rows[ri]) {
@@ -20,14 +19,123 @@ function parseFen(fen: string) {
         fi += parseInt(ch);
       } else {
         const color = ch === ch.toUpperCase() ? 'w' : 'b';
-        const type = ch.toLowerCase();
-        squares[`${FILES[fi]}${RANKS[ri]}`] = { type, color };
+        squares[`${FILES[fi]}${RANKS[ri]}`] = { type: ch.toLowerCase(), color };
         fi++;
       }
     }
   }
   return squares;
 }
+
+function squaresToFen(squares: Record<string, Piece>): string {
+  let rows = '';
+  for (let ri = 0; ri < 8; ri++) {
+    let empty = 0;
+    for (let fi = 0; fi < 8; fi++) {
+      const sq = `${FILES[fi]}${RANKS[ri]}`;
+      const p = squares[sq];
+      if (p) {
+        if (empty > 0) { rows += empty; empty = 0; }
+        rows += p.color === 'w' ? p.type.toUpperCase() : p.type.toLowerCase();
+      } else {
+        empty++;
+      }
+    }
+    if (empty > 0) rows += empty;
+    if (ri < 7) rows += '/';
+  }
+  return rows + ' w - - 0 1';
+}
+
+function getPawnMoves(square: string, squares: Record<string, Piece>, color: 'w' | 'b', enPassant: string | null): string[] {
+  const ff = FILES.indexOf(square[0]);
+  const fr = RANKS.indexOf(square[1]);
+  const dir = color === 'w' ? -1 : 1; // white moves up (decreasing rank index), black down
+  const valid: string[] = [];
+
+  // Forward 1
+  const r1 = fr + dir;
+  if (r1 >= 0 && r1 < 8) {
+    const f1 = `${FILES[ff]}${RANKS[r1]}`;
+    if (!squares[f1]) valid.push(f1);
+  }
+
+  // Forward 2 from start
+  const startRank = color === 'w' ? 6 : 1; // rank '2' is index 6, rank '7' is index 1
+  if (fr === startRank) {
+    const r2 = fr + 2 * dir;
+    const f1 = `${FILES[ff]}${RANKS[r1]}`;
+    const f2 = `${FILES[ff]}${RANKS[r2]}`;
+    if (!squares[f1] && !squares[f2]) valid.push(f2);
+  }
+
+  // Diagonal captures
+  for (const df of [-1, 1]) {
+    const fd = ff + df;
+    if (fd >= 0 && fd < 8 && r1 >= 0 && r1 < 8) {
+      const sq = `${FILES[fd]}${RANKS[r1]}`;
+      const target = squares[sq];
+      if (target && target.color !== color) valid.push(sq);
+      // En passant
+      if (enPassant && sq === enPassant) valid.push(sq);
+    }
+  }
+
+  return valid;
+}
+
+function makeMove(squares: Record<string, Piece>, currentEnPassant: string | null, from: string, to: string): { squares: Record<string, Piece>; enPassant: string | null; captured: Piece | null; promoted: boolean } {
+  const p = squares[from];
+  if (!p) return { squares, enPassant: null, captured: null, promoted: false };
+
+  const next: Record<string, Piece> = { ...squares };
+  delete next[from];
+  let captured = next[to] || null;
+
+  // En passant capture
+  if (p.type === 'p' && to === currentEnPassant) {
+    const ff = FILES.indexOf(from[0]);
+    const tf = FILES.indexOf(to[0]);
+    if (ff !== tf) {
+      const captureSq = `${FILES[tf]}${from[1]}`;
+      captured = next[captureSq] || captured;
+      delete next[captureSq];
+    }
+  }
+
+  delete next[to];
+
+  // Promotion
+  const rank = to[1];
+  if (p.type === 'p' && (rank === '8' || rank === '1')) {
+    next[to] = { type: 'q', color: p.color };
+  } else {
+    next[to] = p;
+  }
+
+  // Set en passant target
+  let newEnPassant: string | null = null;
+  if (p.type === 'p') {
+    const fromRank = parseInt(from[1]);
+    const toRank = parseInt(to[1]);
+    if (Math.abs(toRank - fromRank) === 2) {
+      const epRank = p.color === 'w' ? (fromRank + 1).toString() : (fromRank - 1).toString();
+      newEnPassant = `${from[0]}${epRank}`;
+    }
+  }
+
+  return { squares: next, enPassant: newEnPassant, captured, promoted: p.type === 'p' && (rank === '8' || rank === '1') };
+}
+
+function countPawns(squares: Record<string, Piece>, color: 'w' | 'b'): number {
+  return Object.values(squares).filter(p => p.type === 'p' && p.color === color).length;
+}
+
+function hasQueen(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
+  return Object.values(squares).some(p => p.type === 'q' && p.color === color);
+}
+
+const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -43,116 +151,112 @@ function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
 }
 
 export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
-  const [game, setGame] = useState(() => new Chess(START_FEN));
+  const [squares, setSquares] = useState<Record<string, Piece>>(() => fenToSquares(START_FEN));
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
   const [winner, setWinner] = useState<string | null>(null);
   const [computerThinking, setComputerThinking] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [validSquares, setValidSquares] = useState<string[]>([]);
+  const [enPassant, setEnPassant] = useState<string | null>(null);
+  const [turn, setTurn] = useState<'w' | 'b'>('w');
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
 
   const reset = useCallback(() => {
-    setGame(new Chess(START_FEN));
+    setSquares(fenToSquares(START_FEN));
     setWhiteCaptured(0);
     setBlackCaptured(0);
     setWinner(null);
     setComputerThinking(false);
     setSelectedSquare(null);
     setValidSquares([]);
+    setEnPassant(null);
+    setTurn('w');
   }, []);
 
-  const checkWin = useCallback((g: Chess, wCap: number, bCap: number): string | null => {
-    const board = g.board();
-    let whiteQueen = false;
-    let blackQueen = false;
-    let blackPawns = 0;
-    let whitePawns = 0;
-
-    for (const row of board) {
-      for (const sq of row) {
-        if (!sq) continue;
-        if (sq.type === 'q') {
-          if (sq.color === 'w') whiteQueen = true;
-          else blackQueen = true;
-        }
-        if (sq.type === 'p') {
-          if (sq.color === 'b') blackPawns++;
-          else whitePawns++;
-        }
-      }
-    }
-
-    if (whiteQueen || bCap >= 5) return 'white';
-    if (blackQueen || wCap >= 5) return 'black';
-    if (whitePawns === 0) return 'black';
-    if (blackPawns === 0) return 'white';
+  const checkWin = useCallback((sqs: Record<string, Piece>, wCap: number, bCap: number): string | null => {
+    if (hasQueen(sqs, 'w') || bCap >= 5) return 'white';
+    if (hasQueen(sqs, 'b') || wCap >= 5) return 'black';
+    if (countPawns(sqs, 'w') === 0) return 'black';
+    if (countPawns(sqs, 'b') === 0) return 'white';
     return null;
   }, []);
 
-  function getValidSquaresForPawn(from: string, g: Chess): string[] {
-    const moves = g.moves({ verbose: true }).filter((m: any) => m.from === from);
-    return moves.map((m: any) => m.to);
-  }
-
   /* ---- Computer move (black) ---- */
   useEffect(() => {
-    if (winner || game.turn() !== 'b') return;
+    if (winner || turn !== 'b') return;
     setComputerThinking(true);
 
     const timer = setTimeout(() => {
       if (!mountedRef.current) return;
 
-      const moves = game.moves({ verbose: true }).filter((m: any) => m.piece === 'p' && m.color === 'b');
-      if (moves.length === 0) {
+      const blackPawns: string[] = [];
+      for (const sq in squares) {
+        if (squares[sq].type === 'p' && squares[sq].color === 'b') blackPawns.push(sq);
+      }
+
+      if (blackPawns.length === 0) {
         setWinner('Белые победили!');
         setComputerThinking(false);
         return;
       }
 
-      const promo = moves.filter((m: any) => m.to[1] === '1');
-      const captures = moves.filter((m: any) => {
-        const target = game.get(m.to as any);
-        return target && target.color === 'w';
-      });
+      let allMoves: { from: string; to: string; score: number }[] = [];
+      for (const from of blackPawns) {
+        const moves = getPawnMoves(from, squares, 'b', enPassant);
+        for (const to of moves) {
+          let score = 0;
+          const target = squares[to];
+          if (target && target.color === 'w') score += 100; // capture
+          if (to[1] === '1') score += 200; // promotion
+          if (to[1] === '2') score += 10; // close to promotion
+          allMoves.push({ from, to, score });
+        }
+      }
 
-      let chosen;
-      if (promo.length > 0) chosen = promo[Math.floor(Math.random() * promo.length)];
-      else if (captures.length > 0) chosen = captures[Math.floor(Math.random() * captures.length)];
-      else chosen = moves[Math.floor(Math.random() * moves.length)];
+      if (allMoves.length === 0) {
+        setWinner('Белые победили!');
+        setComputerThinking(false);
+        return;
+      }
 
-      const newGame = new Chess(game.fen());
-      newGame.move({ from: chosen.from, to: chosen.to, promotion: 'q' });
+      allMoves.sort((a, b) => b.score - a.score);
+      const chosen = allMoves[0];
 
+      const result = makeMove(squares, enPassant, chosen.from, chosen.to);
       let wCap = whiteCaptured;
-      if (chosen.captured === 'p') {
+      if (result.captured && result.captured.color === 'w') {
         wCap = whiteCaptured + 1;
         setWhiteCaptured(wCap);
       }
 
-      const win = checkWin(newGame, wCap, blackCaptured);
+      const win = checkWin(result.squares, wCap, blackCaptured);
       if (win) {
         setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-        setGame(newGame);
+        setSquares(result.squares);
+        setEnPassant(result.enPassant);
+        setTurn('w');
         setComputerThinking(false);
         if (win === 'white') onComplete();
         return;
       }
 
-      setGame(newGame);
+      setSquares(result.squares);
+      setEnPassant(result.enPassant);
+      setTurn('w');
       setComputerThinking(false);
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [game, winner, checkWin, whiteCaptured, blackCaptured, onComplete]);
+  }, [turn, winner, squares, enPassant, whiteCaptured, blackCaptured, checkWin, onComplete]);
 
   const handleSquareClick = useCallback(
     (square: string) => {
-      if (winner || computerThinking || game.turn() !== 'w') return;
+      if (winner || computerThinking || turn !== 'w') return;
 
-      const piece = game.get(square as any);
+      const piece = squares[square];
 
       if (selectedSquare) {
         if (selectedSquare === square) {
@@ -161,28 +265,28 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
           return;
         }
 
-        // Try move
-        const g = new Chess(game.fen());
-        const move = g.move({ from: selectedSquare, to: square, promotion: 'q' });
-
-        if (move && move.piece === 'p' && move.color === 'w') {
+        if (validSquares.includes(square)) {
+          const result = makeMove(squares, enPassant, selectedSquare, square);
           let bCap = blackCaptured;
-          if (move.captured === 'p') {
+          if (result.captured && result.captured.color === 'b') {
             bCap = blackCaptured + 1;
             setBlackCaptured(bCap);
           }
 
-          const win = checkWin(g, whiteCaptured, bCap);
+          const win = checkWin(result.squares, whiteCaptured, bCap);
           if (win) {
             setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
-            setGame(g);
+            setSquares(result.squares);
+            setEnPassant(result.enPassant);
             setSelectedSquare(null);
             setValidSquares([]);
             if (win === 'white') onComplete();
             return;
           }
 
-          setGame(g);
+          setSquares(result.squares);
+          setEnPassant(result.enPassant);
+          setTurn('b');
           setSelectedSquare(null);
           setValidSquares([]);
           return;
@@ -191,7 +295,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         // If clicked another white pawn, select it
         if (piece && piece.color === 'w' && piece.type === 'p') {
           setSelectedSquare(square);
-          setValidSquares(getValidSquaresForPawn(square, game));
+          setValidSquares(getPawnMoves(square, squares, 'w', enPassant));
           return;
         }
 
@@ -200,16 +304,12 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       } else {
         if (piece && piece.color === 'w' && piece.type === 'p') {
           setSelectedSquare(square);
-          setValidSquares(getValidSquaresForPawn(square, game));
+          setValidSquares(getPawnMoves(square, squares, 'w', enPassant));
         }
       }
     },
-    [game, winner, computerThinking, checkWin, whiteCaptured, blackCaptured, onComplete, selectedSquare]
+    [squares, turn, winner, computerThinking, selectedSquare, validSquares, enPassant, whiteCaptured, blackCaptured, checkWin, onComplete]
   );
-
-  const squares = parseFen(game.fen());
-  const FILES = ['a','b','c','d','e','f','g','h'];
-  const RANKS = ['8','7','6','5','4','3','2','1'];
 
   return (
     <div className="flex flex-col items-center gap-4 w-full">
@@ -218,7 +318,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         <div className="text-sm font-medium">
           Белые съели: <span className="text-red-600 font-bold">{blackCaptured}</span>/5
         </div>
-        <div className={`text-sm font-bold ${game.turn() === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
+        <div className={`text-sm font-bold ${turn === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
           {computerThinking ? 'Ход компьютера...' : 'Ваш ход'}
         </div>
         <div className="text-sm font-medium">
@@ -242,7 +342,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
             FILES.map((file, fi) => {
               const sq = `${file}${rank}`;
               const piece = squares[sq];
-              const isLight = ((FILES.indexOf(file) + RANKS.indexOf(rank)) % 2 === 0);
+              const isLight = ((fi + RANKS.indexOf(rank)) % 2 === 0);
               const isSelected = selectedSquare === sq;
               const isValid = validSquares.includes(sq);
 
