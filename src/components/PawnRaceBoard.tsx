@@ -148,6 +148,10 @@ function getAllPawnMoves(squares: Record<string, Piece>, color: 'w' | 'b', enPas
   return moves;
 }
 
+function hasNoMoves(squares: Record<string, Piece>, color: 'w' | 'b', enPassant: string | null): boolean {
+  return getAllPawnMoves(squares, color, enPassant).length === 0;
+}
+
 /* ═════════════════════════════════════════════════════════════════
    AI ENGINE — minimax with alpha-beta pruning for pawn race
    Score is from BLACK's perspective (positive = good for black)
@@ -460,11 +464,10 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
     reset();
   }, [reset]);
 
-  const checkWin = useCallback((sqs: Record<string, Piece>, wCap: number, bCap: number): string | null => {
-    if (hasQueen(sqs, 'w') || bCap >= 5) return 'white';
-    if (hasQueen(sqs, 'b') || wCap >= 5) return 'black';
-    if (countPawns(sqs, 'w') === 0) return 'black';
-    if (countPawns(sqs, 'b') === 0) return 'white';
+  const checkGameOver = useCallback((sqs: Record<string, Piece>, wCap: number, bCap: number, ep: string | null, currentTurn: 'w' | 'b'): string | null => {
+    if (hasQueen(sqs, 'w') || bCap >= 5 || countPawns(sqs, 'b') === 0) return 'Белые победили!';
+    if (hasQueen(sqs, 'b') || wCap >= 5 || countPawns(sqs, 'w') === 0) return 'Чёрные победили!';
+    if (hasNoMoves(sqs, currentTurn, ep)) return 'Ничья';
     return null;
   }, []);
 
@@ -481,7 +484,13 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
       const chosen = getBestMove(sqs, enPassantRef.current, whiteCapturedRef.current, blackCapturedRef.current, diff);
 
       if (!chosen) {
-        setWinner('Белые победили!');
+        // No legal moves for black
+        const result = checkGameOver(sqs, whiteCapturedRef.current, blackCapturedRef.current, enPassantRef.current, 'b');
+        if (result) {
+          setWinner(result);
+        } else {
+          setWinner('Ничья');
+        }
         setComputerThinking(false);
         return;
       }
@@ -493,15 +502,14 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
         setWhiteCaptured(wCap);
       }
 
-      const win = checkWin(result.squares, wCap, blackCapturedRef.current);
+      const win = checkGameOver(result.squares, wCap, blackCapturedRef.current, result.enPassant, 'w');
       if (win) {
-        const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
-        setWinner(winMsg);
+        setWinner(win);
         setSquares(result.squares);
         setEnPassant(result.enPassant);
         setTurn('w');
         setComputerThinking(false);
-        if (win === 'white' && difficultyRef.current) {
+        if (win === 'Белые победили!' && difficultyRef.current) {
           const diff = difficultyRef.current;
           setCompletedLevels(prev => {
             const next = { ...prev, [diff]: true };
@@ -520,11 +528,16 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [turn, winner, checkWin, onComplete, savedKey]);
+  }, [turn, winner, checkGameOver, onComplete, savedKey]);
 
   // Click logic
   const click = useCallback((square: string) => {
     if (winnerRef.current) return; // BLOCK moves after game over
+    // Check for draw BEFORE white's move
+    if (turnRef.current === 'w' && hasNoMoves(squaresRef.current, 'w', enPassantRef.current)) {
+      setWinner('Ничья');
+      return;
+    }
     const sqs = squaresRef.current;
     const sel = selectedSquareRef.current;
     const piece = sqs[square];
@@ -545,16 +558,15 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
           setBlackCaptured(bCap);
         }
 
-        const win = checkWin(result.squares, whiteCapturedRef.current, bCap);
+        const win = checkGameOver(result.squares, whiteCapturedRef.current, bCap, result.enPassant, 'b');
         if (win) {
-          const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
-          setWinner(winMsg);
+          setWinner(win);
           setSquares(result.squares);
           setEnPassant(result.enPassant);
           setSelectedSquare(null);
           setValidSquares([]);
           selectedSquareRef.current = null;
-          if (win === 'white' && difficultyRef.current) {
+          if (win === 'Белые победили!' && difficultyRef.current) {
             const diff = difficultyRef.current;
             setCompletedLevels(prev => {
               const next = { ...prev, [diff]: true };
@@ -572,6 +584,10 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
         setSelectedSquare(null);
         setValidSquares([]);
         selectedSquareRef.current = null;
+        // Check if black has no moves after white's move
+        if (hasNoMoves(result.squares, 'b', result.enPassant)) {
+          setWinner('Ничья');
+        }
         return;
       }
 
@@ -591,13 +607,18 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
         setValidSquares(getPawnMoves(square, sqs, 'w', enPassantRef.current));
       }
     }
-  }, [checkWin, onComplete, savedKey]);
+  }, [checkGameOver, onComplete, savedKey]);
 
   useEffect(() => { clickRef.current = click; }, [click]);
 
   // Drag and drop
   const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
     if (winnerRef.current) return; // BLOCK moves after game over
+    // Check for draw BEFORE white's move
+    if (turnRef.current === 'w' && hasNoMoves(squaresRef.current, 'w', enPassantRef.current)) {
+      setWinner('Ничья');
+      return;
+    }
     if (processLockRef.current) return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
     e.preventDefault();
@@ -649,16 +670,15 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
               bCap = blackCapturedRef.current + 1;
               setBlackCaptured(bCap);
             }
-            const win = checkWin(result.squares, whiteCapturedRef.current, bCap);
+            const win = checkGameOver(result.squares, whiteCapturedRef.current, bCap, result.enPassant, 'b');
             if (win) {
-              const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
-              setWinner(winMsg);
+              setWinner(win);
               setSquares(result.squares);
               setEnPassant(result.enPassant);
               setSelectedSquare(null);
               setValidSquares([]);
               selectedSquareRef.current = null;
-              if (win === 'white' && difficultyRef.current) {
+              if (win === 'Белые победили!' && difficultyRef.current) {
                 const diff = difficultyRef.current;
                 setCompletedLevels(prev => {
                   const next = { ...prev, [diff]: true };
@@ -674,6 +694,10 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
               setSelectedSquare(null);
               setValidSquares([]);
               selectedSquareRef.current = null;
+              // Check if black has no moves after white's drag move
+              if (hasNoMoves(result.squares, 'b', result.enPassant)) {
+                setWinner('Ничья');
+              }
             }
           }
         }
@@ -695,7 +719,7 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
       window.removeEventListener('pointerup', handleGlobalUp);
       window.removeEventListener('pointercancel', handleGlobalCancel);
     };
-  }, [checkWin, onComplete, savedKey]);
+  }, [checkGameOver, onComplete, savedKey]);
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
   const validMoves = selectedSquare
@@ -780,9 +804,11 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
 
       {winner && (
         <div className={`px-6 py-4 border rounded-xl font-bold text-lg text-center ${
-          winner.includes('Белые') 
-            ? 'bg-green-50 border-green-200 text-green-700' 
-            : 'bg-red-50 border-red-200 text-red-700'
+          winner.includes('Белые')
+            ? 'bg-green-50 border-green-200 text-green-700'
+            : winner === 'Ничья'
+              ? 'bg-amber-50 border-amber-200 text-amber-700'
+              : 'bg-red-50 border-red-200 text-red-700'
         }`}>
           <div className="text-xl mb-2">{winner}</div>
           <button
