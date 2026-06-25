@@ -119,10 +119,15 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
           <PieceCards
             lessons={prepLevelLessons.map((l: any, idx: number) => {
               let levelsCount = 1;
-              try {
-                const config = JSON.parse(l.video_url || '{}');
-                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
-              } catch {}
+              // Pawn race (lesson 18) has 3 difficulty levels
+              if (l.id === 'af74a851-e308-411d-82e1-fafdc5bd390a') {
+                levelsCount = 3;
+              } else {
+                try {
+                  const config = JSON.parse(l.video_url || '{}');
+                  if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+                } catch {}
+              }
               return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
             })}
             progressMap={serverProgressMap}

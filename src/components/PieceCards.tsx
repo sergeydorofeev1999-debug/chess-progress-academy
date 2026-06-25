@@ -50,19 +50,32 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const isServerCompleted = progressMap[lesson.id];
         const detail = mounted ? clientDetails[lesson.id] || {} : {};
         const totalLevels = lesson.levelsCount || 1;
-        const levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
-        const allStars = Object.values(detail) as number[];
-        const minStars = allStars.length > 0 ? Math.min(...allStars) : 0;
+
+        // Special handling for pawn race (lesson 18)
+        const isPawnRace = lesson.id === 'af74a851-e308-411d-82e1-fafdc5bd390a';
+        let levelsDone = 0;
+        let minStars = 0;
+        if (isPawnRace && mounted) {
+          try {
+            const pawnRace = JSON.parse(localStorage.getItem(`pawnrace_progress_${lesson.id}`) || '{}');
+            levelsDone = Object.values(pawnRace).filter(Boolean).length;
+            minStars = levelsDone;
+          } catch {}
+        } else {
+          levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
+          const allStars = Object.values(detail) as number[];
+          minStars = allStars.length > 0 ? Math.min(...allStars) : 0;
+        }
 
         const isCompleted = isServerCompleted || (levelsDone >= totalLevels);
-        const isStarted = !isCompleted && levelsDone > 0;
+        const hasProgress = levelsDone > 0;
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted) {
+        if (isCompleted || (isPawnRace && hasProgress)) {
           bgColor = 'bg-[#ebf5d8]';
           borderColor = 'border-[#c5e0a5]';
-        } else if (isStarted) {
+        } else if (hasProgress) {
           bgColor = 'bg-[#cce5ff]';
           borderColor = 'border-[#a3c8f0]';
         }
@@ -92,12 +105,12 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
-            {isCompleted && (
+            {(isCompleted || (isPawnRace && hasProgress)) && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
-                {'★'.repeat(minStars || 3)}
+                {'★'.repeat(minStars || 1)}
               </div>
             )}
-            {isStarted && !isCompleted && (
+            {hasProgress && !isCompleted && !(isPawnRace && hasProgress) && (
               <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {levelsDone}/{totalLevels}
               </div>
