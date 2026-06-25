@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { RotateCcw, ChevronRight, Star, Trophy } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 
 type Piece = { type: string; color: 'w' | 'b' };
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 function parseFen(fen: string): Record<string, Piece> {
   const squares: Record<string, Piece> = {};
@@ -135,6 +136,209 @@ function hasQueen(squares: Record<string, Piece>, color: 'w' | 'b'): boolean {
   return Object.values(squares).some(p => p.type === 'q' && p.color === color);
 }
 
+function getAllPawnMoves(squares: Record<string, Piece>, color: 'w' | 'b', enPassant: string | null): { from: string; to: string }[] {
+  const moves: { from: string; to: string }[] = [];
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (p.type === 'p' && p.color === color) {
+      const mvs = getPawnMoves(sq, squares, color, enPassant);
+      for (const to of mvs) moves.push({ from: sq, to });
+    }
+  }
+  return moves;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   AI ENGINE — minimax with alpha-beta pruning for pawn race
+   ═════════════════════════════════════════════════════════════════ */
+
+function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number, blackCaptured: number): number {
+  // Check terminal states
+  if (hasQueen(squares, 'w') || blackCaptured >= 5) return 10000;
+  if (hasQueen(squares, 'b') || whiteCaptured >= 5) return -10000;
+  if (countPawns(squares, 'w') === 0) return -10000;
+  if (countPawns(squares, 'b') === 0) return 10000;
+
+  let score = 0;
+
+  // Distance to promotion (closer = better)
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (p.type !== 'p') continue;
+    const rank = parseInt(sq[1]);
+    if (p.color === 'w') {
+      score += (rank - 1) * 50; // closer to 8 = higher score
+    } else {
+      score -= (8 - rank) * 50; // closer to 1 = worse for white
+    }
+  }
+
+  // Passed pawns bonus
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (p.type !== 'p' || p.color !== 'w') continue;
+    const rank = parseInt(sq[1]);
+    const file = FILES.indexOf(sq[0]);
+    let isPassed = true;
+    for (let r = rank + 1; r <= 8; r++) {
+      const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
+      const center = `${FILES[file]}${r}`;
+      const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
+      if ((left && squares[left]?.color === 'b' && squares[left]?.type === 'p') ||
+          (center && squares[center]?.color === 'b' && squares[center]?.type === 'p') ||
+          (right && squares[right]?.color === 'b' && squares[right]?.type === 'p')) {
+        isPassed = false;
+        break;
+      }
+    }
+    if (isPassed) score += 200;
+  }
+
+  // Black passed pawns (penalty for white)
+  for (const sq in squares) {
+    const p = squares[sq];
+    if (p.type !== 'p' || p.color !== 'b') continue;
+    const rank = parseInt(sq[1]);
+    const file = FILES.indexOf(sq[0]);
+    let isPassed = true;
+    for (let r = rank - 1; r >= 1; r--) {
+      const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
+      const center = `${FILES[file]}${r}`;
+      const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
+      if ((left && squares[left]?.color === 'w' && squares[left]?.type === 'p') ||
+          (center && squares[center]?.color === 'w' && squares[center]?.type === 'p') ||
+          (right && squares[right]?.color === 'w' && squares[right]?.type === 'p')) {
+        isPassed = false;
+        break;
+      }
+    }
+    if (isPassed) score -= 200;
+  }
+
+  // Pawn count advantage
+  score += (countPawns(squares, 'w') - countPawns(squares, 'b')) * 80;
+
+  // Captures made
+  score += whiteCaptured * 60;
+  score -= blackCaptured * 60;
+
+  return score;
+}
+
+function minimax(
+  squares: Record<string, Piece>,
+  enPassant: string | null,
+  whiteCaptured: number,
+  blackCaptured: number,
+  depth: number,
+  isMaximizing: boolean,
+  alpha: number,
+  beta: number
+): number {
+  const evalScore = evaluatePosition(squares, whiteCaptured, blackCaptured);
+  if (Math.abs(evalScore) >= 9000 || depth === 0) return evalScore;
+
+  const color = isMaximizing ? 'b' : 'w';
+  const moves = getAllPawnMoves(squares, color, enPassant);
+
+  if (moves.length === 0) {
+    // No moves = lose
+    return isMaximizing ? -10000 : 10000;
+  }
+
+  if (isMaximizing) {
+    let maxEval = -Infinity;
+    for (const move of moves) {
+      const result = makePawnMove(squares, enPassant, move.from, move.to);
+      let wCap = whiteCaptured;
+      let bCap = blackCaptured;
+      if (result.captured?.color === 'w') wCap++;
+      if (result.captured?.color === 'b') bCap++;
+      const eval_ = minimax(result.squares, result.enPassant, wCap, bCap, depth - 1, false, alpha, beta);
+      maxEval = Math.max(maxEval, eval_);
+      alpha = Math.max(alpha, eval_);
+      if (beta <= alpha) break;
+    }
+    return maxEval;
+  } else {
+    let minEval = Infinity;
+    for (const move of moves) {
+      const result = makePawnMove(squares, enPassant, move.from, move.to);
+      let wCap = whiteCaptured;
+      let bCap = blackCaptured;
+      if (result.captured?.color === 'w') wCap++;
+      if (result.captured?.color === 'b') bCap++;
+      const eval_ = minimax(result.squares, result.enPassant, wCap, bCap, depth - 1, true, alpha, beta);
+      minEval = Math.min(minEval, eval_);
+      beta = Math.min(beta, eval_);
+      if (beta <= alpha) break;
+    }
+    return minEval;
+  }
+}
+
+function getBestMove(
+  squares: Record<string, Piece>,
+  enPassant: string | null,
+  whiteCaptured: number,
+  blackCaptured: number,
+  difficulty: Difficulty
+): { from: string; to: string } | null {
+  const moves = getAllPawnMoves(squares, 'b', enPassant);
+  if (moves.length === 0) return null;
+
+  // Evaluate each move
+  const scored = moves.map(move => {
+    const result = makePawnMove(squares, enPassant, move.from, move.to);
+    let wCap = whiteCaptured;
+    let bCap = blackCaptured;
+    if (result.captured?.color === 'w') wCap++;
+    if (result.captured?.color === 'b') bCap++;
+
+    let score: number;
+    if (difficulty === 'easy') {
+      // Depth 1 — only immediate evaluation
+      score = evaluatePosition(result.squares, wCap, bCap);
+    } else if (difficulty === 'medium') {
+      // Depth 2 — one black move + one white response
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 2, false, -Infinity, Infinity);
+    } else {
+      // Depth 3 — deeper lookahead
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 3, false, -Infinity, Infinity);
+    }
+
+    return { ...move, score };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+
+  if (difficulty === 'easy') {
+    // 50% chance to pick from top 3, 30% from top 5, 20% random
+    const rand = Math.random();
+    if (rand < 0.5 && scored.length >= 3) {
+      return scored[Math.floor(Math.random() * 3)];
+    } else if (rand < 0.8 && scored.length >= 5) {
+      return scored[Math.floor(Math.random() * 5)];
+    } else {
+      return scored[Math.floor(Math.random() * scored.length)];
+    }
+  } else if (difficulty === 'medium') {
+    // 85% best move, 15% from top 3
+    if (Math.random() < 0.85 || scored.length < 2) {
+      return scored[0];
+    } else {
+      return scored[Math.floor(Math.random() * Math.min(3, scored.length))];
+    }
+  } else {
+    // Hard: always best move
+    return scored[0];
+  }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   UI COMPONENTS
+   ═════════════════════════════════════════════════════════════════ */
+
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
   return (
@@ -150,7 +354,21 @@ function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
 
 const START_FEN = '8/pppppppp/8/8/8/8/PPPPPPPP/8 w - - 0 1';
 
-export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }) {
+const LEVELS: { id: Difficulty; label: string; description: string; color: string; stars: number }[] = [
+  { id: 'easy', label: 'Лёгкий', description: 'Чёрные часто ошибаются', color: 'bg-green-500', stars: 1 },
+  { id: 'medium', label: 'Средний', description: 'Чёрные играют осторожно', color: 'bg-yellow-500', stars: 2 },
+  { id: 'hard', label: 'Продвинутый', description: 'Чёрные почти не ошибаются', color: 'bg-red-500', stars: 3 },
+];
+
+export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
+  const savedKey = lessonId ? `pawnrace_progress_${lessonId}` : 'pawnrace_progress';
+  const savedProgress = useMemo(() => {
+    if (typeof window === 'undefined') return {} as Record<Difficulty, boolean>;
+    try { return JSON.parse(localStorage.getItem(savedKey) || '{}'); } catch { return {}; }
+  }, [savedKey]);
+
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [completedLevels, setCompletedLevels] = useState<Record<Difficulty, boolean>>(savedProgress);
   const [squares, setSquares] = useState<Record<string, Piece>>(() => parseFen(START_FEN));
   const [whiteCaptured, setWhiteCaptured] = useState(0);
   const [blackCaptured, setBlackCaptured] = useState(0);
@@ -176,6 +394,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
   const whiteCapturedRef = useRef(0);
   const blackCapturedRef = useRef(0);
   const winnerRef = useRef<string | null>(null);
+  const difficultyRef = useRef<Difficulty | null>(null);
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -188,6 +407,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
   useEffect(() => { whiteCapturedRef.current = whiteCaptured; }, [whiteCaptured]);
   useEffect(() => { blackCapturedRef.current = blackCaptured; }, [blackCaptured]);
   useEffect(() => { winnerRef.current = winner; }, [winner]);
+  useEffect(() => { difficultyRef.current = difficulty; }, [difficulty]);
 
   useEffect(() => {
     const update = () => {
@@ -215,6 +435,11 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
     setTurn('w');
   }, []);
 
+  const startLevel = useCallback((diff: Difficulty) => {
+    setDifficulty(diff);
+    reset();
+  }, [reset]);
+
   const checkWin = useCallback((sqs: Record<string, Piece>, wCap: number, bCap: number): string | null => {
     if (hasQueen(sqs, 'w') || bCap >= 5) return 'white';
     if (hasQueen(sqs, 'b') || wCap >= 5) return 'black';
@@ -225,44 +450,21 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
 
   // Computer move
   useEffect(() => {
-    if (winnerRef.current || turnRef.current !== 'b') return;
+    if (winnerRef.current || turnRef.current !== 'b' || !difficultyRef.current) return;
     setComputerThinking(true);
 
     const timer = setTimeout(() => {
       if (!mountedRef.current) return;
       const sqs = squaresRef.current;
-      const blackPawns: string[] = [];
-      for (const sq in sqs) {
-        if (sqs[sq].type === 'p' && sqs[sq].color === 'b') blackPawns.push(sq);
-      }
+      const diff = difficultyRef.current!;
 
-      if (blackPawns.length === 0) {
+      const chosen = getBestMove(sqs, enPassantRef.current, whiteCapturedRef.current, blackCapturedRef.current, diff);
+
+      if (!chosen) {
         setWinner('Белые победили!');
         setComputerThinking(false);
         return;
       }
-
-      let allMoves: { from: string; to: string; score: number }[] = [];
-      for (const from of blackPawns) {
-        const moves = getPawnMoves(from, sqs, 'b', enPassantRef.current);
-        for (const to of moves) {
-          let score = 0;
-          const target = sqs[to];
-          if (target && target.color === 'w') score += 100;
-          if (to[1] === '1') score += 200;
-          if (to[1] === '2') score += 10;
-          allMoves.push({ from, to, score });
-        }
-      }
-
-      if (allMoves.length === 0) {
-        setWinner('Белые победили!');
-        setComputerThinking(false);
-        return;
-      }
-
-      allMoves.sort((a, b) => b.score - a.score);
-      const chosen = allMoves[0];
 
       const result = makePawnMove(sqs, enPassantRef.current, chosen.from, chosen.to);
       let wCap = whiteCapturedRef.current;
@@ -273,12 +475,21 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
 
       const win = checkWin(result.squares, wCap, blackCapturedRef.current);
       if (win) {
-        setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+        const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
+        setWinner(winMsg);
         setSquares(result.squares);
         setEnPassant(result.enPassant);
         setTurn('w');
         setComputerThinking(false);
-        if (win === 'white') onComplete();
+        if (win === 'white' && difficultyRef.current) {
+          const diff = difficultyRef.current;
+          setCompletedLevels(prev => {
+            const next = { ...prev, [diff]: true };
+            localStorage.setItem(savedKey, JSON.stringify(next));
+            return next;
+          });
+          onComplete();
+        }
         return;
       }
 
@@ -286,10 +497,10 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       setEnPassant(result.enPassant);
       setTurn('w');
       setComputerThinking(false);
-    }, 1000);
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [turn, winner, checkWin, onComplete]);
+  }, [turn, winner, checkWin, onComplete, savedKey]);
 
   // Click logic
   const click = useCallback((square: string) => {
@@ -315,13 +526,22 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
 
         const win = checkWin(result.squares, whiteCapturedRef.current, bCap);
         if (win) {
-          setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+          const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
+          setWinner(winMsg);
           setSquares(result.squares);
           setEnPassant(result.enPassant);
           setSelectedSquare(null);
           setValidSquares([]);
           selectedSquareRef.current = null;
-          if (win === 'white') onComplete();
+          if (win === 'white' && difficultyRef.current) {
+            const diff = difficultyRef.current;
+            setCompletedLevels(prev => {
+              const next = { ...prev, [diff]: true };
+              localStorage.setItem(savedKey, JSON.stringify(next));
+              return next;
+            });
+            onComplete();
+          }
           return;
         }
 
@@ -350,7 +570,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         setValidSquares(getPawnMoves(square, sqs, 'w', enPassantRef.current));
       }
     }
-  }, [checkWin, onComplete]);
+  }, [checkWin, onComplete, savedKey]);
 
   useEffect(() => { clickRef.current = click; }, [click]);
 
@@ -409,13 +629,22 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
             }
             const win = checkWin(result.squares, whiteCapturedRef.current, bCap);
             if (win) {
-              setWinner(win === 'white' ? 'Белые победили!' : 'Чёрные победили!');
+              const winMsg = win === 'white' ? 'Белые победили!' : 'Чёрные победили!';
+              setWinner(winMsg);
               setSquares(result.squares);
               setEnPassant(result.enPassant);
               setSelectedSquare(null);
               setValidSquares([]);
               selectedSquareRef.current = null;
-              if (win === 'white') onComplete();
+              if (win === 'white' && difficultyRef.current) {
+                const diff = difficultyRef.current;
+                setCompletedLevels(prev => {
+                  const next = { ...prev, [diff]: true };
+                  localStorage.setItem(savedKey, JSON.stringify(next));
+                  return next;
+                });
+                onComplete();
+              }
             } else {
               setSquares(result.squares);
               setEnPassant(result.enPassant);
@@ -444,7 +673,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       window.removeEventListener('pointerup', handleGlobalUp);
       window.removeEventListener('pointercancel', handleGlobalCancel);
     };
-  }, [checkWin, onComplete]);
+  }, [checkWin, onComplete, savedKey]);
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
   const validMoves = selectedSquare
@@ -453,8 +682,67 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       ? getPawnMoves(dragPiece.square, squares, 'w', enPassant)
       : [];
 
+  // ═══════════════════════════════════════════════════════════════
+  // LEVEL SELECTOR
+  // ═══════════════════════════════════════════════════════════════
+  if (!difficulty) {
+    const allCompleted = LEVELS.every(l => completedLevels[l.id]);
+    return (
+      <div className="flex flex-col items-center gap-6 w-full px-4 py-6">
+        <h3 className="text-xl font-bold text-slate-800">Выберите уровень сложности</h3>
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          {LEVELS.map(level => {
+            const isCompleted = completedLevels[level.id];
+            return (
+              <button
+                key={level.id}
+                onClick={() => startLevel(level.id)}
+                className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition text-left ${
+                  isCompleted
+                    ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${level.color}`}>
+                  {isCompleted ? <Trophy size={20} /> : level.stars}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-800">{level.label}</div>
+                  <div className="text-sm text-slate-500">{level.description}</div>
+                </div>
+                <ChevronRight size={20} className="text-slate-400" />
+              </button>
+            );
+          })}
+        </div>
+        {allCompleted && (
+          <div className="mt-4 px-6 py-3 bg-green-100 border border-green-300 rounded-xl text-green-800 font-bold flex items-center gap-2">
+            <Trophy size={20} /> Все уровни пройдены!
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // GAME BOARD
+  // ═══════════════════════════════════════════════════════════════
+  const currentLevel = LEVELS.find(l => l.id === difficulty)!;
+
   return (
     <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
+      {/* Level badge */}
+      <div className="flex items-center gap-2">
+        <span className={`px-3 py-1 rounded-full text-white text-sm font-bold ${currentLevel.color}`}>
+          {currentLevel.label}
+        </span>
+        {completedLevels[difficulty] && (
+          <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
+            <Star size={14} fill="currentColor" /> Пройдено
+          </span>
+        )}
+      </div>
+
       {/* Status */}
       <div className="flex items-center justify-between w-full max-w-sm gap-4 px-2">
         <div className="text-sm font-medium">
@@ -469,12 +757,12 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
       </div>
 
       {winner && (
-        <div className="px-6 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-bold text-lg">
+        <div className="px-6 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-bold text-lg text-center">
           {winner}
         </div>
       )}
 
-      {/* Board — same as InlineChessBoard in LessonClient */}
+      {/* Board */}
       <div className="flex justify-center w-full">
         <div
           className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
@@ -524,7 +812,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
                       {file}
                     </span>
                   )}
-                  {/* Green move indicator dots (Lichess style) */}
+                  {/* Green move indicator dots */}
                   {isValidMove && (
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                       <div
@@ -573,12 +861,20 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         <p className="text-xs text-slate-400 mt-1">Взятие на проходе работает!</p>
       </div>
 
-      <button
-        onClick={reset}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
-      >
-        <RotateCcw size={16} /> Начать заново
-      </button>
+      <div className="flex gap-3">
+        <button
+          onClick={reset}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
+        >
+          <RotateCcw size={16} /> Начать заново
+        </button>
+        <button
+          onClick={() => setDifficulty(null)}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 transition"
+        >
+          <ChevronRight size={16} className="rotate-180" /> Уровни
+        </button>
+      </div>
     </div>
   );
 }
