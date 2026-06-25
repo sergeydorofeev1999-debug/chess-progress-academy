@@ -213,17 +213,6 @@ function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number,
       }
       if (passed) score += 200;
 
-      // CRITICAL: penalty for pawns that can be immediately captured
-      // After black moves, white gets a turn. If white can capture this pawn on the next move,
-      // it's a blunder unless the capture leads to something good for black.
-      const immediateCaptures = getAllPawnMoves(squares, 'w', null).filter(m => {
-        const target = squares[m.to];
-        return target && target.color === 'b' && target.type === 'p';
-      });
-      for (const cap of immediateCaptures) {
-        if (cap.to === sq) score -= 300; // THIS pawn can be captured next turn
-      }
-
       // Connected pawns bonus (same rank, adjacent files = support each other)
       const leftFile = file > 0 ? `${FILES[file - 1]}${rank}` : null;
       const rightFile = file < 7 ? `${FILES[file + 1]}${rank}` : null;
@@ -324,12 +313,20 @@ function getBestMove(
       // Depth 0: only evaluate immediate result
       score = evaluatePosition(result.squares, wCap, bCap);
     } else if (difficulty === 'medium') {
-      // Depth 4: black move + white response + black move + white response
-      // This sees if white can capture the pawn immediately
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 4, false, -Infinity, Infinity);
+      // Depth 2: black move + white response (sees immediate captures)
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 2, false, -Infinity, Infinity);
     } else {
-      // Depth 6: deeper lookahead for advanced
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 6, false, -Infinity, Infinity);
+      // Depth 3: deeper lookahead for advanced
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 3, false, -Infinity, Infinity);
+    }
+
+    // CRITICAL BLUNDER PENALTY: if white can capture THIS pawn on their next move
+    const whiteNextMoves = getAllPawnMoves(result.squares, 'w', result.enPassant);
+    for (const wm of whiteNextMoves) {
+      const target = result.squares[wm.to];
+      if (target && target.color === 'b' && target.type === 'p' && wm.to === move.to) {
+        score -= 600; // massive penalty for giving away a pawn
+      }
     }
 
     return { ...move, score };
