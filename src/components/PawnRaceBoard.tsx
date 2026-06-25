@@ -524,6 +524,7 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
 
   // Click logic
   const click = useCallback((square: string) => {
+    if (winnerRef.current) return; // BLOCK moves after game over
     const sqs = squaresRef.current;
     const sel = selectedSquareRef.current;
     const piece = sqs[square];
@@ -596,6 +597,7 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
 
   // Drag and drop
   const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
+    if (winnerRef.current) return; // BLOCK moves after game over
     if (processLockRef.current) return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
     e.preventDefault();
@@ -777,8 +779,18 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
       </div>
 
       {winner && (
-        <div className="px-6 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-bold text-lg text-center">
-          {winner}
+        <div className={`px-6 py-4 border rounded-xl font-bold text-lg text-center ${
+          winner.includes('Белые') 
+            ? 'bg-green-50 border-green-200 text-green-700' 
+            : 'bg-red-50 border-red-200 text-red-700'
+        }`}>
+          <div className="text-xl mb-2">{winner}</div>
+          <button
+            onClick={reset}
+            className="mt-2 px-6 py-2 bg-white border-2 border-current rounded-lg font-bold text-sm hover:bg-opacity-80 transition"
+          >
+            Начать заново
+          </button>
         </div>
       )}
 
