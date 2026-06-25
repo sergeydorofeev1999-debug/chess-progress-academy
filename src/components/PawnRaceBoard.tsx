@@ -150,77 +150,86 @@ function getAllPawnMoves(squares: Record<string, Piece>, color: 'w' | 'b', enPas
 
 /* ═════════════════════════════════════════════════════════════════
    AI ENGINE — minimax with alpha-beta pruning for pawn race
+   Score is from BLACK's perspective (positive = good for black)
    ═════════════════════════════════════════════════════════════════ */
 
 function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number, blackCaptured: number): number {
-  // Check terminal states
-  if (hasQueen(squares, 'w') || blackCaptured >= 5) return 10000;
-  if (hasQueen(squares, 'b') || whiteCaptured >= 5) return -10000;
-  if (countPawns(squares, 'w') === 0) return -10000;
-  if (countPawns(squares, 'b') === 0) return 10000;
+  // Terminal states
+  if (hasQueen(squares, 'w') || blackCaptured >= 5) return -10000;
+  if (hasQueen(squares, 'b') || whiteCaptured >= 5) return 10000;
+  if (countPawns(squares, 'w') === 0) return 10000;
+  if (countPawns(squares, 'b') === 0) return -10000;
 
   let score = 0;
 
-  // Distance to promotion (closer = better)
   for (const sq in squares) {
     const p = squares[sq];
     if (p.type !== 'p') continue;
     const rank = parseInt(sq[1]);
+    const file = FILES.indexOf(sq[0]);
+
     if (p.color === 'w') {
-      score += (rank - 1) * 50; // closer to 8 = higher score
+      // White advanced = bad for black
+      const advancement = rank - 1;
+      score -= advancement * 45;
+
+      // Central pawns are more dangerous for black
+      const centrality = Math.abs(file - 3.5);
+      if (centrality <= 1.5) score -= 25;
+
+      // Passed pawn = very bad for black
+      let passed = true;
+      for (let r = rank + 1; r <= 8; r++) {
+        const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
+        const center = `${FILES[file]}${r}`;
+        const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
+        if ((left && squares[left]?.color === 'b' && squares[left]?.type === 'p') ||
+            (center && squares[center]?.color === 'b' && squares[center]?.type === 'p') ||
+            (right && squares[right]?.color === 'b' && squares[right]?.type === 'p')) {
+          passed = false;
+          break;
+        }
+      }
+      if (passed) score -= 180;
     } else {
-      score -= (8 - rank) * 50; // closer to 1 = worse for white
-    }
-  }
+      // Black advanced = good for black
+      const advancement = 8 - rank;
+      score += advancement * 45;
 
-  // Passed pawns bonus
-  for (const sq in squares) {
-    const p = squares[sq];
-    if (p.type !== 'p' || p.color !== 'w') continue;
-    const rank = parseInt(sq[1]);
-    const file = FILES.indexOf(sq[0]);
-    let isPassed = true;
-    for (let r = rank + 1; r <= 8; r++) {
-      const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
-      const center = `${FILES[file]}${r}`;
-      const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
-      if ((left && squares[left]?.color === 'b' && squares[left]?.type === 'p') ||
-          (center && squares[center]?.color === 'b' && squares[center]?.type === 'p') ||
-          (right && squares[right]?.color === 'b' && squares[right]?.type === 'p')) {
-        isPassed = false;
-        break;
+      // Central pawns = good for black
+      const centrality = Math.abs(file - 3.5);
+      if (centrality <= 1.5) score += 25;
+
+      // Passed pawn = very good for black
+      let passed = true;
+      for (let r = rank - 1; r >= 1; r--) {
+        const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
+        const center = `${FILES[file]}${r}`;
+        const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
+        if ((left && squares[left]?.color === 'w' && squares[left]?.type === 'p') ||
+            (center && squares[center]?.color === 'w' && squares[center]?.type === 'p') ||
+            (right && squares[right]?.color === 'w' && squares[right]?.type === 'p')) {
+          passed = false;
+          break;
+        }
       }
+      if (passed) score += 180;
     }
-    if (isPassed) score += 200;
   }
 
-  // Black passed pawns (penalty for white)
-  for (const sq in squares) {
-    const p = squares[sq];
-    if (p.type !== 'p' || p.color !== 'b') continue;
-    const rank = parseInt(sq[1]);
-    const file = FILES.indexOf(sq[0]);
-    let isPassed = true;
-    for (let r = rank - 1; r >= 1; r--) {
-      const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
-      const center = `${FILES[file]}${r}`;
-      const right = file < 7 ? `${FILES[file + 1]}${r}` : null;
-      if ((left && squares[left]?.color === 'w' && squares[left]?.type === 'p') ||
-          (center && squares[center]?.color === 'w' && squares[center]?.type === 'p') ||
-          (right && squares[right]?.color === 'w' && squares[right]?.type === 'p')) {
-        isPassed = false;
-        break;
-      }
-    }
-    if (isPassed) score -= 200;
-  }
+  // Mobility
+  const blackMoves = getAllPawnMoves(squares, 'b', null).length;
+  const whiteMoves = getAllPawnMoves(squares, 'w', null).length;
+  score += blackMoves * 8;
+  score -= whiteMoves * 8;
 
-  // Pawn count advantage
-  score += (countPawns(squares, 'w') - countPawns(squares, 'b')) * 80;
+  // Pawn count
+  score += countPawns(squares, 'b') * 100;
+  score -= countPawns(squares, 'w') * 100;
 
-  // Captures made
-  score += whiteCaptured * 60;
-  score -= blackCaptured * 60;
+  // Captures
+  score += blackCaptured * 80;
+  score -= whiteCaptured * 80;
 
   return score;
 }
@@ -242,7 +251,6 @@ function minimax(
   const moves = getAllPawnMoves(squares, color, enPassant);
 
   if (moves.length === 0) {
-    // No moves = lose
     return isMaximizing ? -10000 : 10000;
   }
 
@@ -287,7 +295,6 @@ function getBestMove(
   const moves = getAllPawnMoves(squares, 'b', enPassant);
   if (moves.length === 0) return null;
 
-  // Evaluate each move
   const scored = moves.map(move => {
     const result = makePawnMove(squares, enPassant, move.from, move.to);
     let wCap = whiteCaptured;
@@ -297,14 +304,11 @@ function getBestMove(
 
     let score: number;
     if (difficulty === 'easy') {
-      // Depth 1 — only immediate evaluation
       score = evaluatePosition(result.squares, wCap, bCap);
     } else if (difficulty === 'medium') {
-      // Depth 2 — one black move + one white response
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 2, false, -Infinity, Infinity);
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 2, true, -Infinity, Infinity);
     } else {
-      // Depth 3 — deeper lookahead
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 3, false, -Infinity, Infinity);
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 4, true, -Infinity, Infinity);
     }
 
     return { ...move, score };
@@ -313,7 +317,6 @@ function getBestMove(
   scored.sort((a, b) => b.score - a.score);
 
   if (difficulty === 'easy') {
-    // 50% chance to pick from top 3, 30% from top 5, 20% random
     const rand = Math.random();
     if (rand < 0.5 && scored.length >= 3) {
       return scored[Math.floor(Math.random() * 3)];
@@ -323,14 +326,12 @@ function getBestMove(
       return scored[Math.floor(Math.random() * scored.length)];
     }
   } else if (difficulty === 'medium') {
-    // 85% best move, 15% from top 3
     if (Math.random() < 0.85 || scored.length < 2) {
       return scored[0];
     } else {
       return scored[Math.floor(Math.random() * Math.min(3, scored.length))];
     }
   } else {
-    // Hard: always best move
     return scored[0];
   }
 }
