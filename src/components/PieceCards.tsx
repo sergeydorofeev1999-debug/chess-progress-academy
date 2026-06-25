@@ -56,6 +56,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const isRookPawn = lesson.id === 'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4';
         const isBishopPawn = lesson.id === '2976cdff-d622-45a6-9ce4-fbcc33fa9528';
         const isQueenPawn = lesson.id === 'a8b9a524-5e37-43c5-a479-9c98494d704e';
+        const isKnightPawn = lesson.id === '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac';
         let levelsDone = 0;
         let minStars = 0;
         if (isPawnRace && mounted) {
@@ -82,6 +83,12 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
             levelsDone = Object.values(queenPawn).filter(Boolean).length;
             minStars = levelsDone;
           } catch {}
+        } else if (isKnightPawn && mounted) {
+          try {
+            const knightPawn = JSON.parse(localStorage.getItem(`knightpawn_progress_${lesson.id}`) || '{}');
+            levelsDone = Object.values(knightPawn).filter(Boolean).length;
+            minStars = levelsDone;
+          } catch {}
         } else {
           levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
           const allStars = Object.values(detail) as number[];
@@ -93,7 +100,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn) && hasProgress)) {
+        if (isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn) && hasProgress)) {
           bgColor = 'bg-[#ebf5d8]';
           borderColor = 'border-[#c5e0a5]';
         } else if (hasProgress) {
@@ -126,12 +133,12 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
-            {(isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn) && hasProgress)) && (
+            {(isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn) && hasProgress)) && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {'★'.repeat(minStars || 1)}
               </div>
             )}
-            {hasProgress && !isCompleted && !((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn) && hasProgress) && (
+            {hasProgress && !isCompleted && !((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn) && hasProgress) && (
               <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {levelsDone}/{totalLevels}
               </div>

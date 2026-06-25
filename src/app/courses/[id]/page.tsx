@@ -134,6 +134,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               // Queen pawn (lesson 21) has 3 difficulty levels
               if (l.id === 'a8b9a524-5e37-43c5-a479-9c98494d704e') {
                 levelsCount = 3;
+              }
+              // Knight pawn (lesson 22) has 3 difficulty levels
+              if (l.id === '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac') {
+                levelsCount = 3;
               } else {
                 try {
                   const config = JSON.parse(l.video_url || '{}');

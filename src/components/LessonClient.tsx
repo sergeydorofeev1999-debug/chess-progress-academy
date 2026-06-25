@@ -10,6 +10,7 @@ import PawnRaceBoard from './PawnRaceBoard';
 import RookPawnBoard from './RookPawnBoard';
 import BishopPawnBoard from './BishopPawnBoard';
 import QueenPawnBoard from './QueenPawnBoard';
+import KnightPawnBoard from './KnightPawnBoard';
 
 interface Lesson {
   id: string;
@@ -1444,6 +1445,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_queen_pawn' ? (
           <div className="mb-8">
             <QueenPawnBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_knight_pawn' ? (
+          <div className="mb-8">
+            <KnightPawnBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
