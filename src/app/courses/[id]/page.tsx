@@ -138,6 +138,10 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
               // Knight pawn (lesson 22) has 3 difficulty levels
               if (l.id === '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac') {
                 levelsCount = 3;
+              }
+              // Chess football (lesson 23) has 3 difficulty levels
+              if (l.id === 'bae12fca-bfa4-44b6-9dff-7555fe240706') {
+                levelsCount = 3;
               } else {
                 try {
                   const config = JSON.parse(l.video_url || '{}');
