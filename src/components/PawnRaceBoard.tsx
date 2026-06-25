@@ -170,6 +170,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
   const squaresRef = useRef(squares);
   const clickRef = useRef<(square: string) => void>(() => {});
   const selectedSquareRef = useRef<string | null>(null);
+  const validSquaresRef = useRef<string[]>([]);
   const enPassantRef = useRef(enPassant);
   const turnRef = useRef(turn);
   const whiteCapturedRef = useRef(0);
@@ -181,6 +182,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
 
   useEffect(() => { squaresRef.current = squares; }, [squares]);
   useEffect(() => { selectedSquareRef.current = selectedSquare; }, [selectedSquare]);
+  useEffect(() => { validSquaresRef.current = validSquares; }, [validSquares]);
   useEffect(() => { enPassantRef.current = enPassant; }, [enPassant]);
   useEffect(() => { turnRef.current = turn; }, [turn]);
   useEffect(() => { whiteCapturedRef.current = whiteCaptured; }, [whiteCaptured]);
@@ -303,7 +305,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         return;
       }
 
-      if (validSquares.includes(square)) {
+      if (validSquaresRef.current.includes(square)) {
         const result = makePawnMove(sqs, enPassantRef.current, sel, square);
         let bCap = blackCapturedRef.current;
         if (result.captured && result.captured.color === 'b') {
@@ -348,7 +350,7 @@ export default function PawnRaceBoard({ onComplete }: { onComplete: () => void }
         setValidSquares(getPawnMoves(square, sqs, 'w', enPassantRef.current));
       }
     }
-  }, [validSquares, checkWin, onComplete]);
+  }, [checkWin, onComplete]);
 
   useEffect(() => { clickRef.current = click; }, [click]);
 
