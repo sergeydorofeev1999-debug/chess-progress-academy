@@ -162,6 +162,14 @@ function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number,
 
   let score = 0;
 
+  // Files with white pawns — for "opposite-file rush" strategy
+  const whiteFiles = new Set<number>();
+  for (const sq in squares) {
+    if (squares[sq].type === 'p' && squares[sq].color === 'w') {
+      whiteFiles.add(FILES.indexOf(sq[0]));
+    }
+  }
+
   for (const sq in squares) {
     const p = squares[sq];
     if (p.type !== 'p') continue;
@@ -169,15 +177,14 @@ function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number,
     const file = FILES.indexOf(sq[0]);
 
     if (p.color === 'w') {
-      // White advanced = bad for black
-      const advancement = rank - 1;
-      score -= advancement * 45;
+      // Distance from promotion: closer = more dangerous for black
+      score -= (rank - 1) * 50;
 
-      // Central pawns are more dangerous for black
+      // Central pawns are dangerous
       const centrality = Math.abs(file - 3.5);
-      if (centrality <= 1.5) score -= 25;
+      if (centrality <= 1.5) score -= 40;
 
-      // Passed pawn = very bad for black
+      // Passed pawn = major threat
       let passed = true;
       for (let r = rank + 1; r <= 8; r++) {
         const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
@@ -190,17 +197,21 @@ function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number,
           break;
         }
       }
-      if (passed) score -= 180;
+      if (passed) score -= 250;
     } else {
-      // Black advanced = good for black
-      const advancement = 8 - rank;
-      score += advancement * 45;
+      // Distance from promotion: closer = good for black
+      score += (8 - rank) * 50;
 
-      // Central pawns = good for black
+      // Central pawns = good for black (attacking center, opening up)
       const centrality = Math.abs(file - 3.5);
-      if (centrality <= 1.5) score += 25;
+      if (centrality <= 1.5) score += 40;
 
-      // Passed pawn = very good for black
+      // RUSH on a file WITHOUT enemy pawns = very good (opposite file attack)
+      if (!whiteFiles.has(file)) score += 60;
+      // Adjacent file without enemy pawns = also good
+      if (!whiteFiles.has(file - 1) && !whiteFiles.has(file + 1)) score += 30;
+
+      // Passed pawn = excellent for black
       let passed = true;
       for (let r = rank - 1; r >= 1; r--) {
         const left = file > 0 ? `${FILES[file - 1]}${r}` : null;
@@ -213,23 +224,37 @@ function evaluatePosition(squares: Record<string, Piece>, whiteCaptured: number,
           break;
         }
       }
-      if (passed) score += 180;
+      if (passed) score += 250;
+
+      // Pawns on 2nd/3rd rank not advanced = penalty (must move forward!)
+      if (rank >= 6) score -= 20;
+      // Pawns on 5th rank = good (attacking)
+      if (rank <= 5) score += 15;
+      // Pawns on 4th rank = great (very advanced)
+      if (rank <= 4) score += 30;
+
+      // Capture threat bonus: can capture next move?
+      const captures = getPawnMoves(sq, squares, 'b', null).filter(to => {
+        const target = squares[to];
+        return target && target.color === 'w';
+      });
+      score += captures.length * 70;
     }
   }
 
-  // Mobility
+  // Mobility: more moves = better
   const blackMoves = getAllPawnMoves(squares, 'b', null).length;
   const whiteMoves = getAllPawnMoves(squares, 'w', null).length;
-  score += blackMoves * 8;
-  score -= whiteMoves * 8;
+  score += blackMoves * 10;
+  score -= whiteMoves * 10;
 
   // Pawn count
-  score += countPawns(squares, 'b') * 100;
-  score -= countPawns(squares, 'w') * 100;
+  score += countPawns(squares, 'b') * 120;
+  score -= countPawns(squares, 'w') * 120;
 
   // Captures
-  score += blackCaptured * 80;
-  score -= whiteCaptured * 80;
+  score += blackCaptured * 100;
+  score -= whiteCaptured * 100;
 
   return score;
 }
@@ -306,9 +331,9 @@ function getBestMove(
     if (difficulty === 'easy') {
       score = evaluatePosition(result.squares, wCap, bCap);
     } else if (difficulty === 'medium') {
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 2, true, -Infinity, Infinity);
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 3, true, -Infinity, Infinity);
     } else {
-      score = minimax(result.squares, result.enPassant, wCap, bCap, 4, true, -Infinity, Infinity);
+      score = minimax(result.squares, result.enPassant, wCap, bCap, 5, true, -Infinity, Infinity);
     }
 
     return { ...move, score };
@@ -326,7 +351,7 @@ function getBestMove(
       return scored[Math.floor(Math.random() * scored.length)];
     }
   } else if (difficulty === 'medium') {
-    if (Math.random() < 0.85 || scored.length < 2) {
+    if (Math.random() < 0.95 || scored.length < 2) {
       return scored[0];
     } else {
       return scored[Math.floor(Math.random() * Math.min(3, scored.length))];
