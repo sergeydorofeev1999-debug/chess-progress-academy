@@ -441,7 +441,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       if (g.isStalemate()) {
         setIsStalemate(true);
         const ex = EXERCISES.find(e => e.id === currentExercise)!;
-        setMessage(ex.matIn1 ? 'Провалено.' : 'Пат. Ещё раз. Провалено.');
+        setMessage(ex.matIn1 ? 'Провалено.' : 'Пат. Провалено.');
         return;
       }
 
@@ -481,7 +481,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
-            setMessage('Пат. Ещё раз. Провалено.');
+            setMessage('Пат. Провалено.');
           } else if (ex.matIn1) {
             setIsStalemate(true);
             setMessage('Провалено.');

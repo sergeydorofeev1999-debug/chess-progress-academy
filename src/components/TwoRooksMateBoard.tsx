@@ -361,7 +361,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
 
       if (g.isStalemate()) {
         setIsStalemate(true);
-        setMessage('Пат. Ещё раз. Провалено.');
+        setMessage('Пат. Провалено.');
         return;
       }
 
@@ -396,7 +396,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
             onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
-            setMessage('Пат. Ещё раз. Провалено.');
+            setMessage('Пат. Провалено.');
           } else {
             setMessage('Ничья! Начните заново.');
           }
