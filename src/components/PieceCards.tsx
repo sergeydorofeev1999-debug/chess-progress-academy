@@ -42,6 +42,7 @@ const MULTI_LEVEL_LESSONS = [
 
 const STAR_BASED_LESSONS = [
   '126a2252-7482-4ed4-8d5a-a0afe82d834d', // twoRooksMate
+  '3ca74ff6-7274-4cbd-9336-f33378310fcd', // queenMate
 ];
 
 const LESSON_KEYS: Record<string, string> = {
@@ -52,6 +53,7 @@ const LESSON_KEYS: Record<string, string> = {
   '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac': 'knightpawn_progress',
   'bae12fca-bfa4-44b6-9dff-7555fe240706': 'football_progress',
   '126a2252-7482-4ed4-8d5a-a0afe82d834d': 'tworooks_progress',
+  '3ca74ff6-7274-4cbd-9336-f33378310fcd': 'queenmate_progress',
 };
 
 export default function PieceCards({ lessons, progressMap, courseId, pieceCodes, descriptions }: Props) {
