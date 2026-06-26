@@ -31,13 +31,16 @@ function getLessonDetail(lessonId: string): Record<number, number> {
   }
 }
 
-const INTERACTIVE_LESSONS = [
+const MULTI_LEVEL_LESSONS = [
   'af74a851-e308-411d-82e1-fafdc5bd390a', // pawnRace
   'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4', // rookPawn
   '2976cdff-d622-45a6-9ce4-fbcc33fa9528', // bishopPawn
   'a8b9a524-5e37-43c5-a479-9c98494d704e', // queenPawn
   '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac', // knightPawn
   'bae12fca-bfa4-44b6-9dff-7555fe240706', // chessFootball
+];
+
+const STAR_BASED_LESSONS = [
   '126a2252-7482-4ed4-8d5a-a0afe82d834d', // twoRooksMate
 ];
 
@@ -70,13 +73,14 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const isServerCompleted = progressMap[lesson.id];
         const detail = mounted ? clientDetails[lesson.id] || {} : {};
         const totalLevels = lesson.levelsCount || 1;
-        const isInteractive = INTERACTIVE_LESSONS.includes(lesson.id);
+        const isMultiLevel = MULTI_LEVEL_LESSONS.includes(lesson.id);
+        const isStarBased = STAR_BASED_LESSONS.includes(lesson.id);
         const storageKey = LESSON_KEYS[lesson.id];
 
         let levelsDone = 0;
         let minStars = 0;
 
-        if (isInteractive && mounted && storageKey) {
+        if (storageKey && mounted) {
           try {
             const raw = localStorage.getItem(`${storageKey}_${lesson.id}`) || '{}';
             const progress = JSON.parse(raw);
@@ -95,12 +99,35 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted) {
-          bgColor = 'bg-[#ebf5d8]';
-          borderColor = 'border-[#c5e0a5]';
-        } else if (hasProgress) {
-          bgColor = 'bg-[#cce5ff]';
-          borderColor = 'border-[#a3c8f0]';
+        let starCount = 0;
+
+        if (isMultiLevel) {
+          // Lessons 18-23: green if any level won, stars = levels won
+          if (hasProgress) {
+            bgColor = 'bg-[#ebf5d8]';
+            borderColor = 'border-[#c5e0a5]';
+            starCount = levelsDone;
+          }
+        } else if (isStarBased) {
+          // Lesson 24: purple → blue → green
+          if (isCompleted) {
+            bgColor = 'bg-[#ebf5d8]';
+            borderColor = 'border-[#c5e0a5]';
+            starCount = minStars;
+          } else if (hasProgress) {
+            bgColor = 'bg-[#cce5ff]';
+            borderColor = 'border-[#a3c8f0]';
+          }
+        } else {
+          // Default lessons
+          if (isCompleted) {
+            bgColor = 'bg-[#ebf5d8]';
+            borderColor = 'border-[#c5e0a5]';
+            starCount = minStars || 1;
+          } else if (hasProgress) {
+            bgColor = 'bg-[#cce5ff]';
+            borderColor = 'border-[#a3c8f0]';
+          }
         }
 
         const piece = pieceCodes?.[i];
@@ -128,12 +155,27 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
-            {isCompleted && (
+            {isMultiLevel && hasProgress && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
-                {'★'.repeat(minStars || 1)}
+                {'★'.repeat(Math.min(starCount, 3))}
               </div>
             )}
-            {hasProgress && !isCompleted && (
+            {isStarBased && isCompleted && (
+              <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
+                {'★'.repeat(starCount || 1)}
+              </div>
+            )}
+            {isStarBased && hasProgress && !isCompleted && (
+              <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
+                {levelsDone}/{totalLevels}
+              </div>
+            )}
+            {!isMultiLevel && !isStarBased && isCompleted && (
+              <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
+                {'★'.repeat(starCount || 1)}
+              </div>
+            )}
+            {!isMultiLevel && !isStarBased && hasProgress && !isCompleted && (
               <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {levelsDone}/{totalLevels}
               </div>
