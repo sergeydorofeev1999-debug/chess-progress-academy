@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2;
+type ExerciseId = 1 | 2 | 3;
 
 interface Exercise {
   id: ExerciseId;
@@ -94,6 +94,30 @@ const EXERCISES: Exercise[] = [
     ],
     minMoves3: 12,
     minMoves2: 14,
+  },
+  {
+    id: 3,
+    label: 'Упражнение 3',
+    description: 'Мат ферзём — далёкая начальная позиция',
+    fen: '8/8/8/2k5/8/8/8/K6Q w - - 0 1',
+    demoMoves: [
+      { from: 'h1', to: 'e4', comment: 'Ферзь выходит в центр' },
+      { from: 'c5', to: 'd6', comment: 'Чёрный король отступает' },
+      { from: 'a1', to: 'b2', comment: 'Белый король приближается' },
+      { from: 'd6', to: 'c5', comment: 'Король держится в центре' },
+      { from: 'e4', to: 'c4', comment: 'Ферзь сужает пространство' },
+      { from: 'c5', to: 'd4', comment: 'Король отступает' },
+      { from: 'b2', to: 'c3', comment: 'Белый король продолжает наступление' },
+      { from: 'd4', to: 'e3', comment: 'Чёрный король в центр' },
+      { from: 'c4', to: 'e4', comment: 'Ферзь даёт шах!' },
+      { from: 'e3', to: 'f2', comment: 'Король отступает' },
+      { from: 'c3', to: 'd3', comment: 'Белый король поддерживает' },
+      { from: 'e4', to: 'f4', comment: 'Ферзь даёт шах!' },
+      { from: 'f2', to: 'g1', comment: 'Король прячется в углу' },
+      { from: 'f4', to: 'f2', comment: 'Мат!' },
+    ],
+    minMoves3: 14,
+    minMoves2: 16,
   },
 ];
 
