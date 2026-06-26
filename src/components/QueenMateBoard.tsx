@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1;
+type ExerciseId = 1 | 2;
 
 interface Exercise {
   id: ExerciseId;
@@ -57,6 +57,43 @@ const EXERCISES: Exercise[] = [
     ],
     minMoves3: 14,
     minMoves2: 16,
+  },
+  {
+    id: 2,
+    label: 'Упражнение 2',
+    description: 'Мат ферзём — короли далеко друг от друга',
+    fen: '8/3K4/8/8/6Q1/3k4/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'g4', to: 'h4', comment: 'Ферзь сужает пространство справа' },
+      { from: 'd3', to: 'e2', comment: 'Чёрный король уходит в центр' },
+      { from: 'd7', to: 'e6', comment: 'Белый король приближается' },
+      { from: 'e2', to: 'f1', comment: 'Чёрный король отступает' },
+      { from: 'h4', to: 'h1', comment: 'Ферзь даёт шах!' },
+      { from: 'f1', to: 'f2', comment: 'Король уходит от шаха' },
+      { from: 'e6', to: 'f5', comment: 'Белый король продолжает наступление' },
+      { from: 'f2', to: 'g2', comment: 'Чёрный король бежит' },
+      { from: 'h1', to: 'f3', comment: 'Ферзь преследует' },
+      { from: 'g2', to: 'h1', comment: 'Король прячется' },
+      { from: 'f5', to: 'g5', comment: 'Белый король сокращает дистанцию' },
+      { from: 'h1', to: 'h2', comment: 'Чёрный король держится' },
+      { from: 'f3', to: 'h3', comment: 'Ферзь даёт шах!' },
+      { from: 'h2', to: 'g1', comment: 'Король вынужден отступить' },
+      { from: 'g5', to: 'g4', comment: 'Белый король приближается' },
+      { from: 'g1', to: 'f1', comment: 'Чёрный король пытается уйти' },
+      { from: 'h3', to: 'g3', comment: 'Ферзь сужает пространство' },
+      { from: 'f1', to: 'e1', comment: 'Король отступает' },
+      { from: 'g4', to: 'f3', comment: 'Белый король наступает' },
+      { from: 'e1', to: 'd2', comment: 'Чёрный король в центр' },
+      { from: 'g3', to: 'd3', comment: 'Ферзь даёт шах!' },
+      { from: 'd2', to: 'c2', comment: 'Король уходит' },
+      { from: 'f3', to: 'e2', comment: 'Белый король поддерживает' },
+      { from: 'c2', to: 'b2', comment: 'Чёрный король держится' },
+      { from: 'd3', to: 'd2', comment: 'Ферзь даёт шах!' },
+      { from: 'b2', to: 'a1', comment: 'Король в углу' },
+      { from: 'd2', to: 'b2', comment: 'Мат!' },
+    ],
+    minMoves3: 12,
+    minMoves2: 14,
   },
 ];
 
@@ -535,7 +572,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
           {currentEx.description}
         </div>
 
-        {currentExercise === 1 && !demoMode && !isComplete && (
+        {!demoMode && !isComplete && (
           <button
             onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
