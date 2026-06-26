@@ -67,7 +67,7 @@ const EXERCISES: Exercise[] = [
     id: 3,
     label: 'Упражнение 3',
     description: 'Ладьи на последней горизонтали',
-    fen: 'R6R/4K3/8/8/3k4/8/8/8 w - - 0 1',
+    fen: 'R3K2R/8/8/8/3k4/8/8/8 w - - 0 1',
     demoMoves: [
       { from: 'a8', to: 'a1', comment: 'Ладья выдвигается на 1-ю горизонталь' },
       { from: 'd4', to: 'c3', comment: 'Чёрный король отступает' },
