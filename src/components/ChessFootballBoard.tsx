@@ -330,10 +330,30 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     wKingRef.current = newWKing;
 
     let newWScore = wScoreRef.current;
+    let goalScored = false;
     if (RANKS.indexOf(newWKing[1]) === 7) {
       newWScore += 1;
       setWScore(newWScore);
       wScoreRef.current = newWScore;
+      if (newWScore < 3) {
+        goalScored = true;
+      }
+    }
+
+    // If white scored but game not over, reset kings for next round
+    if (goalScored) {
+      setWKing(START_W_KING);
+      wKingRef.current = START_W_KING;
+      setBKing(START_B_KING);
+      bKingRef.current = START_B_KING;
+      setPositionHistory([]);
+      positionHistoryRef.current = [];
+      setSelectedSquare(null);
+      setValidSquares([]);
+      selectedSquareRef.current = null;
+      setTurn('b');
+      turnRef.current = 'b';
+      return;
     }
 
     const newHistory = [...positionHistoryRef.current, `${newWKing}-${bKingRef.current}`];
@@ -403,10 +423,28 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       bKingRef.current = newBKing;
 
       let newBScore = bScoreRef.current;
+      let bGoalScored = false;
       if (RANKS.indexOf(newBKing[1]) === 0) {
         newBScore += 1;
         setBScore(newBScore);
         bScoreRef.current = newBScore;
+        if (newBScore < 3) {
+          bGoalScored = true;
+        }
+      }
+
+      // If black scored but game not over, reset kings for next round
+      if (bGoalScored) {
+        setWKing(START_W_KING);
+        wKingRef.current = START_W_KING;
+        setBKing(START_B_KING);
+        bKingRef.current = START_B_KING;
+        setPositionHistory([]);
+        positionHistoryRef.current = [];
+        setComputerThinking(false);
+        setTurn('w');
+        turnRef.current = 'w';
+        return;
       }
 
       const newHistory = [...positionHistoryRef.current, `${wKingRef.current}-${newBKing}`];
@@ -681,7 +719,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
                     backgroundColor: light ? '#f0d9b5' : '#b58863',
                   }}
                   onPointerDown={(e) => handlePointerDown(e, sq)}
-                  onClick={() => click(sq)}
                   onDragStart={(e) => e.preventDefault()}
                 >
                   {sel && (
