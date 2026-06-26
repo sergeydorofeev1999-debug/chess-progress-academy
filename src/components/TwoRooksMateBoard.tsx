@@ -2,13 +2,62 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { RotateCcw, Eye, Trophy } from 'lucide-react';
+import { RotateCcw, Eye, Trophy, ChevronRight, Star } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-const START_FEN = '8/8/8/4k3/R7/7R/8/4K3 w - - 0 1';
+type ExerciseId = 1 | 2;
+
+interface Exercise {
+  id: ExerciseId;
+  label: string;
+  description: string;
+  fen: string;
+  demoMoves: { from: string; to: string; comment: string }[];
+}
+
+const EXERCISES: Exercise[] = [
+  {
+    id: 1,
+    label: 'Упражнение 1',
+    description: 'Ладьи на флангах — загоняем влево',
+    fen: '8/8/8/4k3/R7/7R/8/4K3 w - - 0 1',
+    demoMoves: [
+      { from: 'h3', to: 'h5', comment: 'Ладья выдвигается на 5-ю горизонталь' },
+      { from: 'e5', to: 'f6', comment: 'Чёрный король отступает' },
+      { from: 'a4', to: 'a6', comment: 'Вторая ладья даёт шах!' },
+      { from: 'f6', to: 'g7', comment: 'Король уходит на 7-ю линию' },
+      { from: 'h5', to: 'b5', comment: 'Ладья отступает, готовясь к финалу' },
+      { from: 'g7', to: 'f7', comment: 'Король пытается уйти' },
+      { from: 'b5', to: 'b7', comment: 'Шах! Сужаем пространство' },
+      { from: 'f7', to: 'g8', comment: 'Король отступает на край доски' },
+      { from: 'a6', to: 'a8', comment: 'Мат!' },
+    ],
+  },
+  {
+    id: 2,
+    label: 'Упражнение 2',
+    description: 'Ладьи в центре — загоняем вправо',
+    fen: '8/3R4/8/8/4k3/K7/8/3R4 w - - 0 1',
+    demoMoves: [
+      { from: 'd8', to: 'h8', comment: 'Ладья перекрывает правый фланг' },
+      { from: 'e4', to: 'f4', comment: 'Чёрный король отступает вправо' },
+      { from: 'd1', to: 'h1', comment: 'Вторая ладья выдвигается на правый фланг' },
+      { from: 'f4', to: 'g4', comment: 'Король продолжает отступать' },
+      { from: 'h8', to: 'h7', comment: 'Шах! Сужаем пространство сверху' },
+      { from: 'g4', to: 'h4', comment: 'Король вынужден на край доски' },
+      { from: 'h1', to: 'g1', comment: 'Ладья готовится к финальному шаху' },
+      { from: 'h4', to: 'h3', comment: 'Король отступает вниз' },
+      { from: 'h7', to: 'h3', comment: 'Шах!' },
+      { from: 'h3', to: 'h2', comment: 'Король вынужден на 2-ю линию' },
+      { from: 'g1', to: 'g2', comment: 'Шах!' },
+      { from: 'h2', to: 'h1', comment: 'Король отступает в угол' },
+      { from: 'h3', to: 'h1', comment: 'Мат!' },
+    ],
+  },
+];
 
 /* ═════════════════════════════════════════════════════════════════
    PIECE IMAGE (cburnett SVG)
@@ -25,21 +74,6 @@ function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
     />
   );
 }
-
-/* ═════════════════════════════════════════════════════════════════
-   DEMO MOVES (pre-recorded)
-   ═════════════════════════════════════════════════════════════════ */
-const DEMO_MOVES = [
-  { from: 'h3', to: 'h5', comment: 'Ладья выдвигается на 5-ю горизонталь' },
-  { from: 'e5', to: 'f6', comment: 'Чёрный король отступает' },
-  { from: 'a4', to: 'a6', comment: 'Вторая ладья даёт шах!' },
-  { from: 'f6', to: 'g7', comment: 'Король уходит на 7-ю линию' },
-  { from: 'h5', to: 'b5', comment: 'Ладья отступает, готовясь к финалу' },
-  { from: 'g7', to: 'f7', comment: 'Король пытается уйти' },
-  { from: 'b5', to: 'b7', comment: 'Шах! Сужаем пространство' },
-  { from: 'f7', to: 'g8', comment: 'Король отступает на край доски' },
-  { from: 'a6', to: 'a8', comment: 'Мат!' },
-];
 
 /* ═════════════════════════════════════════════════════════════════
    BLACK KING AI — run away from rooks, avoid check
@@ -94,7 +128,8 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
    COMPONENT
    ═════════════════════════════════════════════════════════════════ */
 export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [game, setGame] = useState(() => new Chess(START_FEN));
+  const [exercise, setExercise] = useState<ExerciseId | null>(null);
+  const [game, setGame] = useState<Chess>(() => new Chess(EXERCISES[0].fen));
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [demoMode, setDemoMode] = useState(false);
@@ -102,9 +137,23 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [demoComment, setDemoComment] = useState('');
   const [sqSize, setSqSize] = useState(52);
   const [isComplete, setIsComplete] = useState(false);
+  const [completedExercises, setCompletedExercises] = useState<Record<number, boolean>>({});
   const mountedRef = useRef(true);
 
+  const storageKey = lessonId ? `tworooks_progress_${lessonId}` : 'tworooks_progress';
+
   useEffect(() => () => { mountedRef.current = false; }, []);
+
+  // Load progress from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setCompletedExercises(parsed);
+      }
+    } catch {}
+  }, [storageKey]);
 
   useEffect(() => {
     const update = () => {
@@ -121,8 +170,22 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   }, []);
 
   const reset = useCallback(() => {
-    const g = new Chess(START_FEN);
+    if (!exercise) return;
+    const ex = EXERCISES.find(e => e.id === exercise)!;
+    const g = new Chess(ex.fen);
     setGame(g);
+    setSelectedSquare(null);
+    setMessage('');
+    setDemoMode(false);
+    setDemoStep(0);
+    setDemoComment('');
+    setIsComplete(false);
+  }, [exercise]);
+
+  const startExercise = useCallback((id: ExerciseId) => {
+    const ex = EXERCISES.find(e => e.id === id)!;
+    setExercise(id);
+    setGame(new Chess(ex.fen));
     setSelectedSquare(null);
     setMessage('');
     setDemoMode(false);
@@ -131,10 +194,21 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setIsComplete(false);
   }, []);
 
+  const saveProgress = useCallback((id: ExerciseId) => {
+    setCompletedExercises(prev => {
+      const next = { ...prev, [id]: true };
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [storageKey]);
+
   // Demo auto-play
   useEffect(() => {
-    if (!demoMode) return;
-    if (demoStep >= DEMO_MOVES.length) {
+    if (!demoMode || !exercise) return;
+    const ex = EXERCISES.find(e => e.id === exercise)!;
+    if (demoStep >= ex.demoMoves.length) {
       setDemoMode(false);
       setDemoComment('Мат чёрному королю!');
       setTimeout(() => {
@@ -144,7 +218,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
       return;
     }
 
-    const move = DEMO_MOVES[demoStep];
+    const move = ex.demoMoves[demoStep];
     setDemoComment(move.comment);
 
     const timer = setTimeout(() => {
@@ -158,7 +232,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [demoMode, demoStep]);
+  }, [demoMode, demoStep, exercise]);
 
   const handleSquareClick = useCallback((square: string) => {
     if (demoMode || isComplete) return;
@@ -178,6 +252,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           if (game.isCheckmate()) {
             setMessage('Мат чёрному королю!');
             setIsComplete(true);
+            if (exercise) saveProgress(exercise);
             onComplete();
             return;
           }
@@ -199,13 +274,14 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
               if (game.isCheckmate()) {
                 setMessage('Мат чёрному королю!');
                 setIsComplete(true);
+                if (exercise) saveProgress(exercise);
                 onComplete();
               }
             } else {
-              // No moves for black = stalemate or checkmate
               if (game.isCheckmate()) {
                 setMessage('Мат чёрному королю!');
                 setIsComplete(true);
+                if (exercise) saveProgress(exercise);
                 onComplete();
               } else {
                 setMessage('Ничья! Начните заново.');
@@ -231,7 +307,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         setSelectedSquare(square);
       }
     }
-  }, [game, selectedSquare, demoMode, isComplete, onComplete]);
+  }, [game, selectedSquare, demoMode, isComplete, exercise, saveProgress, onComplete]);
 
   const getPieceAt = (sq: string) => {
     const p = game.get(sq as any);
@@ -246,8 +322,66 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
     : [];
 
+  // ═══════════════════════════════════════════════════════════════
+  // EXERCISE SELECTOR
+  // ═══════════════════════════════════════════════════════════════
+  if (!exercise) {
+    const allCompleted = EXERCISES.every(e => completedExercises[e.id]);
+    return (
+      <div className="flex flex-col items-center gap-6 w-full px-4 py-6">
+        <h3 className="text-xl font-bold text-slate-800">Выберите упражнение</h3>
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          {EXERCISES.map(ex => {
+            const isCompleted = completedExercises[ex.id];
+            return (
+              <button
+                key={ex.id}
+                onClick={() => startExercise(ex.id)}
+                className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition text-left ${
+                  isCompleted
+                    ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
+                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                }`}>
+                  {isCompleted ? <Trophy size={20} /> : ex.id}
+                </div>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-800">{ex.label}</div>
+                  <div className="text-sm text-slate-500">{ex.description}</div>
+                </div>
+                <ChevronRight size={20} className="text-slate-400" />
+              </button>
+            );
+          })}
+        </div>
+        {allCompleted && (
+          <div className="mt-4 px-6 py-3 bg-green-100 border border-green-300 rounded-xl text-green-800 font-bold flex items-center gap-2">
+            <Trophy size={20} /> Все упражнения пройдены!
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const currentEx = EXERCISES.find(e => e.id === exercise)!;
+
   return (
     <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
+      {/* Exercise badge */}
+      <div className="flex items-center gap-2">
+        <span className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-bold">
+          {currentEx.label}
+        </span>
+        {completedExercises[exercise] && (
+          <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
+            <Star size={14} fill="currentColor" /> Пройдено
+          </span>
+        )}
+      </div>
+
       {/* Title */}
       <h3 className="text-lg font-bold text-slate-800">Мат двумя ладьями</h3>
 
@@ -363,6 +497,13 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         >
           <RotateCcw className="w-4 h-4" />
           Начать заново
+        </button>
+        <button
+          onClick={() => setExercise(null)}
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          К упражнениям
         </button>
       </div>
 
