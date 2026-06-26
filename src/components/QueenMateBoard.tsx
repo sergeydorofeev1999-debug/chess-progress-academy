@@ -440,7 +440,8 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
       if (g.isStalemate()) {
         setIsStalemate(true);
-        setMessage('Пат. Ещё раз. Провалено.');
+        const ex = EXERCISES.find(e => e.id === currentExercise)!;
+        setMessage(ex.matIn1 ? 'Провалено.' : 'Пат. Ещё раз. Провалено.');
         return;
       }
 
@@ -679,7 +680,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         {isStalemate && (
           <div className="w-full max-w-sm">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">Пат. Провалено.</p>
+              <p className="text-white font-bold text-lg">{message || 'Пат. Провалено.'}</p>
               <button
                 onClick={reset}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
