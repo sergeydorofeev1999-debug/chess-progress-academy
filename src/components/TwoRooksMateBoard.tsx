@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2;
+type ExerciseId = 1 | 2 | 3;
 
 interface Exercise {
   id: ExerciseId;
@@ -62,6 +62,33 @@ const EXERCISES: Exercise[] = [
     ],
     minMoves3: 5,
     minMoves2: 6,
+  },
+  {
+    id: 3,
+    label: 'Упражнение 3',
+    description: 'Ладьи на последней горизонтали',
+    fen: 'R6R/4K3/8/8/3k4/8/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'a8', to: 'a1', comment: 'Ладья выдвигается на 1-ю горизонталь' },
+      { from: 'd4', to: 'c3', comment: 'Чёрный король отступает' },
+      { from: 'h8', to: 'h1', comment: 'Вторая ладья выдвигается' },
+      { from: 'c3', to: 'b2', comment: 'Король бежит влево' },
+      { from: 'a1', to: 'a2', comment: 'Шах! Сужаем пространство' },
+      { from: 'b2', to: 'c1', comment: 'Король вынужден в угол' },
+      { from: 'h1', to: 'h1', comment: 'Ладья контролирует 1-ю линию' },
+      { from: 'c1', to: 'b1', comment: 'Король пытается уйти' },
+      { from: 'a2', to: 'a1', comment: 'Шах!' },
+      { from: 'b1', to: 'c2', comment: 'Король отступает' },
+      { from: 'h1', to: 'c1', comment: 'Шах!' },
+      { from: 'c2', to: 'd2', comment: 'Король уходит в центр' },
+      { from: 'a1', to: 'a2', comment: 'Шах!' },
+      { from: 'd2', to: 'd3', comment: 'Король отступает' },
+      { from: 'c1', to: 'c3', comment: 'Шах!' },
+      { from: 'd3', to: 'd4', comment: 'Король уходит' },
+      { from: 'a2', to: 'd2', comment: 'Мат!' },
+    ],
+    minMoves3: 6,
+    minMoves2: 7,
   },
 ];
 

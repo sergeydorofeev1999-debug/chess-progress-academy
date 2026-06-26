@@ -164,7 +164,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             lessons={endgameLevelLessons.map((l: any, idx: number) => {
               let levelsCount = 1;
               if (l.id === '126a2252-7482-4ed4-8d5a-a0afe82d834d') {
-                levelsCount = 2;
+                levelsCount = 3;
               } else {
                 try {
                   const config = JSON.parse(l.video_url || '{}');
