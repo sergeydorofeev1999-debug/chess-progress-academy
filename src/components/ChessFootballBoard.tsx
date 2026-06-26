@@ -248,6 +248,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const [bScore, setBScore] = useState(0);
   const [turn, setTurn] = useState<'w' | 'b'>('w');
   const [winner, setWinner] = useState<string | null>(null);
+  const [drawMessage, setDrawMessage] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
   const [completedLevels, setCompletedLevels] = useState<Record<Difficulty, boolean>>(savedProgress);
   const [computerThinking, setComputerThinking] = useState(false);
@@ -262,6 +263,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
 
   const turnRef = useRef(turn);
   const winnerRef = useRef(winner);
+  const drawMessageRef = useRef(drawMessage);
   const wKingRef = useRef(wKing);
   const bKingRef = useRef(bKing);
   const wPawnsRef = useRef(wPawns);
@@ -278,6 +280,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
 
   useEffect(() => { turnRef.current = turn; }, [turn]);
   useEffect(() => { winnerRef.current = winner; }, [winner]);
+  useEffect(() => { drawMessageRef.current = drawMessage; }, [drawMessage]);
   useEffect(() => { wKingRef.current = wKing; }, [wKing]);
   useEffect(() => { bKingRef.current = bKing; }, [bKing]);
   useEffect(() => { wPawnsRef.current = wPawns; }, [wPawns]);
@@ -314,10 +317,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     setBScore(0);
     setTurn('w');
     setWinner(null);
+    setDrawMessage(null);
     setSelectedSquare(null);
     setValidSquares([]);
     setPositionHistory([]);
     winnerRef.current = null;
+    drawMessageRef.current = null;
     wKingRef.current = START_W_KING;
     bKingRef.current = START_B_KING;
     wPawnsRef.current = START_W_PAWNS;
@@ -354,6 +359,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     selectedSquareRef.current = null;
     setWinner(null);
     winnerRef.current = null;
+    setDrawMessage(null);
+    drawMessageRef.current = null;
   }, []);
 
   const doKingMove = useCallback((to: string) => {
@@ -373,9 +380,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     }
 
     if (goalScored) {
-      resetKings();
-      setTurn('w');
-      turnRef.current = 'w';
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        resetKings();
+        setTurn('w');
+        turnRef.current = 'w';
+      }, 3000);
       return;
     }
 
@@ -403,12 +413,10 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     }
 
     if (checkRepetition(newHistory)) {
-      setTimeout(() => {
-        if (!mountedRef.current) return;
-        resetKings();
-        setTurn('w');
-        turnRef.current = 'w';
-      }, 3000);
+      setDrawMessage('Ничья через трехкратное повторение ходов');
+      setSelectedSquare(null);
+      setValidSquares([]);
+      selectedSquareRef.current = null;
       return;
     }
 
@@ -420,7 +428,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   }, [savedKey, checkRepetition, resetKings]);
 
   useEffect(() => {
-    if (winnerRef.current || turnRef.current !== 'b' || !difficultyRef.current) return;
+    if (winnerRef.current || drawMessageRef.current || turnRef.current !== 'b' || !difficultyRef.current) return;
     setComputerThinking(true);
 
     const timer = setTimeout(() => {
@@ -498,13 +506,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       }
 
       if (checkRepetition(newHistory)) {
-        setTimeout(() => {
-          if (!mountedRef.current) return;
-          resetKings();
-          setComputerThinking(false);
-          setTurn('w');
-          turnRef.current = 'w';
-        }, 3000);
+        setDrawMessage('Ничья через трехкратное повторение ходов');
+        setComputerThinking(false);
         return;
       }
 
@@ -517,7 +520,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   }, [turn, winner, wPawns, bPawns, checkRepetition, savedKey, resetKings]);
 
   const click = useCallback((square: string) => {
-    if (winnerRef.current) return;
+    if (winnerRef.current || drawMessageRef.current) return;
     if (turnRef.current !== 'w') return;
 
     const sel = selectedSquareRef.current;
@@ -553,7 +556,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   useEffect(() => { clickRef.current = click; }, [click]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
-    if (winnerRef.current) return;
+    if (winnerRef.current || drawMessageRef.current) return;
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
     pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
@@ -720,6 +723,26 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
           <div className="text-sm font-normal mt-1">
             Счёт: {wScore} : {bScore}
           </div>
+        </div>
+      )}
+
+      {/* Draw message */}
+      {drawMessage && (
+        <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500">
+          {drawMessage}
+          <div className="text-sm font-normal mt-1">
+            Счёт: {wScore} : {bScore}
+          </div>
+          <button
+            onClick={() => {
+              resetKings();
+              setTurn('w');
+              turnRef.current = 'w';
+            }}
+            className="mt-2 px-4 py-2 bg-white text-yellow-600 rounded-lg text-sm font-bold hover:bg-yellow-50 transition-colors"
+          >
+            Продолжить сначала
+          </button>
         </div>
       )}
 
