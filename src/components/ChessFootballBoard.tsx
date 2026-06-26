@@ -220,7 +220,7 @@ const LEVELS: { id: Difficulty; label: string; description: string; color: strin
 
 const START_W_KING = 'e1';
 const START_B_KING = 'e8';
-const START_W_PAWNS = ['a3', 'h3'];
+const START_W_PAWNS = ['a2', 'h2'];
 const START_B_PAWNS = ['a7', 'h7'];
 
 export default function ChessFootballBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
@@ -686,6 +686,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
                     backgroundColor: light ? '#f0d9b5' : '#b58863',
                   }}
                   onPointerDown={(e) => handlePointerDown(e, sq)}
+                  onClick={() => click(sq)}
                   onDragStart={(e) => e.preventDefault()}
                 >
                   {sel && (
