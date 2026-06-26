@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { RotateCcw, Eye, Trophy, ChevronRight } from 'lucide-react';
+import { RotateCcw, Eye, Trophy } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
@@ -118,9 +118,6 @@ function calcStars(ex: Exercise, whiteMoves: number): number {
   return 1;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   STAR RENDER — uses /images/learn/star.png (same as Lesson 7)
-   ═══════════════════════════════════════════════════════════════ */
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
     <img
@@ -139,6 +136,23 @@ function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   DRAG STATE
+   ═══════════════════════════════════════════════════════════════ */
+interface DragState {
+  square: string;
+  type: string;
+  color: 'w' | 'b';
+}
+
+interface PointerStart {
+  x: number;
+  y: number;
+  square: string;
+  moved: boolean;
+  pointerId: number;
+}
+
 export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
   const [currentExercise, setCurrentExercise] = useState<ExerciseId>(1);
   const [game, setGame] = useState<Chess | null>(null);
@@ -151,11 +165,21 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [isComplete, setIsComplete] = useState(false);
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
   const [whiteMoves, setWhiteMoves] = useState(0);
+  const [isStalemate, setIsStalemate] = useState(false);
+
+  // Drag state
+  const [dragPiece, setDragPiece] = useState<DragState | null>(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const pointerStartRef = useRef<PointerStart | null>(null);
+  const isCompleteRef = useRef(false);
+  const demoModeRef = useRef(false);
   const mountedRef = useRef(true);
 
   const storageKey = lessonId ? `tworooks_progress_${lessonId}` : 'tworooks_progress';
 
   useEffect(() => () => { mountedRef.current = false; }, []);
+  useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
+  useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
 
   useEffect(() => {
     try {
@@ -187,6 +211,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoStep(0);
     setDemoComment('');
     setIsComplete(false);
+    setIsStalemate(false);
     setWhiteMoves(0);
   }, [currentExercise]);
 
@@ -201,6 +226,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoStep(0);
     setDemoComment('');
     setIsComplete(false);
+    setIsStalemate(false);
     setWhiteMoves(0);
   }, [currentExercise]);
 
@@ -212,8 +238,9 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     });
   }, [storageKey]);
 
+  // Demo auto-play
   useEffect(() => {
-    if (!demoMode) return;
+    if (!demoMode || !currentExercise) return;
     const ex = EXERCISES.find(e => e.id === currentExercise)!;
     if (demoStep >= ex.demoMoves.length) {
       setDemoMode(false);
@@ -236,25 +263,54 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     return () => clearTimeout(timer);
   }, [demoMode, demoStep, currentExercise]);
 
-  const handleSquareClick = useCallback((square: string) => {
-    if (demoMode || isComplete) return;
+  // ═══════════════════════════════════════════════════════════════
+  // GAME LOGIC (handle white move + black AI response)
+  // ═══════════════════════════════════════════════════════════════
+  const processWhiteMove = useCallback((from: string, to: string) => {
     if (!game) return;
     const g = game;
     if (g.turn() !== 'w') return;
 
-    const piece = g.get(square as any);
+    try {
+      const move = g.move({ from, to });
+      if (!move) return;
 
-    if (selectedSquare) {
-      try {
-        const move = g.move({ from: selectedSquare, to: square });
-        if (move) {
-          const fenAfter = g.fen();
-          const nextWhiteMoves = whiteMoves + 1;
-          setGame(new Chess(fenAfter));
-          setSelectedSquare(null);
-          setMessage('');
-          setWhiteMoves(nextWhiteMoves);
+      const fenAfter = g.fen();
+      const nextWhiteMoves = whiteMoves + 1;
+      setGame(new Chess(fenAfter));
+      setSelectedSquare(null);
+      setMessage('');
+      setWhiteMoves(nextWhiteMoves);
 
+      if (g.isCheckmate()) {
+        const ex = EXERCISES.find(e => e.id === currentExercise)!;
+        const earned = calcStars(ex, nextWhiteMoves);
+        setMessage(`Мат чёрному королю! ${earned} ★`);
+        setIsComplete(true);
+        saveStars(currentExercise, earned);
+        onComplete();
+        return;
+      }
+
+      if (g.isStalemate()) {
+        setIsStalemate(true);
+        setMessage('Пат. Ещё раз. Провалено.');
+        return;
+      }
+
+      if (g.isDraw()) {
+        setMessage('Ничья! Начните заново.');
+        return;
+      }
+
+      // Black's turn — AI move
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        const blackMove = getBlackKingMove(g);
+        if (blackMove) {
+          g.move({ from: blackMove.from, to: blackMove.to });
+          const fenAfterBlack = g.fen();
+          setGame(new Chess(fenAfterBlack));
           if (g.isCheckmate()) {
             const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
@@ -262,62 +318,123 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
             setIsComplete(true);
             saveStars(currentExercise, earned);
             onComplete();
-            return;
           }
-
-          if (g.isStalemate() || g.isDraw()) {
+        } else {
+          if (g.isCheckmate()) {
+            const ex = EXERCISES.find(e => e.id === currentExercise)!;
+            const earned = calcStars(ex, nextWhiteMoves);
+            setMessage(`Мат чёрному королю! ${earned} ★`);
+            setIsComplete(true);
+            saveStars(currentExercise, earned);
+            onComplete();
+          } else if (g.isStalemate()) {
+            setIsStalemate(true);
+            setMessage('Пат. Ещё раз. Провалено.');
+          } else {
             setMessage('Ничья! Начните заново.');
-            return;
           }
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            const blackMove = getBlackKingMove(g);
-            if (blackMove) {
-              g.move({ from: blackMove.from, to: blackMove.to });
-              const fenAfterBlack = g.fen();
-              setGame(new Chess(fenAfterBlack));
-              if (g.isCheckmate()) {
-                const ex = EXERCISES.find(e => e.id === currentExercise)!;
-                const earned = calcStars(ex, nextWhiteMoves);
-                setMessage(`Мат чёрному королю! ${earned} ★`);
-                setIsComplete(true);
-                saveStars(currentExercise, earned);
-                onComplete();
-              }
-            } else {
-              if (g.isCheckmate()) {
-                const ex = EXERCISES.find(e => e.id === currentExercise)!;
-                const earned = calcStars(ex, nextWhiteMoves);
-                setMessage(`Мат чёрному королю! ${earned} ★`);
-                setIsComplete(true);
-                saveStars(currentExercise, earned);
-                onComplete();
-              } else {
-                setMessage('Ничья! Начните заново.');
-              }
-            }
-          }, 500);
-
-          return;
         }
-      } catch {
-        // Invalid move
-      }
+      }, 500);
+    } catch {
+      // Invalid move
+    }
+  }, [game, whiteMoves, currentExercise, saveStars, onComplete]);
 
+  // ═══════════════════════════════════════════════════════════════
+  // CLICK HANDLER
+  // ═══════════════════════════════════════════════════════════════
+  const handleSquareClick = useCallback((square: string) => {
+    if (demoModeRef.current || isCompleteRef.current) return;
+    if (!game) return;
+    const g = game;
+    if (g.turn() !== 'w') return;
+
+    const piece = g.get(square as any);
+
+    if (selectedSquare) {
+      if (selectedSquare === square) {
+        setSelectedSquare(null);
+        return;
+      }
+      processWhiteMove(selectedSquare, square);
       if (piece && piece.color === 'w') {
         setSelectedSquare(square);
-        setMessage('');
-      } else {
-        setSelectedSquare(null);
-        setMessage('Недопустимый ход');
       }
     } else {
       if (piece && piece.color === 'w') {
         setSelectedSquare(square);
       }
     }
-  }, [game, selectedSquare, demoMode, isComplete, currentExercise, whiteMoves, saveStars, onComplete]);
+  }, [game, selectedSquare, processWhiteMove]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // DRAG AND DROP (pointer events)
+  // ═══════════════════════════════════════════════════════════════
+  const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
+    if (isCompleteRef.current || demoModeRef.current) return;
+    if (!game) return;
+    const g = game;
+    if (g.turn() !== 'w') return;
+    const piece = g.get(square as any);
+    if (!piece || piece.color !== 'w') return;
+    if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+  }, [game]);
+
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+        start.moved = true;
+        const piece = game?.get(start.square as any);
+        if (piece) {
+          setDragPiece({ square: start.square, type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' });
+          setSelectedSquare(null);
+        }
+      }
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      if (!start.moved) {
+        // click handled by onClick
+      } else {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el?.closest('[data-square]') as HTMLElement | null;
+        const targetSquare = cell?.dataset.square || null;
+        if (targetSquare && targetSquare !== start.square) {
+          processWhiteMove(start.square, targetSquare);
+        }
+        setDragPiece(null);
+      }
+      pointerStartRef.current = null;
+    };
+
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        pointerStartRef.current = null;
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
+    };
+  }, [game, processWhiteMove]);
 
   const getPieceAt = (sq: string) => {
     if (!game) return null;
@@ -330,7 +447,9 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
 
   const validMoves = selectedSquare && game
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
-    : [];
+    : dragPiece && game
+      ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
+      : [];
 
   const currentEx = EXERCISES.find(e => e.id === currentExercise)!;
   const earned = exerciseStars[currentExercise] || 0;
@@ -382,7 +501,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           {currentEx.description}
         </div>
 
-        {/* Demo button only for Exercise 1 */}
         {currentExercise === 1 && !demoMode && !isComplete && (
           <button
             onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
@@ -403,7 +521,23 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           {demoMode ? 'Демонстрация...' : turnText}
         </div>
 
-        {message && (
+        {/* Stalemate / fail banner */}
+        {isStalemate && (
+          <div className="w-full max-w-sm">
+            <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
+              <p className="text-white font-bold text-lg">Пат. Ещё раз. Провалено.</p>
+              <button
+                onClick={reset}
+                className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
+              >
+                ЕЩЁ РАЗ
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success message */}
+        {message && !isStalemate && (
           <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
             message.includes('Мат') ? 'bg-green-500' : 'bg-yellow-500'
           }`}>
@@ -413,7 +547,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         )}
 
         {/* Board */}
-        <div className="flex justify-center w-full">
+        <div className="flex justify-center w-full relative">
           <div
             className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
             style={{
@@ -429,6 +563,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
                 const light = isLight(fi, ri);
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
+                const isDragSource = dragPiece?.square === sq;
 
                 return (
                   <div
@@ -441,8 +576,10 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
                       cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete ? 'grab' : 'default',
                       touchAction: 'none',
                       backgroundColor: light ? '#f0d9b5' : '#b58863',
+                      opacity: isDragSource ? 0.3 : 1,
                     }}
                     onClick={() => handleSquareClick(sq)}
+                    onPointerDown={(e) => handlePointerDown(e, sq)}
                     onDragStart={(e) => e.preventDefault()}
                   >
                     {sel && (
@@ -471,7 +608,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
                         />
                       </div>
                     )}
-                    {pieceObj && (
+                    {pieceObj && !isDragSource && (
                       <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
@@ -481,6 +618,21 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
               })
             ))}
           </div>
+
+          {/* Dragged piece overlay */}
+          {dragPiece && (
+            <div
+              className="fixed pointer-events-none z-50"
+              style={{
+                left: dragPos.x - sqSize * 0.425,
+                top: dragPos.y - sqSize * 0.425,
+                width: Math.round(sqSize * 0.85),
+                height: Math.round(sqSize * 0.85),
+              }}
+            >
+              <PieceImg type={dragPiece.type} color={dragPiece.color} />
+            </div>
+          )}
         </div>
 
         {/* Mobile exercise pills */}
@@ -507,7 +659,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           })}
         </div>
 
-        {/* Mobile reset */}
         <button
           onClick={reset}
           className="flex lg:hidden items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
