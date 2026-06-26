@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { RotateCcw, Eye, Trophy, ChevronRight, Star, Info } from 'lucide-react';
+import { RotateCcw, Eye, Trophy, ChevronRight } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
@@ -16,8 +16,8 @@ interface Exercise {
   description: string;
   fen: string;
   demoMoves: { from: string; to: string; comment: string }[];
-  minMoves3: number; // ходов белых для 3 звёзд
-  minMoves2: number; // ходов белых для 2 звёзд
+  minMoves3: number;
+  minMoves2: number;
 }
 
 const EXERCISES: Exercise[] = [
@@ -118,8 +118,29 @@ function calcStars(ex: Exercise, whiteMoves: number): number {
   return 1;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   STAR RENDER — uses /images/learn/star.png (same as Lesson 7)
+   ═══════════════════════════════════════════════════════════════ */
+function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
+  return (
+    <img
+      src="/images/learn/star.png"
+      alt=""
+      className="shrink-0"
+      style={{
+        width: size,
+        height: size,
+        filter: filled
+          ? 'brightness(1.2) drop-shadow(0 0 1px rgba(255,255,255,0.6))'
+          : 'grayscale(100%) brightness(0.4)',
+      }}
+      draggable={false}
+    />
+  );
+}
+
 export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<ExerciseId | null>(null);
+  const [currentExercise, setCurrentExercise] = useState<ExerciseId>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -130,7 +151,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [isComplete, setIsComplete] = useState(false);
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
   const [whiteMoves, setWhiteMoves] = useState(0);
-  const [showStarHint, setShowStarHint] = useState(false);
   const mountedRef = useRef(true);
 
   const storageKey = lessonId ? `tworooks_progress_${lessonId}` : 'tworooks_progress';
@@ -159,8 +179,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   }, []);
 
   const reset = useCallback(() => {
-    if (!exercise) return;
-    const ex = EXERCISES.find(e => e.id === exercise)!;
+    const ex = EXERCISES.find(e => e.id === currentExercise)!;
     setGame(new Chess(ex.fen));
     setSelectedSquare(null);
     setMessage('');
@@ -169,11 +188,12 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoComment('');
     setIsComplete(false);
     setWhiteMoves(0);
-  }, [exercise]);
+  }, [currentExercise]);
 
-  const startExercise = useCallback((id: ExerciseId) => {
+  const switchExercise = useCallback((id: ExerciseId) => {
+    if (id === currentExercise) return;
     const ex = EXERCISES.find(e => e.id === id)!;
-    setExercise(id);
+    setCurrentExercise(id);
     setGame(new Chess(ex.fen));
     setSelectedSquare(null);
     setMessage('');
@@ -182,7 +202,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoComment('');
     setIsComplete(false);
     setWhiteMoves(0);
-  }, []);
+  }, [currentExercise]);
 
   const saveStars = useCallback((id: ExerciseId, stars: number) => {
     setExerciseStars(prev => {
@@ -193,8 +213,8 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   }, [storageKey]);
 
   useEffect(() => {
-    if (!demoMode || !exercise) return;
-    const ex = EXERCISES.find(e => e.id === exercise)!;
+    if (!demoMode) return;
+    const ex = EXERCISES.find(e => e.id === currentExercise)!;
     if (demoStep >= ex.demoMoves.length) {
       setDemoMode(false);
       setDemoComment('Мат чёрному королю!');
@@ -214,7 +234,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
       setDemoStep(s => s + 1);
     }, 1000);
     return () => clearTimeout(timer);
-  }, [demoMode, demoStep, exercise]);
+  }, [demoMode, demoStep, currentExercise]);
 
   const handleSquareClick = useCallback((square: string) => {
     if (demoMode || isComplete) return;
@@ -236,11 +256,11 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           setWhiteMoves(nextWhiteMoves);
 
           if (g.isCheckmate()) {
-            const ex = EXERCISES.find(e => e.id === exercise)!;
+            const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
-            if (exercise) saveStars(exercise, earned);
+            saveStars(currentExercise, earned);
             onComplete();
             return;
           }
@@ -258,20 +278,20 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
               const fenAfterBlack = g.fen();
               setGame(new Chess(fenAfterBlack));
               if (g.isCheckmate()) {
-                const ex = EXERCISES.find(e => e.id === exercise)!;
+                const ex = EXERCISES.find(e => e.id === currentExercise)!;
                 const earned = calcStars(ex, nextWhiteMoves);
                 setMessage(`Мат чёрному королю! ${earned} ★`);
                 setIsComplete(true);
-                if (exercise) saveStars(exercise, earned);
+                saveStars(currentExercise, earned);
                 onComplete();
               }
             } else {
               if (g.isCheckmate()) {
-                const ex = EXERCISES.find(e => e.id === exercise)!;
+                const ex = EXERCISES.find(e => e.id === currentExercise)!;
                 const earned = calcStars(ex, nextWhiteMoves);
                 setMessage(`Мат чёрному королю! ${earned} ★`);
                 setIsComplete(true);
-                if (exercise) saveStars(exercise, earned);
+                saveStars(currentExercise, earned);
                 onComplete();
               } else {
                 setMessage('Ничья! Начните заново.');
@@ -297,7 +317,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         setSelectedSquare(square);
       }
     }
-  }, [game, selectedSquare, demoMode, isComplete, exercise, whiteMoves, saveStars, onComplete]);
+  }, [game, selectedSquare, demoMode, isComplete, currentExercise, whiteMoves, saveStars, onComplete]);
 
   const getPieceAt = (sq: string) => {
     if (!game) return null;
@@ -312,220 +332,193 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
     : [];
 
-  // Exercise selector
-  if (!exercise) {
-    const allCompleted = EXERCISES.every(e => (exerciseStars[e.id] || 0) >= 1);
-    return (
-      <div className="flex flex-col items-center gap-6 w-full px-4 py-6">
-        <h3 className="text-xl font-bold text-slate-800">Выберите упражнение</h3>
-        <div className="flex flex-col gap-3 w-full max-w-sm">
-          {EXERCISES.map(ex => {
-            const stars = exerciseStars[ex.id] || 0;
+  const currentEx = EXERCISES.find(e => e.id === currentExercise)!;
+  const earned = exerciseStars[currentExercise] || 0;
+  const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
+      {/* LEFT COLUMN: exercise pills (desktop) */}
+      <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
+        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
+          {EXERCISES.map((ex) => {
+            const earnedStars = exerciseStars[ex.id] || 0;
+            const isCurrent = ex.id === currentExercise;
+            const isDone = earnedStars > 0;
             return (
               <button
                 key={ex.id}
-                onClick={() => startExercise(ex.id)}
-                className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition text-left ${
-                  stars >= 1
-                    ? 'border-green-300 bg-green-50 hover:bg-green-100'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
-                }`}
+                onClick={() => switchExercise(ex.id)}
+                className={`flex items-center justify-center px-2 py-1.5 transition ${
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                  stars >= 1 ? 'bg-green-500' : 'bg-blue-500'
-                }`}>
-                  {stars >= 1 ? <Trophy size={20} /> : ex.id}
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map((s) => (
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                  ))}
                 </div>
-                <div className="flex-1">
-                  <div className="font-bold text-slate-800">{ex.label}</div>
-                  <div className="text-sm text-slate-500">{ex.description}</div>
-                  {stars > 0 && (
-                    <div className="flex gap-0.5 mt-1">
-                      {[1,2,3].map(s => (
-                        <Star key={s} size={14} fill={s <= stars ? '#fbbf24' : 'none'} color={s <= stars ? '#fbbf24' : '#cbd5e1'} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <ChevronRight size={20} className="text-slate-400" />
+                <span className="ml-2 text-xs font-medium">{ex.id}</span>
               </button>
             );
           })}
         </div>
-        {allCompleted && (
-          <div className="mt-4 px-6 py-3 bg-green-100 border border-green-300 rounded-xl text-green-800 font-bold flex items-center gap-2">
-            <Trophy size={20} /> Все упражнения пройдены!
-          </div>
-        )}
-      </div>
-    );
-  }
 
-  const currentEx = EXERCISES.find(e => e.id === exercise)!;
-  const earned = exerciseStars[exercise] || 0;
-  const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
-
-  return (
-    <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
-      <div className="flex items-center gap-2">
-        <span className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-bold">
-          {currentEx.label}
-        </span>
-        {earned > 0 && (
-          <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
-            <Star size={14} fill="currentColor" /> {earned}/3
-          </span>
-        )}
-      </div>
-
-      <h3 className="text-lg font-bold text-slate-800">Мат двумя ладьями</h3>
-
-      {/* Demo button only for Exercise 1 */}
-      {exercise === 1 && !demoMode && !isComplete && (
-        <button
-          onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-          Посмотреть как ставить мат
-        </button>
-      )}
-
-      {demoComment && (
-        <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 text-center max-w-sm">
-          {demoComment}
-        </div>
-      )}
-
-      <div className={`text-sm font-bold ${game && game.turn() === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
-        {demoMode ? 'Демонстрация...' : turnText}
-      </div>
-
-      {message && (
-        <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
-          message.includes('Мат') ? 'bg-green-500' : 'bg-yellow-500'
-        }`}>
-          {message.includes('Мат') && <Trophy className="w-5 h-5 inline-block mr-2" />}
-          {message}
-        </div>
-      )}
-
-      <div className="flex justify-center w-full">
-        <div
-          className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
-          style={{
-            gridTemplateColumns: `repeat(8, ${sqSize}px)`,
-            gridTemplateRows: `repeat(8, ${sqSize}px)`,
-            touchAction: 'none',
-          }}
-        >
-          {DISPLAY_RANKS.map((rank, ri) => (
-            FILES.map((file, fi) => {
-              const sq = `${file}${rank}`;
-              const pieceObj = getPieceAt(sq);
-              const light = isLight(fi, ri);
-              const sel = selectedSquare === sq;
-              const isValidMove = validMoves.includes(sq);
-
-              return (
-                <div
-                  key={sq}
-                  data-square={sq}
-                  className="flex items-center justify-center relative select-none"
-                  style={{
-                    width: sqSize,
-                    height: sqSize,
-                    cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete ? 'grab' : 'default',
-                    touchAction: 'none',
-                    backgroundColor: light ? '#f0d9b5' : '#b58863',
-                  }}
-                  onClick={() => handleSquareClick(sq)}
-                  onDragStart={(e) => e.preventDefault()}
-                >
-                  {sel && (
-                    <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
-                  )}
-                  {fi === 0 && (
-                    <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
-                      {rank}
-                    </span>
-                  )}
-                  {ri === 7 && (
-                    <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
-                      {file}
-                    </span>
-                  )}
-                  {isValidMove && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                      <div
-                        style={{
-                          width: Math.round(sqSize * 0.3),
-                          height: Math.round(sqSize * 0.3),
-                          backgroundColor: pieceObj ? '#c41e3a' : '#5d9040',
-                          borderRadius: pieceObj ? '4px' : '50%',
-                          opacity: 0.85,
-                        }}
-                      />
-                    </div>
-                  )}
-                  {pieceObj && (
-                    <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
-                      <PieceImg type={pieceObj.type} color={pieceObj.color} />
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          ))}
-        </div>
-      </div>
-
-      {/* Star rating row */}
-      <div className="flex flex-col items-center gap-1">
-        <div className="flex items-center gap-2">
-          {[1,2,3].map(s => (
-            <button
-              key={s}
-              onClick={() => setShowStarHint(v => !v)}
-              className="transition-transform active:scale-90"
-              title={`Кликните для подсказки`}
-            >
-              <Star
-                size={28}
-                fill={isComplete && s <= earned ? '#fbbf24' : '#e2e8f0'}
-                color={isComplete && s <= earned ? '#fbbf24' : '#cbd5e1'}
-              />
-            </button>
-          ))}
-        </div>
-        {showStarHint && (
-          <div className="flex items-center gap-1 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-            <Info size={12} />
-            3★ — мат за {currentEx.minMoves3} ходов белых · 2★ — за {currentEx.minMoves2} · 1★ — за {currentEx.minMoves2 + 1}+
-          </div>
-        )}
-      </div>
-
-      <div className="flex gap-3">
         <button
           onClick={reset}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium transition-colors"
+          className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
         >
-          <RotateCcw className="w-4 h-4" />
-          Начать заново
-        </button>
-        <button
-          onClick={() => setExercise(null)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-sm font-medium transition-colors"
-        >
-          <ChevronRight className="w-4 h-4 rotate-180" />
-          К упражнениям
+          <RotateCcw size={14} /> Заново
         </button>
       </div>
 
-      <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-        <p className="font-medium mb-1">Цель:</p>
-        <p>Поставьте мат чёрному королю двумя ладьями. Используйте одну ладью для ограничения пространства, вторую — для шаха и мата.</p>
+      {/* CENTER COLUMN: board + stats */}
+      <div className="flex-1 flex flex-col items-center gap-3">
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+          {currentEx.description}
+        </div>
+
+        {/* Demo button only for Exercise 1 */}
+        {currentExercise === 1 && !demoMode && !isComplete && (
+          <button
+            onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            <Eye className="w-4 h-4" />
+            Посмотреть как ставить мат
+          </button>
+        )}
+
+        {demoComment && (
+          <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 text-center max-w-sm">
+            {demoComment}
+          </div>
+        )}
+
+        <div className={`text-sm font-bold ${game && game.turn() === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
+          {demoMode ? 'Демонстрация...' : turnText}
+        </div>
+
+        {message && (
+          <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
+            message.includes('Мат') ? 'bg-green-500' : 'bg-yellow-500'
+          }`}>
+            {message.includes('Мат') && <Trophy className="w-5 h-5 inline-block mr-2" />}
+            {message}
+          </div>
+        )}
+
+        {/* Board */}
+        <div className="flex justify-center w-full">
+          <div
+            className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
+            style={{
+              gridTemplateColumns: `repeat(8, ${sqSize}px)`,
+              gridTemplateRows: `repeat(8, ${sqSize}px)`,
+              touchAction: 'none',
+            }}
+          >
+            {DISPLAY_RANKS.map((rank, ri) => (
+              FILES.map((file, fi) => {
+                const sq = `${file}${rank}`;
+                const pieceObj = getPieceAt(sq);
+                const light = isLight(fi, ri);
+                const sel = selectedSquare === sq;
+                const isValidMove = validMoves.includes(sq);
+
+                return (
+                  <div
+                    key={sq}
+                    data-square={sq}
+                    className="flex items-center justify-center relative select-none"
+                    style={{
+                      width: sqSize,
+                      height: sqSize,
+                      cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete ? 'grab' : 'default',
+                      touchAction: 'none',
+                      backgroundColor: light ? '#f0d9b5' : '#b58863',
+                    }}
+                    onClick={() => handleSquareClick(sq)}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    {sel && (
+                      <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                    )}
+                    {fi === 0 && (
+                      <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {rank}
+                      </span>
+                    )}
+                    {ri === 7 && (
+                      <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {file}
+                      </span>
+                    )}
+                    {isValidMove && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                        <div
+                          style={{
+                            width: Math.round(sqSize * 0.3),
+                            height: Math.round(sqSize * 0.3),
+                            backgroundColor: pieceObj ? '#c41e3a' : '#5d9040',
+                            borderRadius: pieceObj ? '4px' : '50%',
+                            opacity: 0.85,
+                          }}
+                        />
+                      </div>
+                    )}
+                    {pieceObj && (
+                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                        <PieceImg type={pieceObj.type} color={pieceObj.color} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ))}
+          </div>
+        </div>
+
+        {/* Mobile exercise pills */}
+        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
+          {EXERCISES.map((ex) => {
+            const earnedStars = exerciseStars[ex.id] || 0;
+            const isCurrent = ex.id === currentExercise;
+            const isDone = earnedStars > 0;
+            return (
+              <button
+                key={ex.id}
+                onClick={() => switchExercise(ex.id)}
+                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                } cursor-pointer`}
+              >
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map((s) => (
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mobile reset */}
+        <button
+          onClick={reset}
+          className="flex lg:hidden items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+        >
+          <RotateCcw size={14} /> Заново
+        </button>
+
+        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
+          <p className="font-medium mb-1">Цель:</p>
+          <p>Поставьте мат чёрному королю двумя ладьями. Используйте одну ладью для ограничения пространства, вторую — для шаха и мата.</p>
+        </div>
       </div>
     </div>
   );
