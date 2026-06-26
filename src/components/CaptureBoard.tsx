@@ -1325,13 +1325,13 @@ export default function CaptureBoard({
         if (isCheck) {
           setFailed(true);
           setGameOver(true);
-          setMsg('Ещё раз. Провалено.');
+          setMsg('Провалено.');
           return false;
         }
         if (hasAnyLegalMove(newSquares, 'b')) {
           setFailed(true);
           setGameOver(true);
-          setMsg('Ещё раз. Провалено.');
+          setMsg('Провалено.');
           return false;
         }
         // Stalemate! Success

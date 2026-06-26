@@ -440,7 +440,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
       if (g.isStalemate()) {
         setIsStalemate(true);
-        setMessage('Пат. Ещё раз. Провалено.');
+        setMessage('Провалено.');
         return;
       }
 
@@ -468,7 +468,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             onComplete();
           } else if (ex.matIn1) {
             setIsStalemate(true);
-            setMessage('Пат. Ещё раз. Провалено.');
+            setMessage('Провалено.');
           }
         } else {
           if (g.isCheckmate()) {
@@ -480,10 +480,10 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
-            setMessage('Пат. Ещё раз. Провалено.');
+            setMessage('Провалено.');
           } else if (ex.matIn1) {
             setIsStalemate(true);
-            setMessage('Пат. Ещё раз. Провалено.');
+            setMessage('Провалено.');
           } else {
             setMessage('Ничья! Начните заново.');
           }
@@ -679,7 +679,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         {isStalemate && (
           <div className="w-full max-w-sm">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">Пат. Ещё раз. Провалено.</p>
+              <p className="text-white font-bold text-lg">Провалено.</p>
               <button
                 onClick={reset}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
