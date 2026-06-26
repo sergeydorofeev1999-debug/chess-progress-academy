@@ -516,12 +516,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       setValidSquares(moves);
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
     } else {
-      if (selectedSquareRef.current && validSquaresRef.current.includes(square)) {
-        clickRef.current(square);
-      } else {
-        setSelectedSquare(null);
-        setValidSquares([]);
-      }
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
     }
   }, [wPawns, bPawns]);
 
