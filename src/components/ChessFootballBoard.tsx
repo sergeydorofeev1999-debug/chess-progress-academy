@@ -511,8 +511,20 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
     e.preventDefault();
-    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-  }, []);
+    if (square === wKingRef.current) {
+      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      setSelectedSquare(square);
+      setValidSquares(moves);
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+    } else {
+      if (selectedSquareRef.current && validSquaresRef.current.includes(square)) {
+        clickRef.current(square);
+      } else {
+        setSelectedSquare(null);
+        setValidSquares([]);
+      }
+    }
+  }, [wPawns, bPawns]);
 
   useEffect(() => {
     const handleGlobalMove = (e: PointerEvent) => {
@@ -541,7 +553,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const cell = el?.closest('[data-square]') as HTMLElement | null;
         const targetSquare = cell?.dataset.square || null;
-        if (targetSquare) {
+        if (targetSquare && targetSquare !== start.square) {
           const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
           if (valid.includes(targetSquare)) {
             doMove(targetSquare);
@@ -550,13 +562,9 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
             setValidSquares([]);
             selectedSquareRef.current = null;
           }
-        } else {
-          setSelectedSquare(null);
-          setValidSquares([]);
-          selectedSquareRef.current = null;
         }
+        setDragPiece(null);
       }
-      setDragPiece(null);
       pointerStartRef.current = null;
     };
 
