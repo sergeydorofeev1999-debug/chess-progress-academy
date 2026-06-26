@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 interface Exercise {
   id: ExerciseId;
@@ -19,6 +19,7 @@ interface Exercise {
   minMoves3: number;
   minMoves2: number;
   matIn1?: boolean;
+  timeLimit?: number; // seconds, timer starts after first white move
 }
 
 const EXERCISES: Exercise[] = [
@@ -168,6 +169,28 @@ const EXERCISES: Exercise[] = [
     minMoves2: 1,
     matIn1: true,
   },
+  {
+    id: 8,
+    label: 'Упражнение 8',
+    description: 'Мат за 1 минуту — белый ферзь на a1, король на h1, чёрный король на e4',
+    fen: '8/8/8/4k3/8/8/8/Q6K w - - 0 1',
+    demoMoves: [
+      { from: 'a1', to: 'e5', comment: 'Ферзь даёт шах!' },
+      { from: 'e4', to: 'd4', comment: 'Король отступает' },
+      { from: 'e5', to: 'e6', comment: 'Ферзь сужает пространство' },
+      { from: 'd4', to: 'c5', comment: 'Король бежит' },
+      { from: 'h1', to: 'h2', comment: 'Белый король приближается' },
+      { from: 'c5', to: 'b4', comment: 'Чёрный король отступает' },
+      { from: 'e6', to: 'd6', comment: 'Ферзь давит' },
+      { from: 'b4', to: 'a5', comment: 'Король в угол' },
+      { from: 'h2', to: 'g3', comment: 'Белый король поддерживает' },
+      { from: 'a5', to: 'b5', comment: 'Король пытается уйти' },
+      { from: 'd6', to: 'c7', comment: 'Мат!' },
+    ],
+    minMoves3: 10,
+    minMoves2: 12,
+    timeLimit: 60,
+  },
 ];
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
@@ -301,6 +324,9 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
   const [whiteMoves, setWhiteMoves] = useState(0);
   const [isStalemate, setIsStalemate] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Drag state
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
@@ -317,6 +343,14 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
   useEffect(() => { isStalemateRef.current = isStalemate; }, [isStalemate]);
+
+  // Clear timer on game end
+  useEffect(() => {
+    if ((isComplete || isStalemate) && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, [isComplete, isStalemate]);
 
   useEffect(() => {
     try {
@@ -359,6 +393,10 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const switchExercise = useCallback((id: ExerciseId) => {
@@ -374,6 +412,10 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const saveStars = useCallback((id: ExerciseId, stars: number) => {
@@ -428,8 +470,27 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       setMessage('');
       setWhiteMoves(nextWhiteMoves);
 
+      // Start timer on first white move in exercise 8
+      const ex = EXERCISES.find(e => e.id === currentExercise)!;
+      if (ex.timeLimit && !timerStarted && nextWhiteMoves === 1) {
+        setTimeLeft(ex.timeLimit);
+        setTimerStarted(true);
+        timerIntervalRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev === null || prev <= 1) {
+              // Time's up — stop timer and show fail
+              if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+              setIsStalemate(true);
+              setMessage('Провалено');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+
       if (g.isCheckmate()) {
-        const ex = EXERCISES.find(e => e.id === currentExercise)!;
         const earned = calcStars(ex, nextWhiteMoves);
         setMessage(`Мат чёрному королю! ${earned} ★`);
         setIsComplete(true);
@@ -440,7 +501,6 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
       if (g.isStalemate()) {
         setIsStalemate(true);
-        const ex = EXERCISES.find(e => e.id === currentExercise)!;
         setMessage(ex.matIn1 ? 'Провалено' : 'Пат. Провалено.');
         return;
       }
@@ -451,7 +511,6 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       }
 
       // Black's turn — AI move
-      const ex = EXERCISES.find(e => e.id === currentExercise)!;
       const delayMs = ex.matIn1 ? 1000 : 500;
       setTimeout(() => {
         if (!mountedRef.current) return;
@@ -461,7 +520,6 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
           if (g.isCheckmate()) {
-            const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
@@ -473,7 +531,6 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
           }
         } else {
           if (g.isCheckmate()) {
-            const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
@@ -606,7 +663,8 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
       : [];
 
-  const currentEx = EXERCISES.find(e => e.id === currentExercise)!;
+  // Stalemate / fail banner
+  const ex = EXERCISES.find(e => e.id === currentExercise)!;
   const earned = exerciseStars[currentExercise] || 0;
   const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
 
@@ -653,8 +711,15 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {currentEx.description}
+          {ex.description}
         </div>
+
+        {/* Timer for exercise 8 */}
+        {ex.timeLimit && timerStarted && timeLeft !== null && !isComplete && !isStalemate && (
+          <div className={`text-2xl font-bold font-mono ${timeLeft <= 10 ? 'text-red-500' : 'text-slate-700'}`}>
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </div>
+        )}
 
         {currentExercise === 1 && !demoMode && !isComplete && (
           <button
