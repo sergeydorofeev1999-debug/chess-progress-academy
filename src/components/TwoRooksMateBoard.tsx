@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { RotateCcw, Eye, Trophy, ChevronRight, Star } from 'lucide-react';
+import { RotateCcw, Eye, Trophy, ChevronRight, Star, Info } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
@@ -16,6 +16,8 @@ interface Exercise {
   description: string;
   fen: string;
   demoMoves: { from: string; to: string; comment: string }[];
+  minMoves3: number; // ходов белых для 3 звёзд
+  minMoves2: number; // ходов белых для 2 звёзд
 }
 
 const EXERCISES: Exercise[] = [
@@ -35,6 +37,8 @@ const EXERCISES: Exercise[] = [
       { from: 'f7', to: 'g8', comment: 'Король отступает на край доски' },
       { from: 'a6', to: 'a8', comment: 'Мат!' },
     ],
+    minMoves3: 5,
+    minMoves2: 6,
   },
   {
     id: 2,
@@ -56,6 +60,8 @@ const EXERCISES: Exercise[] = [
       { from: 'h2', to: 'h1', comment: 'Король отступает в угол' },
       { from: 'h3', to: 'h1', comment: 'Мат!' },
     ],
+    minMoves3: 5,
+    minMoves2: 6,
   },
 ];
 
@@ -106,6 +112,12 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
   return scored[0] ? { from: scored[0].move.from, to: scored[0].move.to } : null;
 }
 
+function calcStars(ex: Exercise, whiteMoves: number): number {
+  if (whiteMoves <= ex.minMoves3) return 3;
+  if (whiteMoves <= ex.minMoves2) return 2;
+  return 1;
+}
+
 export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
   const [exercise, setExercise] = useState<ExerciseId | null>(null);
   const [game, setGame] = useState<Chess | null>(null);
@@ -116,7 +128,9 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [demoComment, setDemoComment] = useState('');
   const [sqSize, setSqSize] = useState(52);
   const [isComplete, setIsComplete] = useState(false);
-  const [completedExercises, setCompletedExercises] = useState<Record<number, boolean>>({});
+  const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
+  const [whiteMoves, setWhiteMoves] = useState(0);
+  const [showStarHint, setShowStarHint] = useState(false);
   const mountedRef = useRef(true);
 
   const storageKey = lessonId ? `tworooks_progress_${lessonId}` : 'tworooks_progress';
@@ -126,7 +140,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) setCompletedExercises(JSON.parse(raw));
+      if (raw) setExerciseStars(JSON.parse(raw));
     } catch {}
   }, [storageKey]);
 
@@ -154,6 +168,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoStep(0);
     setDemoComment('');
     setIsComplete(false);
+    setWhiteMoves(0);
   }, [exercise]);
 
   const startExercise = useCallback((id: ExerciseId) => {
@@ -166,11 +181,12 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setDemoStep(0);
     setDemoComment('');
     setIsComplete(false);
+    setWhiteMoves(0);
   }, []);
 
-  const saveProgress = useCallback((id: ExerciseId) => {
-    setCompletedExercises(prev => {
-      const next = { ...prev, [id]: true };
+  const saveStars = useCallback((id: ExerciseId, stars: number) => {
+    setExerciseStars(prev => {
+      const next = { ...prev, [id]: Math.max(prev[id] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
       return next;
     });
@@ -213,14 +229,18 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         const move = g.move({ from: selectedSquare, to: square });
         if (move) {
           const fenAfter = g.fen();
+          const nextWhiteMoves = whiteMoves + 1;
           setGame(new Chess(fenAfter));
           setSelectedSquare(null);
           setMessage('');
+          setWhiteMoves(nextWhiteMoves);
 
           if (g.isCheckmate()) {
-            setMessage('Мат чёрному королю!');
+            const ex = EXERCISES.find(e => e.id === exercise)!;
+            const earned = calcStars(ex, nextWhiteMoves);
+            setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
-            if (exercise) saveProgress(exercise);
+            if (exercise) saveStars(exercise, earned);
             onComplete();
             return;
           }
@@ -238,16 +258,20 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
               const fenAfterBlack = g.fen();
               setGame(new Chess(fenAfterBlack));
               if (g.isCheckmate()) {
-                setMessage('Мат чёрному королю!');
+                const ex = EXERCISES.find(e => e.id === exercise)!;
+                const earned = calcStars(ex, nextWhiteMoves);
+                setMessage(`Мат чёрному королю! ${earned} ★`);
                 setIsComplete(true);
-                if (exercise) saveProgress(exercise);
+                if (exercise) saveStars(exercise, earned);
                 onComplete();
               }
             } else {
               if (g.isCheckmate()) {
-                setMessage('Мат чёрному королю!');
+                const ex = EXERCISES.find(e => e.id === exercise)!;
+                const earned = calcStars(ex, nextWhiteMoves);
+                setMessage(`Мат чёрному королю! ${earned} ★`);
                 setIsComplete(true);
-                if (exercise) saveProgress(exercise);
+                if (exercise) saveStars(exercise, earned);
                 onComplete();
               } else {
                 setMessage('Ничья! Начните заново.');
@@ -273,7 +297,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         setSelectedSquare(square);
       }
     }
-  }, [game, selectedSquare, demoMode, isComplete, exercise, saveProgress, onComplete]);
+  }, [game, selectedSquare, demoMode, isComplete, exercise, whiteMoves, saveStars, onComplete]);
 
   const getPieceAt = (sq: string) => {
     if (!game) return null;
@@ -288,32 +312,40 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
     : [];
 
+  // Exercise selector
   if (!exercise) {
-    const allCompleted = EXERCISES.every(e => completedExercises[e.id]);
+    const allCompleted = EXERCISES.every(e => (exerciseStars[e.id] || 0) >= 1);
     return (
       <div className="flex flex-col items-center gap-6 w-full px-4 py-6">
         <h3 className="text-xl font-bold text-slate-800">Выберите упражнение</h3>
         <div className="flex flex-col gap-3 w-full max-w-sm">
           {EXERCISES.map(ex => {
-            const isCompleted = completedExercises[ex.id];
+            const stars = exerciseStars[ex.id] || 0;
             return (
               <button
                 key={ex.id}
                 onClick={() => startExercise(ex.id)}
                 className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition text-left ${
-                  isCompleted
+                  stars >= 1
                     ? 'border-green-300 bg-green-50 hover:bg-green-100'
                     : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${
-                  isCompleted ? 'bg-green-500' : 'bg-blue-500'
+                  stars >= 1 ? 'bg-green-500' : 'bg-blue-500'
                 }`}>
-                  {isCompleted ? <Trophy size={20} /> : ex.id}
+                  {stars >= 1 ? <Trophy size={20} /> : ex.id}
                 </div>
                 <div className="flex-1">
                   <div className="font-bold text-slate-800">{ex.label}</div>
                   <div className="text-sm text-slate-500">{ex.description}</div>
+                  {stars > 0 && (
+                    <div className="flex gap-0.5 mt-1">
+                      {[1,2,3].map(s => (
+                        <Star key={s} size={14} fill={s <= stars ? '#fbbf24' : 'none'} color={s <= stars ? '#fbbf24' : '#cbd5e1'} />
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <ChevronRight size={20} className="text-slate-400" />
               </button>
@@ -330,6 +362,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   }
 
   const currentEx = EXERCISES.find(e => e.id === exercise)!;
+  const earned = exerciseStars[exercise] || 0;
   const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
 
   return (
@@ -338,16 +371,17 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         <span className="px-3 py-1 rounded-full bg-blue-500 text-white text-sm font-bold">
           {currentEx.label}
         </span>
-        {completedExercises[exercise] && (
+        {earned > 0 && (
           <span className="flex items-center gap-1 text-green-600 text-sm font-bold">
-            <Star size={14} fill="currentColor" /> Пройдено
+            <Star size={14} fill="currentColor" /> {earned}/3
           </span>
         )}
       </div>
 
       <h3 className="text-lg font-bold text-slate-800">Мат двумя ладьями</h3>
 
-      {!demoMode && !isComplete && (
+      {/* Demo button only for Exercise 1 */}
+      {exercise === 1 && !demoMode && !isComplete && (
         <button
           onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
@@ -444,6 +478,32 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
             })
           ))}
         </div>
+      </div>
+
+      {/* Star rating row */}
+      <div className="flex flex-col items-center gap-1">
+        <div className="flex items-center gap-2">
+          {[1,2,3].map(s => (
+            <button
+              key={s}
+              onClick={() => setShowStarHint(v => !v)}
+              className="transition-transform active:scale-90"
+              title={`Кликните для подсказки`}
+            >
+              <Star
+                size={28}
+                fill={isComplete && s <= earned ? '#fbbf24' : '#e2e8f0'}
+                color={isComplete && s <= earned ? '#fbbf24' : '#cbd5e1'}
+              />
+            </button>
+          ))}
+        </div>
+        {showStarHint && (
+          <div className="flex items-center gap-1 text-xs text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+            <Info size={12} />
+            3★ — мат за {currentEx.minMoves3} ходов белых · 2★ — за {currentEx.minMoves2} · 1★ — за {currentEx.minMoves2 + 1}+
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3">
