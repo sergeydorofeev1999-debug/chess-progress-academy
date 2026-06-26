@@ -510,7 +510,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (winnerRef.current) return;
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
-    e.preventDefault();
     if (square === wKingRef.current) {
       const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
       setSelectedSquare(square);
