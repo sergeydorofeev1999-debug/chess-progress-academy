@@ -441,7 +441,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       if (g.isStalemate()) {
         setIsStalemate(true);
         const ex = EXERCISES.find(e => e.id === currentExercise)!;
-        setMessage(ex.matIn1 ? 'Провалено.' : 'Пат. Провалено.');
+        setMessage(ex.matIn1 ? 'Провалено' : 'Пат. Провалено.');
         return;
       }
 
@@ -469,7 +469,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             onComplete();
           } else if (ex.matIn1) {
             setIsStalemate(true);
-            setMessage('Провалено.');
+            setMessage('Провалено');
           }
         } else {
           if (g.isCheckmate()) {
@@ -484,7 +484,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             setMessage('Пат. Провалено.');
           } else if (ex.matIn1) {
             setIsStalemate(true);
-            setMessage('Провалено.');
+            setMessage('Провалено');
           } else {
             setMessage('Ничья! Начните заново.');
           }
