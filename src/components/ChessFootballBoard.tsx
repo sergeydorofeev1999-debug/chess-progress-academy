@@ -511,21 +511,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
     e.preventDefault();
-
-    if (square === wKingRef.current) {
-      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-    } else {
-      if (selectedSquareRef.current && validSquaresRef.current.includes(square)) {
-        clickRef.current(square);
-      } else {
-        setSelectedSquare(null);
-        setValidSquares([]);
-      }
-    }
-  }, [wPawns, bPawns]);
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+  }, []);
 
   useEffect(() => {
     const handleGlobalMove = (e: PointerEvent) => {
