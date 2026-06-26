@@ -26,6 +26,7 @@ function getKingMoves(
   const fr = RANKS.indexOf(square[1]);
   const valid: string[] = [];
   const otherKing = kingColor === 'w' ? bKing : wKing;
+  const ownPawns = kingColor === 'w' ? wPawns : bPawns;
   const otherPawns = kingColor === 'w' ? bPawns : wPawns;
 
   const directions = [
@@ -40,14 +41,74 @@ function getKingMoves(
     if (fdi < 0 || fdi >= 8 || rdi < 0 || rdi >= 8) continue;
     const sq = `${FILES[fdi]}${RANKS[rdi]}`;
 
+    // Cannot move adjacent to other king
     const otherFile = FILES.indexOf(otherKing[0]);
     const otherRank = RANKS.indexOf(otherKing[1]);
     const dist = Math.max(Math.abs(fdi - otherFile), Math.abs(rdi - otherRank));
     if (dist <= 1) continue;
 
-    if (otherPawns.includes(sq)) continue;
+    // Cannot move to square occupied by own pawn
+    if (ownPawns.includes(sq)) continue;
+
+    // Cannot move to square attacked by enemy pawns
+    const isUnderAttack = otherPawns.some(p => {
+      const att = getPawnAttackSquares(p, kingColor === 'w' ? 'b' : 'w');
+      return att.includes(sq);
+    });
+    if (isUnderAttack) continue;
 
     valid.push(sq);
+  }
+
+  return valid;
+}
+
+function getPawnMoves(
+  pawnSquare: string,
+  color: 'w' | 'b',
+  wKing: string,
+  bKing: string,
+  wPawns: string[],
+  bPawns: string[]
+): string[] {
+  const ff = FILES.indexOf(pawnSquare[0]);
+  const fr = RANKS.indexOf(pawnSquare[1]);
+  const dir = color === 'w' ? 1 : -1;
+  const valid: string[] = [];
+  const allPawns = [...wPawns, ...bPawns];
+
+  // Forward one
+  const f1 = ff;
+  const r1 = fr + dir;
+  if (r1 >= 0 && r1 < 8) {
+    const sq1 = `${FILES[f1]}${RANKS[r1]}`;
+    if (!allPawns.includes(sq1) && sq1 !== wKing && sq1 !== bKing) {
+      valid.push(sq1);
+    }
+  }
+
+  // Forward two from start
+  const startRank = color === 'w' ? 1 : 6; // 0-indexed: rank '2' = index 1, rank '7' = index 6
+  if (fr === startRank) {
+    const r2 = fr + 2 * dir;
+    const sq2 = `${FILES[f1]}${RANKS[r2]}`;
+    const sqMid = `${FILES[f1]}${RANKS[r1]}`;
+    if (!allPawns.includes(sq2) && !allPawns.includes(sqMid) && sq2 !== wKing && sq2 !== bKing) {
+      valid.push(sq2);
+    }
+  }
+
+  // Captures
+  for (const df of [-1, 1]) {
+    const fc = ff + df;
+    const rc = fr + dir;
+    if (fc >= 0 && fc < 8 && rc >= 0 && rc < 8) {
+      const sq = `${FILES[fc]}${RANKS[rc]}`;
+      const enemyPawns = color === 'w' ? bPawns : wPawns;
+      if (enemyPawns.includes(sq)) {
+        valid.push(sq);
+      }
+    }
   }
 
   return valid;
@@ -232,8 +293,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
 
   const [wKing, setWKing] = useState(START_W_KING);
   const [bKing, setBKing] = useState(START_B_KING);
-  const [wPawns] = useState(START_W_PAWNS);
-  const [bPawns] = useState(START_B_PAWNS);
+  const [wPawns, setWPawns] = useState(START_W_PAWNS);
+  const [bPawns, setBPawns] = useState(START_B_PAWNS);
   const [wScore, setWScore] = useState(0);
   const [bScore, setBScore] = useState(0);
   const [turn, setTurn] = useState<'w' | 'b'>('w');
@@ -254,10 +315,13 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const winnerRef = useRef(winner);
   const wKingRef = useRef(wKing);
   const bKingRef = useRef(bKing);
+  const wPawnsRef = useRef(wPawns);
+  const bPawnsRef = useRef(bPawns);
   const wScoreRef = useRef(wScore);
   const bScoreRef = useRef(bScore);
   const difficultyRef = useRef(difficulty);
   const selectedSquareRef = useRef(selectedSquare);
+  const selectedSquareTypeRef = useRef<'king' | 'pawn' | null>(null);
   const validSquaresRef = useRef(validSquares);
   const mountedRef = useRef(true);
   const positionHistoryRef = useRef(positionHistory);
@@ -268,6 +332,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   useEffect(() => { winnerRef.current = winner; }, [winner]);
   useEffect(() => { wKingRef.current = wKing; }, [wKing]);
   useEffect(() => { bKingRef.current = bKing; }, [bKing]);
+  useEffect(() => { wPawnsRef.current = wPawns; }, [wPawns]);
+  useEffect(() => { bPawnsRef.current = bPawns; }, [bPawns]);
   useEffect(() => { wScoreRef.current = wScore; }, [wScore]);
   useEffect(() => { bScoreRef.current = bScore; }, [bScore]);
   useEffect(() => { difficultyRef.current = difficulty; }, [difficulty]);
@@ -294,6 +360,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const reset = useCallback(() => {
     setWKing(START_W_KING);
     setBKing(START_B_KING);
+    setWPawns(START_W_PAWNS);
+    setBPawns(START_B_PAWNS);
     setWScore(0);
     setBScore(0);
     setTurn('w');
@@ -304,6 +372,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     winnerRef.current = null;
     wKingRef.current = START_W_KING;
     bKingRef.current = START_B_KING;
+    wPawnsRef.current = START_W_PAWNS;
+    bPawnsRef.current = START_B_PAWNS;
     wScoreRef.current = 0;
     bScoreRef.current = 0;
     positionHistoryRef.current = [];
@@ -324,7 +394,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     return count >= 2;
   }, []);
 
-  const doMove = useCallback((to: string) => {
+  const doKingMove = useCallback((to: string) => {
     const newWKing = to;
     setWKing(newWKing);
     wKingRef.current = newWKing;
@@ -351,6 +421,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       setSelectedSquare(null);
       setValidSquares([]);
       selectedSquareRef.current = null;
+      selectedSquareTypeRef.current = null;
       setTurn('b');
       turnRef.current = 'b';
       return;
@@ -365,6 +436,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       setSelectedSquare(null);
       setValidSquares([]);
       selectedSquareRef.current = null;
+      selectedSquareTypeRef.current = null;
 
       if (difficultyRef.current) {
         const d = difficultyRef.current;
@@ -384,6 +456,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       setSelectedSquare(null);
       setValidSquares([]);
       selectedSquareRef.current = null;
+      selectedSquareTypeRef.current = null;
       return;
     }
 
@@ -392,7 +465,29 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     setSelectedSquare(null);
     setValidSquares([]);
     selectedSquareRef.current = null;
+    selectedSquareTypeRef.current = null;
   }, [savedKey, checkRepetition]);
+
+  const doPawnMove = useCallback((from: string, to: string) => {
+    // Move white pawn
+    const newWPawns = wPawnsRef.current.map(p => p === from ? to : p);
+    setWPawns(newWPawns);
+    wPawnsRef.current = newWPawns;
+
+    // Check if captured black pawn
+    if (bPawnsRef.current.includes(to)) {
+      const newBPawns = bPawnsRef.current.filter(p => p !== to);
+      setBPawns(newBPawns);
+      bPawnsRef.current = newBPawns;
+    }
+
+    setTurn('b');
+    turnRef.current = 'b';
+    setSelectedSquare(null);
+    setValidSquares([]);
+    selectedSquareRef.current = null;
+    selectedSquareTypeRef.current = null;
+  }, []);
 
   useEffect(() => {
     if (winnerRef.current || turnRef.current !== 'b' || !difficultyRef.current) return;
@@ -402,15 +497,48 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       if (!mountedRef.current) return;
       const diff = difficultyRef.current!;
 
-      const chosen = getBestMove(
-        wKingRef.current,
-        bKingRef.current,
-        wPawns,
-        bPawns,
-        wScoreRef.current,
-        bScoreRef.current,
-        diff
-      );
+      // Get all possible black moves (king + pawns)
+      const kingMoves = getAllKingMoves(bKingRef.current, 'b', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      const pawnMoves = bPawns.flatMap(p => {
+        const moves = getPawnMoves(p, 'b', wKingRef.current, bKingRef.current, wPawns, bPawns);
+        return moves.map(to => ({ from: p, to, isPawn: true as boolean }));
+      });
+
+      // Simple AI: 50% chance to move pawn if moves available, else king
+      let chosen: { from: string; to: string } | null = null;
+      let isPawnMove = false;
+
+      if (pawnMoves.length > 0 && Math.random() < 0.5) {
+        // Random pawn move
+        chosen = pawnMoves[Math.floor(Math.random() * pawnMoves.length)];
+        isPawnMove = true;
+      } else if (kingMoves.length > 0) {
+        // Use minimax for king move
+        const scored = kingMoves.map(move => {
+          let newBScore = bScoreRef.current;
+          if (RANKS.indexOf(move.to[1]) === 0) newBScore += 1;
+          let score: number;
+          if (diff === 'easy') {
+            score = evaluatePosition(wKingRef.current, move.to, wScoreRef.current, newBScore);
+          } else if (diff === 'medium') {
+            score = minimax(wKingRef.current, move.to, wPawns, bPawns, wScoreRef.current, newBScore, 2, false, -Infinity, Infinity);
+          } else {
+            score = minimax(wKingRef.current, move.to, wPawns, bPawns, wScoreRef.current, newBScore, 3, false, -Infinity, Infinity);
+          }
+          return { ...move, score };
+        });
+        scored.sort((a, b) => b.score - a.score);
+        if (diff === 'easy' && scored.length >= 3 && Math.random() < 0.5) {
+          chosen = scored[Math.floor(Math.random() * 3)];
+        } else if (diff === 'medium' && scored.length >= 2 && Math.random() < 0.2) {
+          chosen = scored[Math.floor(Math.random() * 2)];
+        } else {
+          chosen = scored[0];
+        }
+      } else if (pawnMoves.length > 0) {
+        chosen = pawnMoves[0];
+        isPawnMove = true;
+      }
 
       if (!chosen) {
         setWinner('Белые победили!');
@@ -418,49 +546,64 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         return;
       }
 
-      const newBKing = chosen.to;
-      setBKing(newBKing);
-      bKingRef.current = newBKing;
+      if (isPawnMove) {
+        // Execute pawn move
+        const newBPawns = bPawnsRef.current.map(p => p === chosen!.from ? chosen!.to : p);
+        setBPawns(newBPawns);
+        bPawnsRef.current = newBPawns;
 
-      let newBScore = bScoreRef.current;
-      let bGoalScored = false;
-      if (RANKS.indexOf(newBKing[1]) === 0) {
-        newBScore += 1;
-        setBScore(newBScore);
-        bScoreRef.current = newBScore;
-        if (newBScore < 3) {
-          bGoalScored = true;
+        // Check capture
+        if (wPawnsRef.current.includes(chosen.to)) {
+          const newWPawns = wPawnsRef.current.filter(p => p !== chosen!.to);
+          setWPawns(newWPawns);
+          wPawnsRef.current = newWPawns;
         }
-      }
+      } else {
+        // Execute king move
+        const newBKing = chosen.to;
+        setBKing(newBKing);
+        bKingRef.current = newBKing;
 
-      // If black scored but game not over, reset kings for next round
-      if (bGoalScored) {
-        setWKing(START_W_KING);
-        wKingRef.current = START_W_KING;
-        setBKing(START_B_KING);
-        bKingRef.current = START_B_KING;
-        setPositionHistory([]);
-        positionHistoryRef.current = [];
-        setComputerThinking(false);
-        setTurn('w');
-        turnRef.current = 'w';
-        return;
-      }
+        let newBScore = bScoreRef.current;
+        let bGoalScored = false;
+        if (RANKS.indexOf(newBKing[1]) === 0) {
+          newBScore += 1;
+          setBScore(newBScore);
+          bScoreRef.current = newBScore;
+          if (newBScore < 3) {
+            bGoalScored = true;
+          }
+        }
 
-      const newHistory = [...positionHistoryRef.current, `${wKingRef.current}-${newBKing}`];
-      setPositionHistory(newHistory);
-      positionHistoryRef.current = newHistory;
+        // If black scored but game not over, reset kings for next round
+        if (bGoalScored) {
+          setWKing(START_W_KING);
+          wKingRef.current = START_W_KING;
+          setBKing(START_B_KING);
+          bKingRef.current = START_B_KING;
+          setPositionHistory([]);
+          positionHistoryRef.current = [];
+          setComputerThinking(false);
+          setTurn('w');
+          turnRef.current = 'w';
+          return;
+        }
 
-      if (newBScore >= 3) {
-        setWinner('Чёрные победили!');
-        setComputerThinking(false);
-        return;
-      }
+        const newHistory = [...positionHistoryRef.current, `${wKingRef.current}-${newBKing}`];
+        setPositionHistory(newHistory);
+        positionHistoryRef.current = newHistory;
 
-      if (checkRepetition(newHistory)) {
-        setWinner('Ничья');
-        setComputerThinking(false);
-        return;
+        if (newBScore >= 3) {
+          setWinner('Чёрные победили!');
+          setComputerThinking(false);
+          return;
+        }
+
+        if (checkRepetition(newHistory)) {
+          setWinner('Ничья');
+          setComputerThinking(false);
+          return;
+        }
       }
 
       setTurn('w');
@@ -476,33 +619,54 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (turnRef.current !== 'w') return;
 
     const sel = selectedSquareRef.current;
+    const selType = selectedSquareTypeRef.current;
 
-    if (sel) {
+    if (sel && selType) {
       if (sel === square) {
         setSelectedSquare(null);
         setValidSquares([]);
         selectedSquareRef.current = null;
+        selectedSquareTypeRef.current = null;
         return;
       }
 
       if (validSquaresRef.current.includes(square)) {
-        doMove(square);
+        if (selType === 'king') {
+          doKingMove(square);
+        } else {
+          doPawnMove(sel, square);
+        }
         return;
       }
     }
 
+    // Select king
     if (square === wKingRef.current) {
       const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
       setSelectedSquare(square);
       setValidSquares(moves);
       selectedSquareRef.current = square;
+      selectedSquareTypeRef.current = 'king';
       validSquaresRef.current = moves;
-    } else {
-      setSelectedSquare(null);
-      setValidSquares([]);
-      selectedSquareRef.current = null;
+      return;
     }
-  }, [wPawns, bPawns, doMove]);
+
+    // Select white pawn
+    if (wPawns.includes(square)) {
+      const moves = getPawnMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      setSelectedSquare(square);
+      setValidSquares(moves);
+      selectedSquareRef.current = square;
+      selectedSquareTypeRef.current = 'pawn';
+      validSquaresRef.current = moves;
+      return;
+    }
+
+    setSelectedSquare(null);
+    setValidSquares([]);
+    selectedSquareRef.current = null;
+    selectedSquareTypeRef.current = null;
+  }, [wPawns, bPawns, doKingMove, doPawnMove]);
 
   useEffect(() => { clickRef.current = click; }, [click]);
 
@@ -510,10 +674,21 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (winnerRef.current) return;
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
-    if (square === wKingRef.current) {
+
+    const isKing = square === wKingRef.current;
+    const isPawn = wPawns.includes(square);
+
+    if (isKing) {
       const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
       setSelectedSquare(square);
       setValidSquares(moves);
+      selectedSquareTypeRef.current = 'king';
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+    } else if (isPawn) {
+      const moves = getPawnMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      setSelectedSquare(square);
+      setValidSquares(moves);
+      selectedSquareTypeRef.current = 'pawn';
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
     } else {
       pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
@@ -529,8 +704,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       const dy = e.clientY - start.y;
       if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         start.moved = true;
-        setDragPiece({ square: start.square, type: 'k', color: 'w' });
-        setSelectedSquare(null);
+        const isKing = start.square === wKingRef.current;
+        const isPawn = wPawns.includes(start.square);
+        if (isKing || isPawn) {
+          setDragPiece({ square: start.square, type: isKing ? 'k' : 'p', color: 'w' });
+          setSelectedSquare(null);
+        }
       }
       if (start.moved) {
         setDragPos({ x: e.clientX, y: e.clientY });
@@ -544,17 +723,38 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       if (!start.moved) {
         clickRef.current(start.square);
       } else {
+        const isKing = start.square === wKingRef.current;
+        const isPawn = wPawns.includes(start.square);
+        if (!isKing && !isPawn) {
+          setDragPiece(null);
+          pointerStartRef.current = null;
+          return;
+        }
+
         const el = document.elementFromPoint(e.clientX, e.clientY);
         const cell = el?.closest('[data-square]') as HTMLElement | null;
         const targetSquare = cell?.dataset.square || null;
         if (targetSquare && targetSquare !== start.square) {
-          const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-          if (valid.includes(targetSquare)) {
-            doMove(targetSquare);
+          if (isKing) {
+            const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+            if (valid.includes(targetSquare)) {
+              doKingMove(targetSquare);
+            } else {
+              setSelectedSquare(null);
+              setValidSquares([]);
+              selectedSquareRef.current = null;
+              selectedSquareTypeRef.current = null;
+            }
           } else {
-            setSelectedSquare(null);
-            setValidSquares([]);
-            selectedSquareRef.current = null;
+            const valid = getPawnMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+            if (valid.includes(targetSquare)) {
+              doPawnMove(start.square, targetSquare);
+            } else {
+              setSelectedSquare(null);
+              setValidSquares([]);
+              selectedSquareRef.current = null;
+              selectedSquareTypeRef.current = null;
+            }
           }
         }
         setDragPiece(null);
@@ -577,7 +777,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       window.removeEventListener('pointerup', handleGlobalUp);
       window.removeEventListener('pointercancel', handleGlobalCancel);
     };
-  }, [wPawns, bPawns, doMove]);
+  }, [wPawns, bPawns, doKingMove, doPawnMove]);
 
   const getPieceAt = (sq: string) => {
     if (wKing === sq) return { type: 'k', color: 'w' as Color };
@@ -589,10 +789,14 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  const validMoves = selectedSquare
-    ? getKingMoves(selectedSquare, 'w', wKing, bKing, wPawns, bPawns)
+  const validMoves = selectedSquare && selectedSquareTypeRef.current
+    ? (selectedSquareTypeRef.current === 'king'
+        ? getKingMoves(selectedSquare, 'w', wKing, bKing, wPawns, bPawns)
+        : getPawnMoves(selectedSquare, 'w', wKing, bKing, wPawns, bPawns))
     : dragPiece
-      ? getKingMoves(dragPiece.square, 'w', wKing, bKing, wPawns, bPawns)
+      ? (dragPiece.type === 'k'
+          ? getKingMoves(dragPiece.square, 'w', wKing, bKing, wPawns, bPawns)
+          : getPawnMoves(dragPiece.square, 'w', wKing, bKing, wPawns, bPawns))
       : [];
 
   if (!difficulty) {
