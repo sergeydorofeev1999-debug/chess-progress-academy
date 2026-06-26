@@ -1325,13 +1325,13 @@ export default function CaptureBoard({
         if (isCheck) {
           setFailed(true);
           setGameOver(true);
-          setMsg('Провалено.');
+          setMsg('Ещё раз. Провалено.');
           return false;
         }
         if (hasAnyLegalMove(newSquares, 'b')) {
           setFailed(true);
           setGameOver(true);
-          setMsg('Провалено.');
+          setMsg('Ещё раз. Провалено.');
           return false;
         }
         // Stalemate! Success
@@ -1486,7 +1486,7 @@ export default function CaptureBoard({
         {failed && (
           <div className="w-full">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">Провалено.</p>
+              <p className="text-white font-bold text-lg">Задание провалено!</p>
               <button
                 onClick={resetLevel}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
