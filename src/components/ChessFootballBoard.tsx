@@ -352,6 +352,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     setSelectedSquare(null);
     setValidSquares([]);
     selectedSquareRef.current = null;
+    setWinner(null);
+    winnerRef.current = null;
   }, []);
 
   const doKingMove = useCallback((to: string) => {
@@ -401,10 +403,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     }
 
     if (checkRepetition(newHistory)) {
-      setWinner('Ничья');
-      setSelectedSquare(null);
-      setValidSquares([]);
-      selectedSquareRef.current = null;
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        resetKings();
+        setTurn('w');
+        turnRef.current = 'w';
+      }, 3000);
       return;
     }
 
@@ -494,8 +498,13 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       }
 
       if (checkRepetition(newHistory)) {
-        setWinner('Ничья');
-        setComputerThinking(false);
+        setTimeout(() => {
+          if (!mountedRef.current) return;
+          resetKings();
+          setComputerThinking(false);
+          setTurn('w');
+          turnRef.current = 'w';
+        }, 3000);
         return;
       }
 
