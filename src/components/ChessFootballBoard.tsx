@@ -571,34 +571,29 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   if (!difficulty) {
     const allCompleted = LEVELS.every(l => completedLevels[l.id]);
     return (
-      <div className="flex flex-col items-center gap-6 py-8">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
-            <Trophy className="w-8 h-8 text-blue-600" />
-          </div>
-          <h3 className="text-xl font-bold mb-2">Шахматный футбол</h3>
-          <p className="text-slate-600 max-w-xs mx-auto">Дойди королём до противоположной линии и забей 3 гола. Пешки блокируют ходы королям. Чёрный король ходит автоматически.</p>
-        </div>
-
+      <div className="flex flex-col items-center gap-6 w-full px-4 py-6">
+        <h3 className="text-xl font-bold text-slate-800">Выберите уровень сложности</h3>
         <div className="flex flex-col gap-3 w-full max-w-sm">
-          {LEVELS.map((lvl, idx) => {
-            const isDone = completedLevels[lvl.id];
+          {LEVELS.map(level => {
+            const isCompleted = completedLevels[level.id];
             return (
               <button
-                key={lvl.id}
-                onClick={() => startLevel(lvl.id)}
-                className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all text-left ${
-                  isDone ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:border-slate-300 bg-white'
+                key={level.id}
+                onClick={() => startLevel(level.id)}
+                className={`flex items-center gap-4 px-5 py-4 rounded-xl border-2 transition text-left ${
+                  isCompleted
+                    ? 'border-green-300 bg-green-50 hover:bg-green-100'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300'
                 }`}
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${lvl.color}`}>
-                  {isDone ? <Trophy className="w-5 h-5" /> : idx + 1}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${level.color}`}>
+                  {isCompleted ? <Trophy size={20} /> : level.stars}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{lvl.label}</div>
-                  <div className="text-xs text-slate-500">{lvl.description}</div>
+                <div className="flex-1">
+                  <div className="font-bold text-slate-800">{level.label}</div>
+                  <div className="text-sm text-slate-500">{level.description}</div>
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 shrink-0" />
+                <ChevronRight size={20} className="text-slate-400" />
               </button>
             );
           })}
