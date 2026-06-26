@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3 | 4;
+type ExerciseId = 1 | 2 | 3 | 4 | 5;
 
 interface Exercise {
   id: ExerciseId;
@@ -18,6 +18,7 @@ interface Exercise {
   demoMoves: { from: string; to: string; comment: string }[];
   minMoves3: number;
   minMoves2: number;
+  timeLimit?: number; // seconds, timer starts after first white move
 }
 
 const EXERCISES: Exercise[] = [
@@ -113,6 +114,26 @@ const EXERCISES: Exercise[] = [
     minMoves3: 6,
     minMoves2: 7,
   },
+  {
+    id: 5,
+    label: 'Упражнение 5',
+    description: 'Мат за 1 минуту — белые ладьи на a1 и h1, король на e1, чёрный король на e4',
+    fen: '8/8/8/8/4k3/8/8/R3K2R w - - 0 1',
+    demoMoves: [
+      { from: 'a1', to: 'a4', comment: 'Ладья даёт шах!' },
+      { from: 'e4', to: 'd5', comment: 'Чёрный король отступает' },
+      { from: 'h1', to: 'h5', comment: 'Вторая ладья сужает пространство' },
+      { from: 'd5', to: 'c6', comment: 'Король отступает влево' },
+      { from: 'a4', to: 'a6', comment: 'Шах! Преследуем короля' },
+      { from: 'c6', to: 'b7', comment: 'Король уходит на 7-ю линию' },
+      { from: 'h5', to: 'b5', comment: 'Ладья перекрывает' },
+      { from: 'b7', to: 'c8', comment: 'Король на край доски' },
+      { from: 'a6', to: 'a8', comment: 'Мат!' },
+    ],
+    minMoves3: 10,
+    minMoves2: 12,
+    timeLimit: 60,
+  },
 ];
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
@@ -171,6 +192,7 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
 }
 
 function calcStars(ex: Exercise, whiteMoves: number): number {
+  if (ex.timeLimit) return 3;
   if (whiteMoves <= ex.minMoves3) return 3;
   if (whiteMoves <= ex.minMoves2) return 2;
   return 1;
@@ -224,6 +246,10 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
   const [whiteMoves, setWhiteMoves] = useState(0);
   const [isStalemate, setIsStalemate] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isStalemateRef = useRef(false);
 
   // Drag state
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
@@ -238,6 +264,15 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
+  useEffect(() => { isStalemateRef.current = isStalemate; }, [isStalemate]);
+
+  // Clear timer on game end
+  useEffect(() => {
+    if ((isComplete || isStalemate) && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, [isComplete, isStalemate]);
 
   useEffect(() => {
     try {
@@ -280,6 +315,10 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const switchExercise = useCallback((id: ExerciseId) => {
@@ -295,6 +334,10 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const saveStars = useCallback((id: ExerciseId, stars: number) => {
@@ -349,8 +392,26 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
       setMessage('');
       setWhiteMoves(nextWhiteMoves);
 
+      // Start timer on first white move in exercise 5
+      const ex = EXERCISES.find(e => e.id === currentExercise)!;
+      if (ex.timeLimit && !timerStarted && nextWhiteMoves === 1) {
+        setTimeLeft(ex.timeLimit);
+        setTimerStarted(true);
+        timerIntervalRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev === null || prev <= 1) {
+              if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+              setIsStalemate(true);
+              setMessage('Провалено');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+
       if (g.isCheckmate()) {
-        const ex = EXERCISES.find(e => e.id === currentExercise)!;
         const earned = calcStars(ex, nextWhiteMoves);
         setMessage(`Мат чёрному королю! ${earned} ★`);
         setIsComplete(true);
@@ -379,7 +440,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
           if (g.isCheckmate()) {
-            const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
@@ -388,7 +448,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           }
         } else {
           if (g.isCheckmate()) {
-            const ex = EXERCISES.find(e => e.id === currentExercise)!;
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
@@ -411,7 +470,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   // CLICK HANDLER
   // ═══════════════════════════════════════════════════════════════
   const handleSquareClick = useCallback((square: string) => {
-    if (demoModeRef.current || isCompleteRef.current) return;
+    if (demoModeRef.current || isCompleteRef.current || isStalemateRef.current) return;
     if (!game) return;
     const g = game;
     if (g.turn() !== 'w') return;
@@ -568,6 +627,13 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           {currentEx.description}
         </div>
 
+        {/* Timer for exercise 5 */}
+        {currentEx.timeLimit && timerStarted && timeLeft !== null && !isComplete && !isStalemate && (
+          <div className={`text-2xl font-bold font-mono ${timeLeft <= 10 ? 'text-red-500' : 'text-slate-700'}`}>
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </div>
+        )}
+
         {currentExercise === 1 && !demoMode && !isComplete && (
           <button
             onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
@@ -592,7 +658,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         {isStalemate && (
           <div className="w-full max-w-sm">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">Пат. Провалено.</p>
+              <p className="text-white font-bold text-lg">{message || 'Пат. Провалено.'}</p>
               <button
                 onClick={reset}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
