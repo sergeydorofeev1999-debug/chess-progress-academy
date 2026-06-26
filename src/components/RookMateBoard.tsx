@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2;
+type ExerciseId = 1 | 2 | 3;
 
 interface Exercise {
   id: ExerciseId;
@@ -60,6 +60,15 @@ const EXERCISES: Exercise[] = [
     demoMoves: [],
     minMoves3: 10,
     minMoves2: 12,
+  },
+  {
+    id: 3,
+    label: 'Упражнение 3',
+    description: 'Мат ладьёй — далёкая начальная позиция',
+    fen: 'R7/8/8/4k3/8/8/8/7K w - - 0 1',
+    demoMoves: [],
+    minMoves3: 16,
+    minMoves2: 19,
   },
 ];
 
