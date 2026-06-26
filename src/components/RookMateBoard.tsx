@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1;
+type ExerciseId = 1 | 2;
 
 interface Exercise {
   id: ExerciseId;
@@ -55,6 +55,15 @@ const EXERCISES: Exercise[] = [
     ],
     minMoves3: 14,
     minMoves2: 16,
+  },
+  {
+    id: 2,
+    label: 'Упражнение 2',
+    description: 'Мат ладьёй — поставьте мат не более чем за 10 ходов',
+    fen: '8/8/8/4K3/R7/4k3/8/8 w - - 0 1',
+    demoMoves: [],
+    minMoves3: 10,
+    minMoves2: 12,
   },
 ];
 
@@ -700,7 +709,11 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>Поставьте мат чёрному королю двумя ладьями. Используйте одну ладью для ограничения пространства, вторую — для шаха и мата.</p>
+          {currentExercise === 1 ? (
+            <p>Поставьте мат чёрному королю ладьёй при поддержке своего короля.</p>
+          ) : (
+            <p>Поставьте мат чёрному королю ладьёй не более чем за 10 ходов.</p>
+          )}
         </div>
       </div>
     </div>
