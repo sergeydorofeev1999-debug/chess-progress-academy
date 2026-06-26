@@ -58,6 +58,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const isQueenPawn = lesson.id === 'a8b9a524-5e37-43c5-a479-9c98494d704e';
         const isKnightPawn = lesson.id === '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac';
         const isChessFootball = lesson.id === 'bae12fca-bfa4-44b6-9dff-7555fe240706';
+        const isTwoRooksMate = lesson.id === '126a2252-7482-4ed4-8d5a-a0afe82d834d';
         let levelsDone = 0;
         let minStars = 0;
         if (isPawnRace && mounted) {
@@ -96,6 +97,14 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
             levelsDone = Object.values(football).filter(Boolean).length;
             minStars = levelsDone;
           } catch {}
+        } else if (isTwoRooksMate && mounted) {
+          try {
+            const completed = localStorage.getItem(`lesson_completed_${lesson.id}`);
+            if (completed === 'true') {
+              levelsDone = 1;
+              minStars = 1;
+            }
+          } catch {}
         } else {
           levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
           const allStars = Object.values(detail) as number[];
@@ -107,7 +116,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn) && hasProgress)) {
+        if (isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn || isTwoRooksMate) && hasProgress)) {
           bgColor = 'bg-[#ebf5d8]';
           borderColor = 'border-[#c5e0a5]';
         } else if (hasProgress) {

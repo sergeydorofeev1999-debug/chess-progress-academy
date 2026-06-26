@@ -12,6 +12,7 @@ import BishopPawnBoard from './BishopPawnBoard';
 import QueenPawnBoard from './QueenPawnBoard';
 import KnightPawnBoard from './KnightPawnBoard';
 import ChessFootballBoard from './ChessFootballBoard';
+import TwoRooksMateBoard from './TwoRooksMateBoard';
 
 interface Lesson {
   id: string;
@@ -1460,6 +1461,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_chess_football' ? (
           <div className="mb-8">
             <ChessFootballBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_two_rooks_mate' ? (
+          <div className="mb-8">
+            <TwoRooksMateBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
