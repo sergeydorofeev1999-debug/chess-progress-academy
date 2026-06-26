@@ -40,7 +40,7 @@ const EXERCISES: Exercise[] = [
     id: 2,
     label: 'Упражнение 2',
     description: 'Ладьи в центре — загоняем вправо',
-    fen: '8/3R4/8/8/4k3/K7/8/3R4 w - - 0 1',
+    fen: '3R4/8/8/8/K3k3/8/8/3R4 w - - 0 1',
     demoMoves: [
       { from: 'd8', to: 'h8', comment: 'Ладья перекрывает правый фланг' },
       { from: 'e4', to: 'f4', comment: 'Чёрный король отступает вправо' },
