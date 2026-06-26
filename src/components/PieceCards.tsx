@@ -31,6 +31,26 @@ function getLessonDetail(lessonId: string): Record<number, number> {
   }
 }
 
+const INTERACTIVE_LESSONS = [
+  'af74a851-e308-411d-82e1-fafdc5bd390a', // pawnRace
+  'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4', // rookPawn
+  '2976cdff-d622-45a6-9ce4-fbcc33fa9528', // bishopPawn
+  'a8b9a524-5e37-43c5-a479-9c98494d704e', // queenPawn
+  '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac', // knightPawn
+  'bae12fca-bfa4-44b6-9dff-7555fe240706', // chessFootball
+  '126a2252-7482-4ed4-8d5a-a0afe82d834d', // twoRooksMate
+];
+
+const LESSON_KEYS: Record<string, string> = {
+  'af74a851-e308-411d-82e1-fafdc5bd390a': 'pawnrace_progress',
+  'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4': 'rookpawn_progress',
+  '2976cdff-d622-45a6-9ce4-fbcc33fa9528': 'bishoppawn_progress',
+  'a8b9a524-5e37-43c5-a479-9c98494d704e': 'queenpawn_progress',
+  '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac': 'knightpawn_progress',
+  'bae12fca-bfa4-44b6-9dff-7555fe240706': 'football_progress',
+  '126a2252-7482-4ed4-8d5a-a0afe82d834d': 'tworooks_progress',
+};
+
 export default function PieceCards({ lessons, progressMap, courseId, pieceCodes, descriptions }: Props) {
   const [clientDetails, setClientDetails] = useState<Record<string, Record<number, number>>>({});
   const [mounted, setMounted] = useState(false);
@@ -50,60 +70,19 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
         const isServerCompleted = progressMap[lesson.id];
         const detail = mounted ? clientDetails[lesson.id] || {} : {};
         const totalLevels = lesson.levelsCount || 1;
+        const isInteractive = INTERACTIVE_LESSONS.includes(lesson.id);
+        const storageKey = LESSON_KEYS[lesson.id];
 
-        // Special handling for interactive lessons with difficulty levels
-        const isPawnRace = lesson.id === 'af74a851-e308-411d-82e1-fafdc5bd390a';
-        const isRookPawn = lesson.id === 'd239daeb-f7e9-410e-84c7-8f0eac3ebcb4';
-        const isBishopPawn = lesson.id === '2976cdff-d622-45a6-9ce4-fbcc33fa9528';
-        const isQueenPawn = lesson.id === 'a8b9a524-5e37-43c5-a479-9c98494d704e';
-        const isKnightPawn = lesson.id === '1ce04101-6a7d-45c9-bcef-6e17dbafa6ac';
-        const isChessFootball = lesson.id === 'bae12fca-bfa4-44b6-9dff-7555fe240706';
-        const isTwoRooksMate = lesson.id === '126a2252-7482-4ed4-8d5a-a0afe82d834d';
         let levelsDone = 0;
         let minStars = 0;
-        if (isPawnRace && mounted) {
+
+        if (isInteractive && mounted && storageKey) {
           try {
-            const pawnRace = JSON.parse(localStorage.getItem(`pawnrace_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(pawnRace).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isRookPawn && mounted) {
-          try {
-            const rookPawn = JSON.parse(localStorage.getItem(`rookpawn_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(rookPawn).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isBishopPawn && mounted) {
-          try {
-            const bishopPawn = JSON.parse(localStorage.getItem(`bishoppawn_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(bishopPawn).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isQueenPawn && mounted) {
-          try {
-            const queenPawn = JSON.parse(localStorage.getItem(`queenpawn_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(queenPawn).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isKnightPawn && mounted) {
-          try {
-            const knightPawn = JSON.parse(localStorage.getItem(`knightpawn_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(knightPawn).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isChessFootball && mounted) {
-          try {
-            const football = JSON.parse(localStorage.getItem(`football_progress_${lesson.id}`) || '{}');
-            levelsDone = Object.values(football).filter(Boolean).length;
-            minStars = levelsDone;
-          } catch {}
-        } else if (isTwoRooksMate && mounted) {
-          try {
-            const completed = localStorage.getItem(`lesson_completed_${lesson.id}`);
-            if (completed === 'true') {
-              levelsDone = 1;
-              minStars = 1;
-            }
+            const raw = localStorage.getItem(`${storageKey}_${lesson.id}`) || '{}';
+            const progress = JSON.parse(raw);
+            const stars = Object.values(progress) as number[];
+            levelsDone = stars.filter(s => s > 0).length;
+            minStars = stars.length > 0 ? Math.min(...stars) : 0;
           } catch {}
         } else {
           levelsDone = Object.values(detail).filter((v: any) => v >= 1).length;
@@ -116,7 +95,7 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
 
         let bgColor = 'bg-[#e6e0ec]';
         let borderColor = 'border-[#c5b5d8]';
-        if (isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn || isTwoRooksMate) && hasProgress)) {
+        if (isCompleted) {
           bgColor = 'bg-[#ebf5d8]';
           borderColor = 'border-[#c5e0a5]';
         } else if (hasProgress) {
@@ -149,12 +128,12 @@ export default function PieceCards({ lessons, progressMap, courseId, pieceCodes,
               <p className="font-bold text-gray-800 text-sm truncate">{lesson.title}</p>
               {desc && <p className="text-xs text-gray-500 truncate">{desc}</p>}
             </div>
-            {(isCompleted || ((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn || isChessFootball) && hasProgress)) && (
+            {isCompleted && (
               <div className="absolute top-0 right-0 bg-[#7ab648] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {'★'.repeat(minStars || 1)}
               </div>
             )}
-            {hasProgress && !isCompleted && !((isPawnRace || isRookPawn || isBishopPawn || isQueenPawn || isKnightPawn || isChessFootball) && hasProgress) && (
+            {hasProgress && !isCompleted && (
               <div className="absolute top-0 right-0 bg-[#3399ff] text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg">
                 {levelsDone}/{totalLevels}
               </div>
