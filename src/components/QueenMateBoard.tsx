@@ -596,7 +596,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
           {currentEx.description}
         </div>
 
-        {!demoMode && !isComplete && (
+        {currentExercise === 1 && !demoMode && !isComplete && (
           <button
             onClick={() => { reset(); setDemoMode(true); setDemoStep(0); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
