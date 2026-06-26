@@ -98,32 +98,36 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
     const toCol = FILES.indexOf(m.to[0]);
     let score = 0;
 
-    // Увеличить расстояние до ферзя
+    // 1. ГЛАВНОЕ — держаться в ЦЕНТРЕ доски
+    const centerDist = Math.abs(toRow - 3.5) + Math.abs(toCol - 3.5);
+    score -= centerDist * 50; // чем ближе к центру, тем лучше
+
+    // 2. Штраф за край доски
+    const isEdge = (toRow === 0 || toRow === 7 || toCol === 0 || toCol === 7);
+    if (isEdge) score -= 200;
+
+    // 3. Штраф за угол
+    const isCorner = ((toRow === 0 || toRow === 7) && (toCol === 0 || toCol === 7));
+    if (isCorner) score -= 300;
+
+    // 4. Увеличить расстояние до белого короля (не дать подойти)
+    if (whiteKingPos) {
+      const distToWK = Math.max(Math.abs(toRow - whiteKingPos.row), Math.abs(toCol - whiteKingPos.col));
+      score += distToWK * 30;
+    }
+
+    // 5. Увеличить расстояние до ферзя (но меньший вес)
     if (queenPos) {
       const distToQueen = Math.max(Math.abs(toRow - queenPos.row), Math.abs(toCol - queenPos.col));
-      score += distToQueen * 40;
-      // Штраф за нахождение на одной линии с ферзём
+      score += distToQueen * 15;
+      // Не стоять на одной линии с ферзём (под боем)
       if (toRow === queenPos.row || toCol === queenPos.col ||
           Math.abs(toRow - queenPos.row) === Math.abs(toCol - queenPos.col)) {
-        score -= 30;
+        score -= 100;
       }
     }
 
-    // Увеличить расстояние до белого короля
-    if (whiteKingPos) {
-      const distToWK = Math.max(Math.abs(toRow - whiteKingPos.row), Math.abs(toCol - whiteKingPos.col));
-      score += distToWK * 25;
-    }
-
-    // Бонус за центр
-    const centerBonus = (toRow >= 2 && toRow <= 5 && toCol >= 2 && toCol <= 5) ? 20 : 0;
-    score += centerBonus;
-
-    // Штраф за край доски
-    const edgePenalty = ((toRow === 0 || toRow === 7) ? -15 : 0) + ((toCol === 0 || toCol === 7) ? -15 : 0);
-    score += edgePenalty;
-
-    // Если можно съесть ферзя — отличный ход
+    // 6. Если можно съесть ферзя — отличный ход
     if (m.captured && m.captured === 'q') score += 1000;
 
     return { move: m, score };
