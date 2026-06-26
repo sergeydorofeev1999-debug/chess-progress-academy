@@ -651,17 +651,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       return;
     }
 
-    // Select white pawn
-    if (wPawns.includes(square)) {
-      const moves = getPawnMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      selectedSquareRef.current = square;
-      selectedSquareTypeRef.current = 'pawn';
-      validSquaresRef.current = moves;
-      return;
-    }
-
     setSelectedSquare(null);
     setValidSquares([]);
     selectedSquareRef.current = null;
@@ -674,26 +663,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (winnerRef.current) return;
     if (turnRef.current !== 'w') return;
     if (e.pointerType === 'touch' && e.isPrimary === false) return;
-
-    const isKing = square === wKingRef.current;
-    const isPawn = wPawns.includes(square);
-
-    if (isKing) {
-      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      selectedSquareTypeRef.current = 'king';
-      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-    } else if (isPawn) {
-      const moves = getPawnMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      selectedSquareTypeRef.current = 'pawn';
-      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-    } else {
-      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-    }
-  }, [wPawns, bPawns]);
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+  }, []);
 
   useEffect(() => {
     const handleGlobalMove = (e: PointerEvent) => {
@@ -705,9 +676,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         start.moved = true;
         const isKing = start.square === wKingRef.current;
-        const isPawn = wPawns.includes(start.square);
-        if (isKing || isPawn) {
-          setDragPiece({ square: start.square, type: isKing ? 'k' : 'p', color: 'w' });
+        if (isKing) {
+          setDragPiece({ square: start.square, type: 'k', color: 'w' });
           setSelectedSquare(null);
         }
       }
@@ -724,8 +694,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         clickRef.current(start.square);
       } else {
         const isKing = start.square === wKingRef.current;
-        const isPawn = wPawns.includes(start.square);
-        if (!isKing && !isPawn) {
+        if (!isKing) {
           setDragPiece(null);
           pointerStartRef.current = null;
           return;
@@ -735,26 +704,14 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         const cell = el?.closest('[data-square]') as HTMLElement | null;
         const targetSquare = cell?.dataset.square || null;
         if (targetSquare && targetSquare !== start.square) {
-          if (isKing) {
-            const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-            if (valid.includes(targetSquare)) {
-              doKingMove(targetSquare);
-            } else {
-              setSelectedSquare(null);
-              setValidSquares([]);
-              selectedSquareRef.current = null;
-              selectedSquareTypeRef.current = null;
-            }
+          const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+          if (valid.includes(targetSquare)) {
+            doKingMove(targetSquare);
           } else {
-            const valid = getPawnMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-            if (valid.includes(targetSquare)) {
-              doPawnMove(start.square, targetSquare);
-            } else {
-              setSelectedSquare(null);
-              setValidSquares([]);
-              selectedSquareRef.current = null;
-              selectedSquareTypeRef.current = null;
-            }
+            setSelectedSquare(null);
+            setValidSquares([]);
+            selectedSquareRef.current = null;
+            selectedSquareTypeRef.current = null;
           }
         }
         setDragPiece(null);
