@@ -64,8 +64,8 @@ function getKingMoves(
     const dist = Math.max(Math.abs(fdi - otherFile), Math.abs(rdi - otherRank));
     if (dist <= 1) continue;
 
-    // Cannot move to square occupied by own pawn
-    if (ownPawns.includes(sq)) continue;
+    // Cannot move to square occupied by any pawn
+    if (ownPawns.includes(sq) || otherPawns.includes(sq)) continue;
 
     // Cannot move to square attacked by enemy pawns
     const isUnderAttack = otherPawns.some(p => {
@@ -755,7 +755,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
                     backgroundColor: light ? '#f0d9b5' : '#b58863',
                   }}
                   onPointerDown={(e) => handlePointerDown(e, sq)}
-                  onClick={() => click(sq)}
                   onDragStart={(e) => e.preventDefault()}
                 >
                   {sel && (
