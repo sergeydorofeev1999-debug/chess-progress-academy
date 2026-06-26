@@ -173,7 +173,7 @@ const EXERCISES: Exercise[] = [
     id: 8,
     label: 'Упражнение 8',
     description: 'Мат за 1 минуту — белый ферзь на a1, король на h1, чёрный король на e4',
-    fen: '8/8/8/4k3/8/8/8/Q6K w - - 0 1',
+    fen: '8/8/8/8/4k3/8/8/Q6K w - - 0 1',
     demoMoves: [
       { from: 'a1', to: 'e5', comment: 'Ферзь даёт шах!' },
       { from: 'e4', to: 'd4', comment: 'Король отступает' },
@@ -271,6 +271,7 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
 }
 
 function calcStars(ex: Exercise, whiteMoves: number): number {
+  if (ex.timeLimit) return 3;
   if (whiteMoves <= ex.minMoves3) return 3;
   if (whiteMoves <= ex.minMoves2) return 2;
   return 1;
