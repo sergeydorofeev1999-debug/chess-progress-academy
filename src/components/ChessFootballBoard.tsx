@@ -80,7 +80,7 @@ function getKingMoves(
   return valid;
 }
 
-function evaluatePosition(wKing: string, bKing: string, wScore: number, bScore: number): number {
+function evaluatePosition(wKing: string, bKing: string, wScore: number, bScore: number, forHard: boolean = false): number {
   if (wScore >= 3) return -10000;
   if (bScore >= 3) return 10000;
 
@@ -95,6 +95,47 @@ function evaluatePosition(wKing: string, bKing: string, wScore: number, bScore: 
   const bFile = FILES.indexOf(bKing[0]);
   score += (3.5 - Math.abs(bFile - 3.5)) * 20;
   score -= (3.5 - Math.abs(wFile - 3.5)) * 20;
+
+  // Hard: mirror the white king's file — same file is best for black
+  if (forHard) {
+    const fileDiff = Math.abs(bFile - wFile);
+    score -= fileDiff * 150;           // strongly prefer same file
+
+    // Prefer odd Manhattan distance (odd number of squares between kings)
+    const dist = Math.abs(bRank - wRank) + fileDiff;
+    if (dist % 2 === 0) {
+      score -= 80;                      // penalize even distance
+    } else {
+      score += 40;                      // bonus for odd distance
+    }
+
+    // When on same file, prefer being directly opposite (opposition)
+    if (fileDiff === 0) {
+      const rankGap = bRank - wRank;    // positive = black is above white
+      if (rankGap === 1) {
+        score += 300;                   // direct opposition — best!
+      } else if (rankGap === 2) {
+        score += 150;                   // close opposition
+      } else if (rankGap > 2) {
+        score -= (rankGap - 2) * 50;    // too far, close the gap
+      } else if (rankGap <= 0) {
+        score -= 200;                   // black should never be below white
+      }
+    } else {
+      // When not on same file, prefer closing file gap over rank gap
+      score -= fileDiff * 100;
+    }
+
+    // Bonus for blocking white's path to rank 8 (same or adjacent file)
+    if (fileDiff <= 1 && bRank > wRank) {
+      score += 80;
+    }
+
+    // Penalty if white king has a free path forward on its current file
+    if (fileDiff === 0 && bRank < wRank) {
+      score -= 250;                     // black let white get past — disaster
+    }
+  }
 
   return score;
 }
@@ -121,10 +162,11 @@ function minimax(
   depth: number,
   isMaximizing: boolean,
   alpha: number,
-  beta: number
+  beta: number,
+  forHard: boolean = false
 ): number {
   if (wScore >= 3 || bScore >= 3 || depth === 0) {
-    return evaluatePosition(wKing, bKing, wScore, bScore);
+    return evaluatePosition(wKing, bKing, wScore, bScore, forHard);
   }
 
   const moves = isMaximizing
@@ -140,7 +182,7 @@ function minimax(
     for (const move of moves) {
       let newBScore = bScore;
       if (RANKS.indexOf(move.to[1]) === 0) newBScore += 1;
-      const eval_ = minimax(wKing, move.to, wPawns, bPawns, wScore, newBScore, depth - 1, false, alpha, beta);
+      const eval_ = minimax(wKing, move.to, wPawns, bPawns, wScore, newBScore, depth - 1, false, alpha, beta, forHard);
       maxEval = Math.max(maxEval, eval_);
       alpha = Math.max(alpha, eval_);
       if (beta <= alpha) break;
@@ -151,7 +193,7 @@ function minimax(
     for (const move of moves) {
       let newWScore = wScore;
       if (RANKS.indexOf(move.to[1]) === 7) newWScore += 1;
-      const eval_ = minimax(move.to, bKing, wPawns, bPawns, newWScore, bScore, depth - 1, true, alpha, beta);
+      const eval_ = minimax(move.to, bKing, wPawns, bPawns, newWScore, bScore, depth - 1, true, alpha, beta, forHard);
       minEval = Math.min(minEval, eval_);
       beta = Math.min(beta, eval_);
       if (beta <= alpha) break;
@@ -181,7 +223,7 @@ function getBestMove(
     } else if (difficulty === 'medium') {
       score = minimax(wKing, move.to, wPawns, bPawns, wScore, newBScore, 2, false, -Infinity, Infinity);
     } else {
-      score = minimax(wKing, move.to, wPawns, bPawns, wScore, newBScore, 3, false, -Infinity, Infinity);
+      score = minimax(wKing, move.to, wPawns, bPawns, wScore, newBScore, 3, false, -Infinity, Infinity, true);
     }
     return { ...move, score };
   });
@@ -449,7 +491,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
           } else if (diff === 'medium') {
             score = minimax(wKingRef.current, move.to, wPawnsRef.current, bPawnsRef.current, wScoreRef.current, newBScore, 2, false, -Infinity, Infinity);
           } else {
-            score = minimax(wKingRef.current, move.to, wPawnsRef.current, bPawnsRef.current, wScoreRef.current, newBScore, 3, false, -Infinity, Infinity);
+            score = minimax(wKingRef.current, move.to, wPawnsRef.current, bPawnsRef.current, wScoreRef.current, newBScore, 3, false, -Infinity, Infinity, true);
           }
           return { ...move, score };
         });
