@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3;
+type ExerciseId = 1 | 2 | 3 | 4;
 
 interface Exercise {
   id: ExerciseId;
@@ -18,6 +18,7 @@ interface Exercise {
   demoMoves: { from: string; to: string; comment: string }[];
   minMoves3: number;
   minMoves2: number;
+  matIn1?: boolean;
 }
 
 const EXERCISES: Exercise[] = [
@@ -69,6 +70,18 @@ const EXERCISES: Exercise[] = [
     demoMoves: [],
     minMoves3: 16,
     minMoves2: 19,
+  },
+  {
+    id: 4,
+    label: 'Упражнение 4',
+    description: 'Мат в 1 ход — белая ладья на h5',
+    fen: '8/8/8/7R/8/4K3/8/4k3 w - - 0 1',
+    demoMoves: [
+      { from: 'h5', to: 'h1', comment: 'Мат!' },
+    ],
+    minMoves3: 1,
+    minMoves2: 1,
+    matIn1: true,
   },
 ];
 
@@ -352,6 +365,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
       }
 
       // Black's turn — AI move
+      const delayMs = ex.matIn1 ? 1000 : 500;
       setTimeout(() => {
         if (!mountedRef.current) return;
         const blackMove = getBlackKingMove(g);
@@ -365,6 +379,9 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
             setIsComplete(true);
             saveStars(currentExercise, earned);
             onComplete();
+          } else if (ex.matIn1) {
+            setIsStalemate(true);
+            setMessage('Провалено');
           }
         } else {
           if (g.isCheckmate()) {
@@ -376,11 +393,14 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Провалено.');
+          } else if (ex.matIn1) {
+            setIsStalemate(true);
+            setMessage('Провалено');
           } else {
             setMessage('Ничья! Начните заново.');
           }
         }
-      }, 500);
+      }, delayMs);
     } catch {
       // Invalid move
     }
