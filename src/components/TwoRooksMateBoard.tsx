@@ -248,6 +248,15 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     } catch {}
   }, [storageKey]);
 
+  // Initialize game on first mount
+  useEffect(() => {
+    if (!game) {
+      const ex = EXERCISES.find(e => e.id === currentExercise)!;
+      setGame(new Chess(ex.fen));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const update = () => {
       const isMobile = window.innerWidth < 1024;
