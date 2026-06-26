@@ -505,7 +505,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: exercise pills (desktop) */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
+        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-[#c5b5d8]">
           {EXERCISES.map((ex) => {
             const earnedStars = exerciseStars[ex.id] || 0;
             const isCurrent = ex.id === currentExercise;
@@ -519,7 +519,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
                     ? 'bg-blue-500 text-white'
                     : isDone
                     ? 'bg-emerald-500 text-white'
-                    : 'bg-gray-200 text-gray-500'
+                    : 'bg-[#e6e0ec] text-[#6b5b7d]'
                 } cursor-pointer hover:brightness-110`}
               >
                 <div className="flex gap-0.5">
@@ -692,7 +692,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
                 key={ex.id}
                 onClick={() => switchExercise(ex.id)}
                 className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-[#e6e0ec] text-[#6b5b7d]'
                 } cursor-pointer`}
               >
                 <div className="flex gap-0.5">
