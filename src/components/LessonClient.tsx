@@ -13,6 +13,7 @@ import QueenPawnBoard from './QueenPawnBoard';
 import KnightPawnBoard from './KnightPawnBoard';
 import ChessFootballBoard from './ChessFootballBoard';
 import TwoRooksMateBoard from './TwoRooksMateBoard';
+import QueenMateBoard from './QueenMateBoard';
 
 interface Lesson {
   id: string;
@@ -1468,6 +1469,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_two_rooks_mate' ? (
           <div className="mb-8">
             <TwoRooksMateBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_queen_mate' ? (
+          <div className="mb-8">
+            <QueenMateBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
