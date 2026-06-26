@@ -124,14 +124,24 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
     const toRow = RANKS.indexOf(m.to[1]);
     const toCol = FILES.indexOf(m.to[0]);
     let score = 0;
+
+    // 1. Держаться ближе к центру
+    const centerDist = Math.abs(toCol - 3.5) + Math.abs(toRow - 3.5);
+    score -= centerDist * 15;
+
+    // 2. Подходить ближе к ладьям — мешать им
     for (const r of rooks) {
       const dist = Math.abs(toRow - r.row) + Math.abs(toCol - r.col);
-      score += dist * 10;
+      score -= dist * 8;
     }
-    score += (3.5 - Math.abs(toCol - 3.5)) * 5;
-    score += toRow * 3;
-    if (toCol === 0 || toCol === 7) score -= 15;
-    if (toRow === 0 || toRow === 7) score -= 15;
+
+    // 3. Избегать края доски
+    if (toCol === 0 || toCol === 7) score -= 25;
+    if (toRow === 0 || toRow === 7) score -= 25;
+
+    // 4. Если можно съесть ладью — отличный ход
+    if (m.captured) score += 300;
+
     return { move: m, score };
   });
 
