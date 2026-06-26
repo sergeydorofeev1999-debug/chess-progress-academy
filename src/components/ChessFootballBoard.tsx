@@ -633,8 +633,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       if (validSquaresRef.current.includes(square)) {
         if (selType === 'king') {
           doKingMove(square);
-        } else {
-          doPawnMove(sel, square);
         }
         return;
       }
@@ -655,7 +653,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     setValidSquares([]);
     selectedSquareRef.current = null;
     selectedSquareTypeRef.current = null;
-  }, [wPawns, bPawns, doKingMove, doPawnMove]);
+  }, [wPawns, bPawns, doKingMove]);
 
   useEffect(() => { clickRef.current = click; }, [click]);
 
@@ -734,7 +732,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       window.removeEventListener('pointerup', handleGlobalUp);
       window.removeEventListener('pointercancel', handleGlobalCancel);
     };
-  }, [wPawns, bPawns, doKingMove, doPawnMove]);
+  }, [wPawns, bPawns, doKingMove]);
 
   const getPieceAt = (sq: string) => {
     if (wKing === sq) return { type: 'k', color: 'w' as Color };
