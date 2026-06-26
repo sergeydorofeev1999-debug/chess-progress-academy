@@ -5,77 +5,13 @@ import { RotateCcw, Star, Trophy, ChevronRight } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['1','2','3','4','5','6','7','8'];
+const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 type Color = 'w' | 'b';
-
-function getSquareCenter(square: string): { x: number; y: number } {
-  const fileIndex = FILES.indexOf(square[0]);
-  const rankIndex = RANKS.indexOf(square[1]);
-  return { x: fileIndex * 50 + 25, y: (7 - rankIndex) * 50 + 25 };
-}
-
-function isSameSquare(s1: string, s2: string): boolean {
-  return s1 === s2;
-}
+type Difficulty = 'easy' | 'medium' | 'hard';
 
 /* ═════════════════════════════════════════════════════════════════
-   BOARD RENDERING
-   ═════════════════════════════════════════════════════════════════ */
-
-function BoardBackground() {
-  const squares = [];
-  for (let rank = 0; rank < 8; rank++) {
-    for (let file = 0; file < 8; file++) {
-      const isWhite = (file + rank) % 2 === 0;
-      squares.push(
-        <div
-          key={`${file}-${rank}`}
-          style={{
-            position: 'absolute',
-            left: `${file * 50}px`,
-            top: `${rank * 50}px`,
-            width: '50px',
-            height: '50px',
-            backgroundColor: isWhite ? '#f0d9b5' : '#b58863',
-          }}
-        />
-      );
-    }
-  }
-  return <>{squares}</>;
-}
-
-function FileLabels() {
-  return (
-    <div className="flex ml-[25px]">
-      {FILES.map(f => (
-        <div key={f} className="w-[50px] text-center text-xs text-slate-400 select-none">{f}</div>
-      ))}
-    </div>
-  );
-}
-
-function RankLabels() {
-  return (
-    <div className="absolute left-0 top-[25px] flex flex-col">
-      {RANKS.slice().reverse().map(r => (
-        <div key={r} className="h-[50px] w-[25px] flex items-center justify-center text-xs text-slate-400 select-none">{r}</div>
-      ))}
-    </div>
-  );
-}
-
-/* ═════════════════════════════════════════════════════════════════
-   PIECE SVG
-   ═════════════════════════════════════════════════════════════════ */
-
-function PieceImage({ type, color, size = 45 }: { type: string; color: 'w' | 'b'; size?: number }) {
-  const src = `/pieces/cburnett/${color}${type}.svg`;
-  return <img src={src} alt={`${color}${type}`} style={{ width: size, height: size }} draggable={false} />;
-}
-
-/* ═════════════════════════════════════════════════════════════════
-   KING MOVES
+   GAME LOGIC
    ═════════════════════════════════════════════════════════════════ */
 
 function getKingMoves(
@@ -104,13 +40,11 @@ function getKingMoves(
     if (fdi < 0 || fdi >= 8 || rdi < 0 || rdi >= 8) continue;
     const sq = `${FILES[fdi]}${RANKS[rdi]}`;
 
-    // Kings cannot be adjacent (must be at least 1 square apart)
     const otherFile = FILES.indexOf(otherKing[0]);
     const otherRank = RANKS.indexOf(otherKing[1]);
     const dist = Math.max(Math.abs(fdi - otherFile), Math.abs(rdi - otherRank));
     if (dist <= 1) continue;
 
-    // Cannot move to a square attacked by enemy pawns
     if (otherPawns.includes(sq)) continue;
 
     valid.push(sq);
@@ -118,10 +52,6 @@ function getKingMoves(
 
   return valid;
 }
-
-/* ═════════════════════════════════════════════════════════════════
-   PAWN ATTACK SQUARES (for blocking king moves)
-   ═════════════════════════════════════════════════════════════════ */
 
 function getPawnAttackSquares(pawnSquare: string, color: 'w' | 'b'): string[] {
   const ff = FILES.indexOf(pawnSquare[0]);
@@ -140,12 +70,6 @@ function getPawnAttackSquares(pawnSquare: string, color: 'w' | 'b'): string[] {
   return attacks;
 }
 
-/* ═════════════════════════════════════════════════════════════════
-   AI ENGINE
-   ═════════════════════════════════════════════════════════════════ */
-
-type Difficulty = 'easy' | 'medium' | 'hard';
-
 function evaluatePosition(wKing: string, bKing: string, wScore: number, bScore: number): number {
   if (wScore >= 3) return -10000;
   if (bScore >= 3) return 10000;
@@ -154,11 +78,9 @@ function evaluatePosition(wKing: string, bKing: string, wScore: number, bScore: 
   const bRank = RANKS.indexOf(bKing[1]);
 
   let score = 0;
-  // Black wants to reach rank 1, white wants to reach rank 8
-  score += (7 - bRank) * 100; // black advancing
-  score -= wRank * 100; // white advancing
+  score += (7 - bRank) * 100;
+  score -= wRank * 100;
 
-  // Prefer center files for both kings
   const wFile = FILES.indexOf(wKing[0]);
   const bFile = FILES.indexOf(bKing[0]);
   score += (3.5 - Math.abs(bFile - 3.5)) * 20;
@@ -274,19 +196,32 @@ function getBestMove(
 }
 
 /* ═════════════════════════════════════════════════════════════════
-   MAIN COMPONENT
+   PIECE IMAGE
    ═════════════════════════════════════════════════════════════════ */
 
-const START_W_KING = 'e1';
-const START_B_KING = 'e8';
-const START_W_PAWNS = ['a2', 'h2'];
-const START_B_PAWNS = ['a7', 'h7'];
+function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
+  const pieceKey = `${color}${type.toUpperCase()}`;
+  return (
+    <img
+      src={`/pieces/cburnett/${pieceKey}.svg`}
+      alt=""
+      className="w-full h-full"
+      draggable={false}
+      style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}
+    />
+  );
+}
 
 const LEVELS: { id: Difficulty; label: string; description: string; color: string; stars: number }[] = [
   { id: 'easy', label: 'Лёгкий', description: 'Чёрные часто ошибаются', color: 'bg-green-500', stars: 1 },
   { id: 'medium', label: 'Средний', description: 'Чёрные иногда ошибаются', color: 'bg-yellow-500', stars: 2 },
   { id: 'hard', label: 'Продвинутый', description: 'Чёрные почти не ошибаются', color: 'bg-red-500', stars: 3 },
 ];
+
+const START_W_KING = 'e1';
+const START_B_KING = 'e8';
+const START_W_PAWNS = ['a3', 'h3'];
+const START_B_PAWNS = ['a7', 'h7'];
 
 export default function ChessFootballBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
   const savedKey = lessonId ? `football_progress_${lessonId}` : 'football_progress';
@@ -309,6 +244,11 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [validSquares, setValidSquares] = useState<string[]>([]);
   const [positionHistory, setPositionHistory] = useState<string[]>([]);
+  const [sqSize, setSqSize] = useState(44);
+
+  const [dragPiece, setDragPiece] = useState<{ square: string; type: string; color: string } | null>(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const pointerStartRef = useRef<{ x: number; y: number; square: string; moved: boolean; pointerId: number } | null>(null);
 
   const turnRef = useRef(turn);
   const winnerRef = useRef(winner);
@@ -321,6 +261,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const validSquaresRef = useRef(validSquares);
   const mountedRef = useRef(true);
   const positionHistoryRef = useRef(positionHistory);
+  const clickRef = useRef<(square: string) => void>(() => {});
+  const onCompleteRef = useRef(onComplete);
 
   useEffect(() => { turnRef.current = turn; }, [turn]);
   useEffect(() => { winnerRef.current = winner; }, [winner]);
@@ -332,7 +274,22 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   useEffect(() => { selectedSquareRef.current = selectedSquare; }, [selectedSquare]);
   useEffect(() => { validSquaresRef.current = validSquares; }, [validSquares]);
   useEffect(() => { positionHistoryRef.current = positionHistory; }, [positionHistory]);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   useEffect(() => () => { mountedRef.current = false; }, []);
+
+  useEffect(() => {
+    const update = () => {
+      const isMobile = window.innerWidth < 1024;
+      if (isMobile) {
+        setSqSize(Math.min(64, Math.max(36, Math.floor((window.innerWidth - 24) / 8))));
+      } else {
+        setSqSize(Math.min(64, Math.max(48, Math.floor((window.innerWidth - 340) / 8))));
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   const reset = useCallback(() => {
     setWKing(START_W_KING);
@@ -357,7 +314,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     reset();
   }, [reset]);
 
-  // Check for draw by 3-fold repetition
   const checkRepetition = useCallback((history: string[]): boolean => {
     if (history.length < 6) return false;
     const current = history[history.length - 1];
@@ -365,10 +321,59 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     for (let i = 0; i < history.length - 1; i++) {
       if (history[i] === current) count++;
     }
-    return count >= 2; // 3 times total (including current)
+    return count >= 2;
   }, []);
 
-  // Computer move (black) - auto after 1 second
+  const doMove = useCallback((to: string) => {
+    const newWKing = to;
+    setWKing(newWKing);
+    wKingRef.current = newWKing;
+
+    let newWScore = wScoreRef.current;
+    if (RANKS.indexOf(newWKing[1]) === 7) {
+      newWScore += 1;
+      setWScore(newWScore);
+      wScoreRef.current = newWScore;
+    }
+
+    const newHistory = [...positionHistoryRef.current, `${newWKing}-${bKingRef.current}`];
+    setPositionHistory(newHistory);
+    positionHistoryRef.current = newHistory;
+
+    if (newWScore >= 3) {
+      setWinner('Белые победили!');
+      setSelectedSquare(null);
+      setValidSquares([]);
+      selectedSquareRef.current = null;
+
+      if (difficultyRef.current) {
+        const d = difficultyRef.current;
+        setCompletedLevels(prev => {
+          if (prev[d]) return prev;
+          const next = { ...prev, [d]: true };
+          if (savedKey) localStorage.setItem(savedKey, JSON.stringify(next));
+          return next;
+        });
+        onCompleteRef.current();
+      }
+      return;
+    }
+
+    if (checkRepetition(newHistory)) {
+      setWinner('Ничья');
+      setSelectedSquare(null);
+      setValidSquares([]);
+      selectedSquareRef.current = null;
+      return;
+    }
+
+    setTurn('b');
+    turnRef.current = 'b';
+    setSelectedSquare(null);
+    setValidSquares([]);
+    selectedSquareRef.current = null;
+  }, [savedKey, checkRepetition]);
+
   useEffect(() => {
     if (winnerRef.current || turnRef.current !== 'b' || !difficultyRef.current) return;
     setComputerThinking(true);
@@ -393,12 +398,10 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         return;
       }
 
-      // Move black king
       const newBKing = chosen.to;
       setBKing(newBKing);
       bKingRef.current = newBKing;
 
-      // Check goal for black
       let newBScore = bScoreRef.current;
       if (RANKS.indexOf(newBKing[1]) === 0) {
         newBScore += 1;
@@ -406,19 +409,16 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         bScoreRef.current = newBScore;
       }
 
-      // Update position history
       const newHistory = [...positionHistoryRef.current, `${wKingRef.current}-${newBKing}`];
       setPositionHistory(newHistory);
       positionHistoryRef.current = newHistory;
 
-      // Check win
       if (newBScore >= 3) {
         setWinner('Чёрные победили!');
         setComputerThinking(false);
         return;
       }
 
-      // Check draw by repetition
       if (checkRepetition(newHistory)) {
         setWinner('Ничья');
         setComputerThinking(false);
@@ -431,9 +431,8 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [wPawns, bPawns, checkRepetition]);
+  }, [turn, winner, wPawns, bPawns, checkRepetition, savedKey]);
 
-  // Click logic for white king
   const click = useCallback((square: string) => {
     if (winnerRef.current) return;
     if (turnRef.current !== 'w') return;
@@ -442,211 +441,135 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
 
     if (sel) {
       if (sel === square) {
-        selectedSquareRef.current = null;
         setSelectedSquare(null);
         setValidSquares([]);
+        selectedSquareRef.current = null;
         return;
       }
 
       if (validSquaresRef.current.includes(square)) {
-        // Move white king
-        const newWKing = square;
-        setWKing(newWKing);
-        wKingRef.current = newWKing;
+        doMove(square);
+        return;
+      }
+    }
 
-        // Check goal for white
-        let newWScore = wScoreRef.current;
-        if (RANKS.indexOf(newWKing[1]) === 7) {
-          newWScore += 1;
-          setWScore(newWScore);
-          wScoreRef.current = newWScore;
-        }
+    if (square === wKingRef.current) {
+      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      setSelectedSquare(square);
+      setValidSquares(moves);
+      selectedSquareRef.current = square;
+      validSquaresRef.current = moves;
+    } else {
+      setSelectedSquare(null);
+      setValidSquares([]);
+      selectedSquareRef.current = null;
+    }
+  }, [wPawns, bPawns, doMove]);
 
-        // Update position history
-        const newHistory = [...positionHistoryRef.current, `${newWKing}-${bKingRef.current}`];
-        setPositionHistory(newHistory);
-        positionHistoryRef.current = newHistory;
+  useEffect(() => { clickRef.current = click; }, [click]);
 
-        // Check win
-        if (newWScore >= 3) {
-          setWinner('Белые победили!');
-          setSelectedSquare(null);
-          setValidSquares([]);
-          selectedSquareRef.current = null;
+  const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
+    if (winnerRef.current) return;
+    if (turnRef.current !== 'w') return;
+    if (e.pointerType === 'touch' && e.isPrimary === false) return;
+    e.preventDefault();
 
-          if (difficultyRef.current) {
-            const d = difficultyRef.current;
-            setCompletedLevels(prev => {
-              if (prev[d]) return prev;
-              const next = { ...prev, [d]: true };
-              if (savedKey) localStorage.setItem(savedKey, JSON.stringify(next));
-              return next;
-            });
-            onComplete();
+    if (square === wKingRef.current) {
+      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+      setSelectedSquare(square);
+      setValidSquares(moves);
+      pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
+    } else {
+      if (selectedSquareRef.current && validSquaresRef.current.includes(square)) {
+        clickRef.current(square);
+      } else {
+        setSelectedSquare(null);
+        setValidSquares([]);
+      }
+    }
+  }, [wPawns, bPawns]);
+
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+        start.moved = true;
+        setDragPiece({ square: start.square, type: 'k', color: 'w' });
+        setSelectedSquare(null);
+      }
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      if (!start.moved) {
+        clickRef.current(start.square);
+      } else {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el?.closest('[data-square]') as HTMLElement | null;
+        const targetSquare = cell?.dataset.square || null;
+        if (targetSquare) {
+          const valid = getKingMoves(start.square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
+          if (valid.includes(targetSquare)) {
+            doMove(targetSquare);
+          } else {
+            setSelectedSquare(null);
+            setValidSquares([]);
+            selectedSquareRef.current = null;
           }
-          return;
-        }
-
-        // Check draw by repetition
-        if (checkRepetition(newHistory)) {
-          setWinner('Ничья');
+        } else {
           setSelectedSquare(null);
           setValidSquares([]);
           selectedSquareRef.current = null;
-          return;
         }
-
-        setTurn('b');
-        turnRef.current = 'b';
-        setSelectedSquare(null);
-        setValidSquares([]);
-        selectedSquareRef.current = null;
-        return;
       }
-    }
+      setDragPiece(null);
+      pointerStartRef.current = null;
+    };
 
-    // Select white king
-    if (square === wKingRef.current) {
-      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      selectedSquareRef.current = square;
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      validSquaresRef.current = moves;
-    } else {
-      selectedSquareRef.current = null;
-      setSelectedSquare(null);
-      setValidSquares([]);
-    }
-  }, [wPawns, bPawns, savedKey, onComplete, checkRepetition]);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (winnerRef.current || turnRef.current !== 'w') return;
-    const target = e.target as HTMLElement;
-    const squareEl = target.closest('[data-square]');
-    if (!squareEl) return;
-    const square = (squareEl as HTMLElement).dataset.square!;
-
-    if (square === wKingRef.current) {
-      const moves = getKingMoves(square, 'w', wKingRef.current, bKingRef.current, wPawns, bPawns);
-      selectedSquareRef.current = square;
-      setSelectedSquare(square);
-      setValidSquares(moves);
-      validSquaresRef.current = moves;
-    } else if (selectedSquareRef.current && validSquaresRef.current.includes(square)) {
-      // Move white king
-      const newWKing = square;
-      setWKing(newWKing);
-      wKingRef.current = newWKing;
-
-      let newWScore = wScoreRef.current;
-      if (RANKS.indexOf(newWKing[1]) === 7) {
-        newWScore += 1;
-        setWScore(newWScore);
-        wScoreRef.current = newWScore;
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        pointerStartRef.current = null;
       }
+    };
 
-      const newHistory = [...positionHistoryRef.current, `${newWKing}-${bKingRef.current}`];
-      setPositionHistory(newHistory);
-      positionHistoryRef.current = newHistory;
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
+    };
+  }, [wPawns, bPawns, doMove]);
 
-      if (newWScore >= 3) {
-        setWinner('Белые победили!');
-        setSelectedSquare(null);
-        setValidSquares([]);
-        selectedSquareRef.current = null;
-
-        if (difficultyRef.current) {
-          const d = difficultyRef.current;
-          setCompletedLevels(prev => {
-            if (prev[d]) return prev;
-            const next = { ...prev, [d]: true };
-            if (savedKey) localStorage.setItem(savedKey, JSON.stringify(next));
-            return next;
-          });
-          onComplete();
-        }
-        return;
-      }
-
-      if (checkRepetition(newHistory)) {
-        setWinner('Ничья');
-        setSelectedSquare(null);
-        setValidSquares([]);
-        selectedSquareRef.current = null;
-        return;
-      }
-
-      setTurn('b');
-      turnRef.current = 'b';
-      setSelectedSquare(null);
-      setValidSquares([]);
-      selectedSquareRef.current = null;
-    } else {
-      selectedSquareRef.current = null;
-      setSelectedSquare(null);
-      setValidSquares([]);
-    }
-  }, [wPawns, bPawns, savedKey, onComplete, checkRepetition]);
-
-  // Render pieces
-  const renderPieces = () => {
-    const elements: React.ReactElement[] = [];
-
-    // White king
-    const wCenter = getSquareCenter(wKing);
-    elements.push(
-      <div
-        key="wK"
-        style={{ position: 'absolute', left: wCenter.x - 22.5, top: wCenter.y - 22.5, zIndex: 2, cursor: 'pointer' }}
-        data-square={wKing}
-        onPointerDown={handlePointerDown}
-      >
-        <PieceImage type="k" color="w" />
-      </div>
-    );
-
-    // Black king
-    const bCenter = getSquareCenter(bKing);
-    elements.push(
-      <div
-        key="bK"
-        style={{ position: 'absolute', left: bCenter.x - 22.5, top: bCenter.y - 22.5, zIndex: 2 }}
-        data-square={bKing}
-      >
-        <PieceImage type="k" color="b" />
-      </div>
-    );
-
-    // White pawns
-    for (const sq of wPawns) {
-      const center = getSquareCenter(sq);
-      elements.push(
-        <div
-          key={`wP-${sq}`}
-          style={{ position: 'absolute', left: center.x - 22.5, top: center.y - 22.5, zIndex: 1 }}
-        >
-          <PieceImage type="p" color="w" />
-        </div>
-      );
-    }
-
-    // Black pawns
-    for (const sq of bPawns) {
-      const center = getSquareCenter(sq);
-      elements.push(
-        <div
-          key={`bP-${sq}`}
-          style={{ position: 'absolute', left: center.x - 22.5, top: center.y - 22.5, zIndex: 1 }}
-        >
-          <PieceImage type="p" color="b" />
-        </div>
-      );
-    }
-
-    return elements;
+  const getPieceAt = (sq: string) => {
+    if (wKing === sq) return { type: 'k', color: 'w' as Color };
+    if (bKing === sq) return { type: 'k', color: 'b' as Color };
+    if (wPawns.includes(sq)) return { type: 'p', color: 'w' as Color };
+    if (bPawns.includes(sq)) return { type: 'p', color: 'b' as Color };
+    return null;
   };
 
+  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
+
+  const validMoves = selectedSquare
+    ? getKingMoves(selectedSquare, 'w', wKing, bKing, wPawns, bPawns)
+    : dragPiece
+      ? getKingMoves(dragPiece.square, 'w', wKing, bKing, wPawns, bPawns)
+      : [];
+
   if (!difficulty) {
+    const allCompleted = LEVELS.every(l => completedLevels[l.id]);
     return (
       <div className="flex flex-col items-center gap-6 py-8">
         <div className="text-center">
@@ -669,11 +592,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm ${lvl.color}`}>
-                  {isDone ? (
-                    <Trophy className="w-5 h-5" />
-                  ) : (
-                    idx + 1
-                  )}
+                  {isDone ? <Trophy className="w-5 h-5" /> : idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{lvl.label}</div>
@@ -684,26 +603,31 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
             );
           })}
         </div>
+        {allCompleted && (
+          <div className="mt-4 px-6 py-3 bg-green-100 border border-green-300 rounded-xl text-green-800 font-bold flex items-center gap-2">
+            <Trophy size={20} /> Все уровни пройдены!
+          </div>
+        )}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
       {/* Score */}
       <div className="flex items-center gap-4 text-lg font-bold">
         <div className="flex items-center gap-2">
-          <PieceImage type="k" color="w" size={24} />
+          <img src="/pieces/cburnett/wK.svg" alt="" width={24} height={24} draggable={false} />
           <span>{wScore}</span>
         </div>
         <span className="text-slate-400">:</span>
         <div className="flex items-center gap-2">
           <span>{bScore}</span>
-          <PieceImage type="k" color="b" size={24} />
+          <img src="/pieces/cburnett/bK.svg" alt="" width={24} height={24} draggable={false} />
         </div>
       </div>
 
-      {/* Difficulty label */}
+      {/* Difficulty */}
       <div className="flex items-center gap-2">
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full text-white ${LEVELS.find(l => l.id === difficulty)?.color}`}>
           {LEVELS.find(l => l.id === difficulty)?.label}
@@ -713,65 +637,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         )}
       </div>
 
-      {/* Board */}
-      <div className="relative" style={{ width: '400px', height: '400px' }}>
-        <div className="absolute left-[25px] top-0">
-          <BoardBackground />
-        </div>
-        <RankLabels />
-        <div className="absolute left-[25px] top-0" style={{ width: '400px', height: '400px' }}>
-          {renderPieces()}
-        </div>
-
-        {/* Valid move indicators */}
-        {validSquares.map(sq => {
-          const center = getSquareCenter(sq);
-          return (
-            <div
-              key={`valid-${sq}`}
-              style={{
-                position: 'absolute',
-                left: center.x + 25 - 6,
-                top: center.y + 25 - 6,
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                pointerEvents: 'none',
-                zIndex: 3,
-              }}
-            />
-          );
-        })}
-
-        {/* Selected square highlight */}
-        {selectedSquare && (() => {
-          const center = getSquareCenter(selectedSquare);
-          return (
-            <div
-              style={{
-                position: 'absolute',
-                left: center.x + 25 - 25,
-                top: center.y + 25 - 25,
-                width: '50px',
-                height: '50px',
-                backgroundColor: 'rgba(123, 182, 72, 0.4)',
-                pointerEvents: 'none',
-                zIndex: 1,
-              }}
-            />
-          );
-        })()}
-      </div>
-      <FileLabels />
-
-      {/* Goal indicators */}
-      <div className="flex justify-between w-[400px] px-8 text-xs text-slate-500">
-        <span>Гол чёрных ↓</span>
-        <span>↑ Гол белых</span>
+      {/* Turn */}
+      <div className={`text-sm font-bold ${turn === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
+        {computerThinking ? 'Ход компьютера...' : 'Ваш ход'}
       </div>
 
-      {/* Result banner */}
+      {/* Winner */}
       {winner && (
         <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
           winner === 'Белые победили!' ? 'bg-green-500' : winner === 'Чёрные победили!' ? 'bg-red-500' : 'bg-yellow-500'
@@ -782,6 +653,99 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
           </div>
         </div>
       )}
+
+      {/* Board */}
+      <div className="flex justify-center w-full">
+        <div
+          className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
+          style={{
+            gridTemplateColumns: `repeat(8, ${sqSize}px)`,
+            gridTemplateRows: `repeat(8, ${sqSize}px)`,
+            touchAction: 'none',
+          }}
+        >
+          {DISPLAY_RANKS.map((rank, ri) =>
+            FILES.map((file, fi) => {
+              const sq = `${file}${rank}`;
+              const pieceObj = getPieceAt(sq);
+              const light = isLight(fi, ri);
+              const sel = selectedSquare === sq;
+              const isSource = dragPiece?.square === sq;
+              const isValidMove = validMoves.includes(sq);
+
+              return (
+                <div
+                  key={sq}
+                  data-square={sq}
+                  className={`flex items-center justify-center relative select-none ${isSource ? 'opacity-50' : ''}`}
+                  style={{
+                    width: sqSize,
+                    height: sqSize,
+                    cursor: pieceObj && pieceObj.color === 'w' ? 'grab' : 'default',
+                    touchAction: 'none',
+                    backgroundColor: light ? '#f0d9b5' : '#b58863',
+                  }}
+                  onPointerDown={(e) => handlePointerDown(e, sq)}
+                  onDragStart={(e) => e.preventDefault()}
+                >
+                  {sel && (
+                    <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                  )}
+                  {fi === 0 && (
+                    <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                      {rank}
+                    </span>
+                  )}
+                  {ri === 7 && (
+                    <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                      {file}
+                    </span>
+                  )}
+                  {isValidMove && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <div
+                        style={{
+                          width: Math.round(sqSize * 0.3),
+                          height: Math.round(sqSize * 0.3),
+                          backgroundColor: '#5d9040',
+                          borderRadius: '50%',
+                          opacity: 0.85,
+                        }}
+                      />
+                    </div>
+                  )}
+                  {pieceObj && !isSource && (
+                    <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <PieceImg type={pieceObj.type} color={pieceObj.color} />
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Drag overlay */}
+      {dragPiece && (
+        <div
+          className="fixed pointer-events-none z-50"
+          style={{
+            left: dragPos.x - Math.round(sqSize / 2),
+            top: dragPos.y - Math.round(sqSize / 2),
+            width: Math.round(sqSize * 0.85),
+            height: Math.round(sqSize * 0.85),
+          }}
+        >
+          <PieceImg type={dragPiece.type} color={dragPiece.color as 'w' | 'b'} />
+        </div>
+      )}
+
+      {/* Goal indicators */}
+      <div className="flex justify-between w-full max-w-sm px-4 text-xs text-slate-500">
+        <span>Гол чёрных ↓</span>
+        <span>↑ Гол белых</span>
+      </div>
 
       {/* Controls */}
       <div className="flex gap-3">
