@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3;
+type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface Exercise {
   id: ExerciseId;
@@ -18,6 +18,7 @@ interface Exercise {
   demoMoves: { from: string; to: string; comment: string }[];
   minMoves3: number;
   minMoves2: number;
+  matIn1?: boolean;
 }
 
 const EXERCISES: Exercise[] = [
@@ -118,6 +119,54 @@ const EXERCISES: Exercise[] = [
     ],
     minMoves3: 14,
     minMoves2: 16,
+  },
+  {
+    id: 4,
+    label: 'Упражнение 4',
+    description: 'Мат в 1 ход — белый ферзь на g7',
+    fen: '3k4/6Q1/3K4/8/8/8/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'g7', to: 'd7', comment: 'Мат!' },
+    ],
+    minMoves3: 1,
+    minMoves2: 1,
+    matIn1: true,
+  },
+  {
+    id: 5,
+    label: 'Упражнение 5',
+    description: 'Мат в 1 ход — белый ферзь на e7',
+    fen: '8/4Q3/8/8/k7/2K5/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'e7', to: 'b4', comment: 'Мат!' },
+    ],
+    minMoves3: 1,
+    minMoves2: 1,
+    matIn1: true,
+  },
+  {
+    id: 6,
+    label: 'Упражнение 6',
+    description: 'Мат в 1 ход — белый ферзь на f5',
+    fen: '8/8/8/5Q2/8/2K5/8/3k4 w - - 0 1',
+    demoMoves: [
+      { from: 'f5', to: 'f1', comment: 'Мат!' },
+    ],
+    minMoves3: 1,
+    minMoves2: 1,
+    matIn1: true,
+  },
+  {
+    id: 7,
+    label: 'Упражнение 7',
+    description: 'Мат в 1 ход — белый ферзь на c7',
+    fen: '8/2Q5/8/5K2/7k/8/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'c7', to: 'h2', comment: 'Мат!' },
+    ],
+    minMoves3: 1,
+    minMoves2: 1,
+    matIn1: true,
   },
 ];
 
@@ -259,6 +308,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   const pointerStartRef = useRef<PointerStart | null>(null);
   const isCompleteRef = useRef(false);
   const demoModeRef = useRef(false);
+  const isStalemateRef = useRef(false);
   const mountedRef = useRef(true);
 
   const storageKey = lessonId ? `queenmate_progress_${lessonId}` : 'queenmate_progress';
@@ -266,6 +316,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
+  useEffect(() => { isStalemateRef.current = isStalemate; }, [isStalemate]);
 
   useEffect(() => {
     try {
@@ -399,6 +450,8 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
       }
 
       // Black's turn — AI move
+      const ex = EXERCISES.find(e => e.id === currentExercise)!;
+      const delayMs = ex.matIn1 ? 1000 : 500;
       setTimeout(() => {
         if (!mountedRef.current) return;
         const blackMove = getBlackKingMove(g);
@@ -413,6 +466,9 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             setIsComplete(true);
             saveStars(currentExercise, earned);
             onComplete();
+          } else if (ex.matIn1) {
+            setIsStalemate(true);
+            setMessage('Пат. Ещё раз. Провалено.');
           }
         } else {
           if (g.isCheckmate()) {
@@ -425,11 +481,14 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Ещё раз. Провалено.');
+          } else if (ex.matIn1) {
+            setIsStalemate(true);
+            setMessage('Пат. Ещё раз. Провалено.');
           } else {
             setMessage('Ничья! Начните заново.');
           }
         }
-      }, 500);
+      }, delayMs);
     } catch {
       // Invalid move
     }
@@ -439,7 +498,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   // CLICK HANDLER
   // ═══════════════════════════════════════════════════════════════
   const handleSquareClick = useCallback((square: string) => {
-    if (demoModeRef.current || isCompleteRef.current) return;
+    if (demoModeRef.current || isCompleteRef.current || isStalemateRef.current) return;
     if (!game) return;
     const g = game;
     if (g.turn() !== 'w') return;
@@ -620,7 +679,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         {isStalemate && (
           <div className="w-full max-w-sm">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">Пат. Провалено.</p>
+              <p className="text-white font-bold text-lg">Пат. Ещё раз. Провалено.</p>
               <button
                 onClick={reset}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
