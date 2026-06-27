@@ -23,6 +23,7 @@ export async function getCourseWithModules(id: string) {
     .from('courses')
     .select('*')
     .eq('id', id)
+    .eq('is_published', true)
     .single();
   if (courseError) throw courseError;
 
@@ -42,6 +43,7 @@ export async function getCourseWithModules(id: string) {
 
 export async function getLesson(id: string) {
   const supabase = await createClient();
+  let lesson: any = null;
   if (isUUID(id)) {
     const { data, error } = await supabase
       .from('lessons')
@@ -49,7 +51,7 @@ export async function getLesson(id: string) {
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data;
+    lesson = data;
   } else {
     const order = parseInt(id, 10);
     if (isNaN(order)) return null;
@@ -59,8 +61,18 @@ export async function getLesson(id: string) {
       .eq('"order"', order)
       .single();
     if (error) throw error;
-    return data;
+    lesson = data;
   }
+  // Security: ensure the course is published before returning the lesson
+  if (lesson?.course_id) {
+    const { data: course } = await supabase
+      .from('courses')
+      .select('is_published')
+      .eq('id', lesson.course_id)
+      .single();
+    if (!course?.is_published) return null;
+  }
+  return lesson;
 }
 
 export async function getCourseLessons(courseId: string) {
@@ -82,31 +94,6 @@ export async function getUserProgress(userId: string, courseId: string) {
     .eq('user_id', userId);
   if (error) throw error;
   return data || [];
-}
-
-export async function markLessonComplete(userId: string, lessonId: string) {
-  const supabase = await createClient();
-
-  // Ensure profile exists (FK on lesson_progress requires it)
-  const { error: profileError } = await supabase
-    .from('profiles')
-    .upsert({ id: userId, display_name: 'User' }, { onConflict: 'id' });
-  if (profileError) {
-    console.error('Profile upsert error (non-blocking):', profileError.message);
-  }
-
-  const { error } = await supabase
-    .from('lesson_progress')
-    .upsert({
-      user_id: userId,
-      lesson_id: lessonId,
-      is_completed: true,
-      completed_at: new Date().toISOString(),
-    });
-  if (error) {
-    console.error('markLessonComplete error:', error.message, error.details);
-    throw error;
-  }
 }
 
 /** Auth-safe version — userId taken from session, never from client params. */

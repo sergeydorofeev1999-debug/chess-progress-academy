@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getLesson, getCourseLessons, markLessonComplete } from '@/lib/data';
+import { getLesson, getCourseLessons } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import LessonClient from '@/components/LessonClient';
 
