@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3 | 4;
+type ExerciseId = 1 | 2 | 3 | 4 | 5;
 
 interface Exercise {
   id: ExerciseId;
@@ -19,6 +19,7 @@ interface Exercise {
   minMoves3: number;
   minMoves2: number;
   matIn1?: boolean;
+  matIn2?: boolean;
 }
 
 const EXERCISES: Exercise[] = [
@@ -82,6 +83,20 @@ const EXERCISES: Exercise[] = [
     minMoves3: 1,
     minMoves2: 1,
     matIn1: true,
+  },
+  {
+    id: 5,
+    label: 'Упражнение 5',
+    description: 'Мат в 2 хода — белая ладья c7, короли b6 и b8',
+    fen: '1k6/2R5/1K6/8/8/8/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'c7', to: 'c6', comment: 'Ладья даёт шах!' },
+      { from: 'b8', to: 'a8', comment: 'Чёрный король отступает' },
+      { from: 'c6', to: 'c8', comment: 'Мат!' },
+    ],
+    minMoves3: 2,
+    minMoves2: 2,
+    matIn2: true,
   },
 ];
 
@@ -382,7 +397,11 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           } else if (ex.matIn1) {
             setIsStalemate(true);
             setMessage('Провалено');
+          } else if (ex.matIn2 && nextWhiteMoves >= 2) {
+            setIsStalemate(true);
+            setMessage('Провалено');
           }
+          // For matIn2 with nextWhiteMoves === 1: do nothing, wait for 2nd white move
         } else {
           if (g.isCheckmate()) {
             const earned = calcStars(ex, nextWhiteMoves);
@@ -393,9 +412,11 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Провалено.');
-          } else if (ex.matIn1) {
+          } else if (ex.matIn1 || (ex.matIn2 && nextWhiteMoves >= 2)) {
             setIsStalemate(true);
             setMessage('Провалено');
+          } else if (ex.matIn2) {
+            // matIn2, black has no legal move after 1st white move — wait for white's 2nd move
           } else {
             setMessage('Ничья! Начните заново.');
           }
