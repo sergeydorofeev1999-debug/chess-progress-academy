@@ -696,7 +696,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           </div>
         )}
 
-        <div className="text-center font-bold text-white text-lg">
+        <div className="text-center font-bold text-slate-700 text-lg">
           {demoMode ? 'Демонстрация...' : turnText}
         </div>
 
