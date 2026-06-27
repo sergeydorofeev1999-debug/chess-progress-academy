@@ -1174,24 +1174,21 @@ function MultiLevelStarBoard({
                 const name = cfg?.pieceName || l.title;
                 const isActive = l.id === currentLessonId;
                 return (
-                  <div
+                  <Link
                     key={l.id}
-                    onClick={() => {
-                      if (!isActive && courseId) {
-                        router.push(`/lessons/${l.id}?course=${courseId}`);
-                      }
-                    }}
+                    href={isActive ? '#' : `/lessons/${l.id}?course=${courseId}`}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`flex items-center gap-2 px-2 py-1.5 text-xs ${
                       isActive
-                        ? 'bg-blue-50 text-blue-900 font-semibold'
+                        ? 'bg-blue-50 text-blue-900 font-semibold pointer-events-none'
                         : i % 2 === 0
-                          ? 'bg-white text-gray-600 cursor-pointer hover:bg-gray-100'
-                          : 'bg-gray-50 text-gray-600 cursor-pointer hover:bg-gray-100'
+                          ? 'bg-white text-gray-600 hover:bg-gray-100'
+                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                     }`}
                   >
                     <img src={`/pieces/cburnett/${code}.svg`} className="w-5 h-5" draggable={false} alt="" />
                     <span>{name}</span>
-                  </div>
+                  </Link>
                 );
               })}
           </div>
@@ -1375,6 +1372,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   const supabase = useMemo(() => createClient(), []);
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
   const [isCompletionSaving, setIsCompletionSaving] = useState(false);
+  const [completionError, setCompletionError] = useState('');
 
   useEffect(() => {
     if (!isCompleted && typeof window !== 'undefined') {
@@ -1399,6 +1397,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
     if (isCompleted || isCompletionSaving) return;
 
     setIsCompletionSaving(true);
+    setCompletionError('');
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
@@ -1424,7 +1423,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       setIsCompleted(true);
     } catch (error) {
       console.error('Failed to mark lesson complete:', error);
-      try { localStorage.setItem(`lesson_completed_${lesson.id}`, 'true'); } catch {}
+      setCompletionError('Не удалось сохранить прогресс. Проверьте подключение и попробуйте ещё раз.');
     } finally {
       setIsCompletionSaving(false);
     }
@@ -1570,6 +1569,12 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       {isCompletionSaving && (
         <div className="mb-4 rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-600">
           Сохраняем прогресс...
+        </div>
+      )}
+
+      {completionError && (
+        <div role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+          {completionError}
         </div>
       )}
 

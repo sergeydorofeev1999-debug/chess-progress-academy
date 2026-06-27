@@ -78,13 +78,19 @@ export default function Navbar({ isAdmin }: NavbarProps) {
           )}
         </div>
 
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
+        <button
+          className="md:hidden"
+          aria-label="Открыть меню"
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+          onClick={() => setOpen(!open)}
+        >
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-slate-700 px-4 py-3 space-y-2 text-sm">
+        <div id="mobile-menu" className="md:hidden border-t border-slate-700 px-4 py-3 space-y-2 text-sm">
           {navLinks.map(({ href, label, icon: Icon }) => (
             <Link key={href} href={href} className="flex items-center gap-2 py-1 hover:text-amber-400"
               onClick={() => setOpen(false)}>

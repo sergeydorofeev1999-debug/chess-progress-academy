@@ -3,6 +3,26 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+function getAuthErrorMessage(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('invalid login credentials')) {
+    return 'Неверный email или пароль';
+  }
+  if (normalized.includes('email not confirmed')) {
+    return 'Подтвердите email перед входом';
+  }
+  if (normalized.includes('user already registered') || normalized.includes('already registered')) {
+    return 'Пользователь с таким email уже зарегистрирован';
+  }
+  if (normalized.includes('password')) {
+    return 'Пароль должен быть не короче 6 символов';
+  }
+  if (normalized.includes('rate limit') || normalized.includes('too many')) {
+    return 'Слишком много попыток. Попробуйте позже';
+  }
+  return 'Не удалось выполнить вход. Попробуйте ещё раз';
+}
+
 export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +51,7 @@ export default function AuthPage() {
     if (isSignUp) {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
-        setMessage(error.message);
+        setMessage(getAuthErrorMessage(error.message));
         setMessageType('error');
       } else {
         setMessage('Проверьте почту для подтверждения регистрации');
@@ -40,7 +60,7 @@ export default function AuthPage() {
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        setMessage(error.message);
+        setMessage(getAuthErrorMessage(error.message));
         setMessageType('error');
       } else {
         window.location.href = '/dashboard';

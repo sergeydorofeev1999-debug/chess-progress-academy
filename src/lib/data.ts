@@ -79,7 +79,7 @@ export async function getCourseLessons(courseId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('lessons')
-    .select('*')
+    .select('id,title,"order",duration_minutes,video_url')
     .eq('course_id', courseId)
     .order('"order"');
   if (error) throw error;
@@ -90,10 +90,22 @@ export async function getUserProgress(courseId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Fetch lesson IDs for this course first
+  const { data: lessons, error: lessonsError } = await supabase
+    .from('lessons')
+    .select('id')
+    .eq('course_id', courseId);
+  if (lessonsError) throw lessonsError;
+
+  const lessonIds = (lessons || []).map((l: any) => l.id);
+  if (lessonIds.length === 0) return [];
+
   const { data, error } = await supabase
     .from('lesson_progress')
     .select('lesson_id, is_completed')
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .in('lesson_id', lessonIds);
   if (error) throw error;
   return data || [];
 }
