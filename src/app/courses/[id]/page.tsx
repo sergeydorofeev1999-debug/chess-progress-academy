@@ -15,7 +15,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
 
   let serverProgressMap: Record<string, boolean> = {};
   if (user) {
-    const progress = await getUserProgress(user.id, id);
+    const progress = await getUserProgress(id);
     progress.forEach((p: any) => {
       serverProgressMap[p.lesson_id] = p.is_completed;
     });
@@ -57,7 +57,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
         <p className="text-slate-600 mb-4">{course.description}</p>
-        <CourseProgress totalLessons={totalLessons} serverProgressMap={serverProgressMap} allLessons={allLessons} />
+        <CourseProgress totalLessons={totalLessons} serverProgressMap={serverProgressMap} />
       </div>
 
       <div className="space-y-6">

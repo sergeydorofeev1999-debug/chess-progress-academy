@@ -5,7 +5,11 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Menu, X, Home, BookOpen, LayoutDashboard, Settings, LogIn, LogOut } from 'lucide-react';
 
-export default function Navbar() {
+interface NavbarProps {
+  isAdmin: boolean;
+}
+
+export default function Navbar({ isAdmin }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -52,9 +56,11 @@ export default function Navbar() {
               <Link href="/dashboard" className="hover:text-amber-400 transition">
                 Кабинет
               </Link>
-              <Link href="/admin" className="hover:text-amber-400 transition">
-                Админ
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="hover:text-amber-400 transition">
+                  Админ
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1 text-slate-400 hover:text-white transition"
@@ -91,10 +97,12 @@ export default function Navbar() {
                 onClick={() => setOpen(false)}>
                 <LayoutDashboard size={16} /> Кабинет
               </Link>
-              <Link href="/admin" className="flex items-center gap-2 py-1 hover:text-amber-400"
-                onClick={() => setOpen(false)}>
-                <Settings size={16} /> Админ
-              </Link>
+              {isAdmin && (
+                <Link href="/admin" className="flex items-center gap-2 py-1 hover:text-amber-400"
+                  onClick={() => setOpen(false)}>
+                  <Settings size={16} /> Админ
+                </Link>
+              )}
               <button onClick={handleLogout} className="flex items-center gap-2 py-1 text-slate-400">
                 <LogOut size={16} /> Выйти
               </button>

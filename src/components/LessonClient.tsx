@@ -28,12 +28,17 @@ interface Lesson {
   course_id: string;
 }
 
+interface LessonNav {
+  id: string;
+  title: string;
+  order: number;
+}
+
 interface Props {
   lesson: Lesson;
-  allLessons: Lesson[];
+  allLessons: LessonNav[];
   courseId: string;
   isCompletedInit: boolean;
-  userId: string | null;
 }
 
 function parseInteractiveConfig(videoUrl: string | null | object) {
@@ -1366,7 +1371,7 @@ function MultiLevelStarBoard({
 // ═══════════════════════════════════════════════════════════════════════════════
 // LessonClient — main component
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
+export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const [isCompleted, setIsCompleted] = useState(isCompletedInit);
   const [isCompletionSaving, setIsCompletionSaving] = useState(false);

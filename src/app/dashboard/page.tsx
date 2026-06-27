@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getUserEnrollments, getUserProgress } from '@/lib/data';
+import { getCurrentUserEnrollments, getUserProgress } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { BookOpen, CheckCircle, Clock } from 'lucide-react';
 
@@ -19,8 +19,8 @@ export default async function DashboardPage() {
     );
   }
 
-  const enrollments = await getUserEnrollments(user.id);
-  const progress = await getUserProgress(user.id, '');
+  const enrollments = await getCurrentUserEnrollments();
+  const progress = await getUserProgress('');
   const completedLessons = progress.filter((p: any) => p.is_completed).length;
 
   return (

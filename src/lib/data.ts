@@ -86,12 +86,14 @@ export async function getCourseLessons(courseId: string) {
   return data || [];
 }
 
-export async function getUserProgress(userId: string, courseId: string) {
+export async function getUserProgress(courseId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await supabase
     .from('lesson_progress')
     .select('lesson_id, is_completed')
-    .eq('user_id', userId);
+    .eq('user_id', user.id);
   if (error) throw error;
   return data || [];
 }
@@ -124,20 +126,24 @@ export async function markLessonCompleteAuth(lessonId: string) {
   }
 }
 
-export async function getUserEnrollments(userId: string) {
+export async function getCurrentUserEnrollments() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
   const { data, error } = await supabase
     .from('course_enrollments')
     .select('*, courses(*)')
-    .eq('user_id', userId);
+    .eq('user_id', user.id);
   if (error) throw error;
   return data || [];
 }
 
-export async function enrollUser(userId: string, courseId: string) {
+export async function enrollCurrentUser(courseId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
   const { error } = await supabase
     .from('course_enrollments')
-    .upsert({ user_id: userId, course_id: courseId });
+    .upsert({ user_id: user.id, course_id: courseId });
   if (error) throw error;
 }

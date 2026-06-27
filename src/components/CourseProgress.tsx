@@ -11,17 +11,16 @@ interface Lesson {
 interface Props {
   totalLessons: number;
   serverProgressMap: Record<string, boolean>;
-  allLessons: Lesson[];
 }
 
-export default function CourseProgress({ totalLessons, serverProgressMap, allLessons }: Props) {
+export default function CourseProgress({ totalLessons, serverProgressMap }: Props) {
   const [completedCount, setCompletedCount] = useState(
     () => Object.values(serverProgressMap).filter(Boolean).length
   );
 
   useEffect(() => {
     setCompletedCount(Object.values(serverProgressMap).filter(Boolean).length);
-  }, [allLessons, serverProgressMap]);
+  }, [serverProgressMap]);
 
   const percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 

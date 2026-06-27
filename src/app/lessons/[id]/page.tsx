@@ -19,7 +19,8 @@ export default async function LessonPage({
   const lesson = await getLesson(id);
   if (!lesson) return notFound();
 
-  const allLessons = await getCourseLessons(lesson.course_id);
+  const allLessonsRaw = await getCourseLessons(lesson.course_id);
+  const allLessons = allLessonsRaw.map(({ id, title, order }) => ({ id, title, order }));
 
   // Check auth
   const supabase = await createClient();
@@ -41,7 +42,6 @@ export default async function LessonPage({
       allLessons={allLessons}
       courseId={lesson.course_id}
       isCompletedInit={isCompleted}
-      userId={user?.id || null}
     />
   );
 }
