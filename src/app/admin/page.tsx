@@ -4,11 +4,6 @@ import AdminClient from './AdminClient';
 
 export const dynamic = 'force-dynamic';
 
-// Замените на ваши email'ы администраторов
-const ADMIN_EMAILS = [
-  'sergeydorofeev1999@gmail.com',
-];
-
 export default async function AdminPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,8 +12,14 @@ export default async function AdminPage() {
     redirect('/auth');
   }
 
-  // TODO: после миграции profiles.role переключить на проверку role === 'admin'
-  if (!ADMIN_EMAILS.includes(user.email ?? '')) {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (!profile) {
     notFound();
   }
 
