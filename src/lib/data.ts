@@ -109,6 +109,34 @@ export async function markLessonComplete(userId: string, lessonId: string) {
   }
 }
 
+/** Auth-safe version — userId taken from session, never from client params. */
+export async function markLessonCompleteAuth(lessonId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+  const userId = user.id;
+
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .upsert({ id: userId, display_name: 'User' }, { onConflict: 'id' });
+  if (profileError) {
+    console.error('Profile upsert error (non-blocking):', profileError.message);
+  }
+
+  const { error } = await supabase
+    .from('lesson_progress')
+    .upsert({
+      user_id: userId,
+      lesson_id: lessonId,
+      is_completed: true,
+      completed_at: new Date().toISOString(),
+    });
+  if (error) {
+    console.error('markLessonCompleteAuth error:', error.message, error.details);
+    throw error;
+  }
+}
+
 export async function getUserEnrollments(userId: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
