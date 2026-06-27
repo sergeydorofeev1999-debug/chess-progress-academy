@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3 | 4 | 5;
+type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface Exercise {
   id: ExerciseId;
@@ -93,6 +93,20 @@ const EXERCISES: Exercise[] = [
       { from: 'c7', to: 'c6', comment: 'Ладья даёт шах!' },
       { from: 'b8', to: 'a8', comment: 'Чёрный король отступает' },
       { from: 'c6', to: 'c8', comment: 'Мат!' },
+    ],
+    minMoves3: 2,
+    minMoves2: 2,
+    matIn2: true,
+  },
+  {
+    id: 6,
+    label: 'Упражнение 6',
+    description: 'Мат в 2 хода — белая ладья f6, короли f4 и h5',
+    fen: '8/8/5R2/7k/5K2/8/8/8 w - - 0 1',
+    demoMoves: [
+      { from: 'f6', to: 'e6', comment: 'Ладья готовит мат!' },
+      { from: 'h5', to: 'h4', comment: 'Чёрный король отступает' },
+      { from: 'e6', to: 'h6', comment: 'Мат!' },
     ],
     minMoves3: 2,
     minMoves2: 2,
