@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6;
+type ExerciseId = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface Exercise {
   id: ExerciseId;
@@ -20,6 +20,7 @@ interface Exercise {
   minMoves2: number;
   matIn1?: boolean;
   matIn2?: boolean;
+  timeLimit?: number; // seconds, timer starts after first white move
 }
 
 const EXERCISES: Exercise[] = [
@@ -112,6 +113,26 @@ const EXERCISES: Exercise[] = [
     minMoves2: 2,
     matIn2: true,
   },
+  {
+    id: 7,
+    label: 'Упражнение 7',
+    description: 'Мат за 1 минуту — белая ладья a1, король h1, чёрный король e5',
+    fen: '8/8/8/4k3/8/8/8/R6K w - - 0 1',
+    demoMoves: [
+      { from: 'a1', to: 'e1', comment: 'Ладья даёт шах!' },
+      { from: 'e5', to: 'd4', comment: 'Король отступает' },
+      { from: 'h1', to: 'h2', comment: 'Белый король приближается' },
+      { from: 'd4', to: 'c5', comment: 'Чёрный король бежит' },
+      { from: 'e1', to: 'd1', comment: 'Ладья давит' },
+      { from: 'c5', to: 'b4', comment: 'Чёрный король отступает' },
+      { from: 'h2', to: 'g3', comment: 'Белый король поддерживает' },
+      { from: 'b4', to: 'a5', comment: 'Король в угол' },
+      { from: 'd1', to: 'd7', comment: 'Мат!' },
+    ],
+    minMoves3: 10,
+    minMoves2: 12,
+    timeLimit: 60,
+  },
 ];
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
@@ -191,6 +212,7 @@ function getBlackKingMove(game: Chess): { from: string; to: string } | null {
 }
 
 function calcStars(ex: Exercise, whiteMoves: number): number {
+  if (ex.timeLimit) return 3;
   if (whiteMoves <= ex.minMoves3) return 3;
   if (whiteMoves <= ex.minMoves2) return 2;
   return 1;
@@ -244,6 +266,9 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
   const [whiteMoves, setWhiteMoves] = useState(0);
   const [isStalemate, setIsStalemate] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timerStarted, setTimerStarted] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isStalemateRef = useRef(false);
 
   // Drag state
@@ -260,6 +285,14 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
   useEffect(() => { isStalemateRef.current = isStalemate; }, [isStalemate]);
+
+  // Clear timer on game end
+  useEffect(() => {
+    if ((isComplete || isStalemate) && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, [isComplete, isStalemate]);
 
   useEffect(() => {
     try {
@@ -302,6 +335,10 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const switchExercise = useCallback((id: ExerciseId) => {
@@ -317,6 +354,10 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
     setIsComplete(false);
     setIsStalemate(false);
     setWhiteMoves(0);
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = null;
+    setTimerStarted(false);
+    setTimeLeft(null);
   }, [currentExercise]);
 
   const saveStars = useCallback((id: ExerciseId, stars: number) => {
@@ -373,6 +414,25 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
 
       const ex = EXERCISES.find(e => e.id === currentExercise)!;
 
+      // Start timer on first white move in exercises with timeLimit
+      if (ex.timeLimit && !timerStarted && nextWhiteMoves === 1) {
+        setTimeLeft(ex.timeLimit);
+        setTimerStarted(true);
+        timerIntervalRef.current = setInterval(() => {
+          setTimeLeft(prev => {
+            if (prev === null || prev <= 1) {
+              // Time's up — stop timer and show fail
+              if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+              timerIntervalRef.current = null;
+              setIsStalemate(true);
+              setMessage('Провалено');
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+
       if (g.isCheckmate()) {
         const earned = calcStars(ex, nextWhiteMoves);
         setMessage(`Мат чёрному королю! ${earned} ★`);
@@ -384,7 +444,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
 
       if (g.isStalemate()) {
         setIsStalemate(true);
-        setMessage('Пат. Провалено.');
+        setMessage(ex.timeLimit ? 'Пат. Провалено.' : 'Пат. Провалено.');
         return;
       }
 
@@ -636,9 +696,16 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           </div>
         )}
 
-        <div className={`text-sm font-bold ${game && game.turn() === 'w' ? 'text-blue-600' : 'text-slate-400'}`}>
+        <div className="text-center font-bold text-white text-lg">
           {demoMode ? 'Демонстрация...' : turnText}
         </div>
+
+        {/* Timer */}
+        {EXERCISES.find(e => e.id === currentExercise)?.timeLimit && timeLeft !== null && (
+          <div className={`text-center font-bold text-lg ${timeLeft <= 10 ? 'text-red-500' : 'text-white'}`}>
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </div>
+        )}
 
         {/* Stalemate / fail banner */}
         {isStalemate && (
