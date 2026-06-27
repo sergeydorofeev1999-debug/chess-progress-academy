@@ -423,6 +423,24 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           g.move({ from: blackMove.from, to: blackMove.to });
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
+
+          // If black king captured the white rook → instant fail
+          const squaresAfterBlack = g.board();
+          let rookExists = false;
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              const p = squaresAfterBlack[r][c];
+              if (p && p.type === 'r' && p.color === 'w') {
+                rookExists = true;
+              }
+            }
+          }
+          if (!rookExists) {
+            setIsStalemate(true);
+            setMessage('Провалено');
+            return;
+          }
+
           if (g.isCheckmate()) {
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
