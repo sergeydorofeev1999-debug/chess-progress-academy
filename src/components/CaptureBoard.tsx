@@ -1077,7 +1077,6 @@ export default function CaptureBoard({
             setPosition(fenAfterCapture);
             setFailed(true);
             setGameOver(true);
-            setMsg('Провалено');
             return false;
           }
         }
@@ -1150,8 +1149,8 @@ export default function CaptureBoard({
         setPosition(captureFen);
         setGameOver(true);
         setFailed(true);
-        setMsg('Провалено');
-        return false;
+        setMsg(`💀 ${bp.type === 'r' ? 'Ладья' : bp.type === 'b' ? 'Слон' : bp.type === 'q' ? 'Ферзь' : bp.type === 'n' ? 'Конь' : bp.type === 'p' ? 'Пешка' : 'Фигура'} съела ${wp.type === 'r' ? 'ладью' : wp.type === 'b' ? 'слона' : wp.type === 'q' ? 'ферзя' : wp.type === 'n' ? 'коня' : wp.type === 'p' ? 'пешку' : wp.type === 'k' ? 'короля' : 'фигуру'}!`);
+        return true;
       }
       } // end if (!skipAutoCapture)
       } // end if (!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck
@@ -1487,12 +1486,12 @@ export default function CaptureBoard({
         {failed && (
           <div className="w-full">
             <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
-              <p className="text-white font-bold text-lg">{msg || 'Задание провалено!'}</p>
+              <p className="text-white font-bold text-lg">Задание провалено!</p>
               <button
                 onClick={resetLevel}
                 className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
               >
-                Ещё раз
+                ЕЩЁ РАЗ
               </button>
             </div>
           </div>
