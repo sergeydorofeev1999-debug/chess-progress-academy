@@ -21,7 +21,3 @@ export default function RootLayout({
     </html>
   );
 }
-// force rebuild
-const FORCE_REBUILD = Date.now();
-// trigger rebuild 1782115066
-export const BUILD_ID = '1782118722';

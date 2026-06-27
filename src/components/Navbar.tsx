@@ -18,6 +18,8 @@ export default function Navbar({ isAdmin }: NavbarProps) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+    }).catch((error) => {
+      console.error('Failed to get user:', error);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -28,8 +30,13 @@ export default function Navbar({ isAdmin }: NavbarProps) {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    window.location.reload();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.reload();
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
   };
 
   const navLinks = [

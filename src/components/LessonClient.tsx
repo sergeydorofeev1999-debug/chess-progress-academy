@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
+import { markLessonCompleteAuth } from '@/lib/data';
 import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
 import PawnRaceBoard from './PawnRaceBoard';
@@ -1399,27 +1400,7 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
     setIsCompletionSaving(true);
     setCompletionError('');
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error('Not authenticated');
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({ id: user.id, display_name: 'User' }, { onConflict: 'id' });
-      if (profileError) {
-        console.error('Profile upsert error (non-blocking):', profileError.message);
-      }
-
-      const { error } = await supabase
-        .from('lesson_progress')
-        .upsert({
-          user_id: user.id,
-          lesson_id: lesson.id,
-          is_completed: true,
-          completed_at: new Date().toISOString(),
-        });
-      if (error) throw error;
-
+      await markLessonCompleteAuth(lesson.id);
       setIsCompleted(true);
     } catch (error) {
       console.error('Failed to mark lesson complete:', error);

@@ -77,6 +77,15 @@ export async function getLesson(id: string) {
 
 export async function getCourseLessons(courseId: string) {
   const supabase = await createClient();
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id')
+    .eq('id', courseId)
+    .eq('is_published', true)
+    .maybeSingle();
+  if (courseError) throw courseError;
+  if (!course) return [];
+
   const { data, error } = await supabase
     .from('lessons')
     .select('id,title,"order",duration_minutes,video_url')
@@ -144,7 +153,8 @@ export async function getCurrentUserEnrollments() {
   if (!user) throw new Error('Not authenticated');
   const { data, error } = await supabase
     .from('course_enrollments')
-    .select('*, courses(*)')
+    .select('*, courses!inner(*)')
+    .eq('courses.is_published', true)
     .eq('user_id', user.id);
   if (error) throw error;
   return data || [];

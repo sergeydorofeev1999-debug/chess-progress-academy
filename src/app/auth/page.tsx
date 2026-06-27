@@ -48,26 +48,32 @@ export default function AuthPage() {
     setMessage('');
     setMessageType('success');
 
-    if (isSignUp) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        setMessage(getAuthErrorMessage(error.message));
-        setMessageType('error');
+    try {
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          setMessage(getAuthErrorMessage(error.message));
+          setMessageType('error');
+        } else {
+          setMessage('Проверьте почту для подтверждения регистрации');
+          setMessageType('success');
+        }
       } else {
-        setMessage('Проверьте почту для подтверждения регистрации');
-        setMessageType('success');
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setMessage(getAuthErrorMessage(error.message));
+          setMessageType('error');
+        } else {
+          window.location.href = '/dashboard';
+        }
       }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        setMessage(getAuthErrorMessage(error.message));
-        setMessageType('error');
-      } else {
-        window.location.href = '/dashboard';
-      }
+    } catch (error) {
+      console.error('Auth error:', error);
+      setMessage('Не удалось выполнить вход. Попробуйте ещё раз');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
@@ -75,16 +81,23 @@ export default function AuthPage() {
     setMessage('');
     setMessageType('success');
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
 
-    if (error) {
-      setMessage(error.message);
+      if (error) {
+        setMessage(error.message);
+        setMessageType('error');
+      }
+    } catch (error) {
+      console.error('Google auth error:', error);
+      setMessage('Не удалось выполнить вход через Google. Попробуйте ещё раз');
       setMessageType('error');
+    } finally {
       setGoogleLoading(false);
     }
   };
