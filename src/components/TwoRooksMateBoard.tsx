@@ -439,6 +439,24 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
           g.move({ from: blackMove.from, to: blackMove.to });
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
+
+          // If black king captured a white rook → instant fail
+          const squaresAfterBlack = g.board();
+          let rookCount = 0;
+          for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+              const p = squaresAfterBlack[r][c];
+              if (p && p.type === 'r' && p.color === 'w') {
+                rookCount++;
+              }
+            }
+          }
+          if (rookCount < 2) {
+            setIsStalemate(true);
+            setMessage('Провалено');
+            return;
+          }
+
           if (g.isCheckmate()) {
             const earned = calcStars(ex, nextWhiteMoves);
             setMessage(`Мат чёрному королю! ${earned} ★`);
