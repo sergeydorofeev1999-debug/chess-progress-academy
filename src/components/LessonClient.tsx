@@ -1573,8 +1573,18 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
       )}
 
       {completionError && (
-        <div role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-          {completionError}
+        <div role="alert" className="mb-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700 flex items-center justify-between">
+          <span>{completionError}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setCompletionError('');
+              handleInteractiveComplete();
+            }}
+            className="text-xs font-medium text-red-700 underline hover:no-underline"
+          >
+            Попробовать снова
+          </button>
         </div>
       )}
 
