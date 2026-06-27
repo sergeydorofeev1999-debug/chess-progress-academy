@@ -393,6 +393,15 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
         return;
       }
 
+      // If black king can capture the white rook immediately → instant fail
+      const blackMoves = g.moves({ verbose: true });
+      const canCaptureRook = blackMoves.some(m => m.piece === 'k' && m.captured === 'r');
+      if (canCaptureRook) {
+        setIsStalemate(true);
+        setMessage('Провалено');
+        return;
+      }
+
       // Black's turn — AI move
       const delayMs = ex.matIn1 ? 1000 : 500;
       setTimeout(() => {
