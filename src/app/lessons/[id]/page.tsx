@@ -30,7 +30,7 @@ export default async function LessonPage({
       .from('lesson_progress')
       .select('is_completed')
       .eq('user_id', user.id)
-      .eq('lesson_id', id)
+      .eq('lesson_id', lesson.id)
       .maybeSingle();
     isCompleted = progress?.is_completed || false;
   }

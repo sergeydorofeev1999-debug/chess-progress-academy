@@ -2,6 +2,10 @@
 
 import { createClient } from './supabase/server';
 
+function isUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+
 export async function getCourses() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -38,13 +42,25 @@ export async function getCourseWithModules(id: string) {
 
 export async function getLesson(id: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('id', id)
-    .single();
-  if (error) throw error;
-  return data;
+  if (isUUID(id)) {
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  } else {
+    const order = parseInt(id, 10);
+    if (isNaN(order)) return null;
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('"order"', order)
+      .single();
+    if (error) throw error;
+    return data;
+  }
 }
 
 export async function getCourseLessons(courseId: string) {
