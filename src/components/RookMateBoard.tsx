@@ -701,8 +701,8 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
         </div>
 
         {/* Timer */}
-        {EXERCISES.find(e => e.id === currentExercise)?.timeLimit && (
-          <div className={`text-center font-bold text-lg ${timeLeft !== null && timeLeft <= 10 ? 'text-red-500' : 'text-white'}`}>
+        {EXERCISES.find(e => e.id === currentExercise)?.timeLimit && !isComplete && !isStalemate && (
+          <div className={`text-2xl font-bold font-mono ${timeLeft !== null && timeLeft <= 10 ? 'text-red-500' : 'text-slate-700'}`}>
             {timeLeft !== null ? `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}` : '1:00'}
           </div>
         )}
