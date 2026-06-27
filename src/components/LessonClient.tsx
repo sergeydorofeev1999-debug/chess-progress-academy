@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
 import CaptureBoard from './CaptureBoard';
 import PieceValueBoard from './PieceValueBoard';
@@ -1366,13 +1367,9 @@ function MultiLevelStarBoard({
 // LessonClient — main component
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function LessonClient({ lesson, allLessons, courseId, isCompletedInit, userId }: Props) {
-  const [isCompleted, setIsCompleted] = useState(() => {
-    // Check localStorage for completed status on init
-    if (typeof window !== 'undefined') {
-      return isCompletedInit || localStorage.getItem(`lesson_completed_${lesson.id}`) === 'true';
-    }
-    return isCompletedInit;
-  });
+  const supabase = useMemo(() => createClient(), []);
+  const [isCompleted, setIsCompleted] = useState(isCompletedInit);
+  const [isCompletionSaving, setIsCompletionSaving] = useState(false);
 
   useEffect(() => {
     if (!isCompleted && typeof window !== 'undefined') {
@@ -1394,8 +1391,38 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   };
 
   const handleInteractiveComplete = async () => {
-    localStorage.setItem(`lesson_completed_${lesson.id}`, 'true');
-    setIsCompleted(true);
+    if (isCompleted || isCompletionSaving) return;
+
+    setIsCompletionSaving(true);
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error('Not authenticated');
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, display_name: 'User' }, { onConflict: 'id' });
+      if (profileError) {
+        console.error('Profile upsert error (non-blocking):', profileError.message);
+      }
+
+      const { error } = await supabase
+        .from('lesson_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lesson.id,
+          is_completed: true,
+          completed_at: new Date().toISOString(),
+        });
+      if (error) throw error;
+
+      setIsCompleted(true);
+    } catch (error) {
+      console.error('Failed to mark lesson complete:', error);
+      try { localStorage.setItem(`lesson_completed_${lesson.id}`, 'true'); } catch {}
+    } finally {
+      setIsCompletionSaving(false);
+    }
   };
 
   return (
@@ -1532,6 +1559,12 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
           <div className="w-full max-w-[480px] mx-auto aspect-square bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
             <p className="text-slate-400 text-sm text-center px-4">♟️ Шахматная доска скоро будет здесь</p>
           </div>
+        </div>
+      )}
+
+      {isCompletionSaving && (
+        <div className="mb-4 rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-600">
+          Сохраняем прогресс...
         </div>
       )}
 

@@ -15,36 +15,12 @@ interface Props {
 }
 
 export default function CourseProgress({ totalLessons, serverProgressMap, allLessons }: Props) {
-  const [completedCount, setCompletedCount] = useState(() => {
-    return Object.values(serverProgressMap).filter(Boolean).length;
-  });
+  const [completedCount, setCompletedCount] = useState(
+    () => Object.values(serverProgressMap).filter(Boolean).length
+  );
 
   useEffect(() => {
-    let count = 0;
-    for (const lesson of allLessons) {
-      const serverDone = serverProgressMap[lesson.id];
-      if (serverDone) {
-        count++;
-        continue;
-      }
-      // Check localStorage
-      const detailKey = `lesson_progress_${lesson.id}`;
-      const detail = localStorage.getItem(detailKey);
-      if (detail) {
-        const parsed = JSON.parse(detail);
-        const totalLevels = Object.keys(parsed).length;
-        const completedLevels = Object.values(parsed).filter((v: any) => v >= 1).length;
-        if (completedLevels >= totalLevels) {
-          count++;
-          continue;
-        }
-      }
-      // Fallback: lesson_completed_{id}
-      if (localStorage.getItem(`lesson_completed_${lesson.id}`) === 'true') {
-        count++;
-      }
-    }
-    setCompletedCount(count);
+    setCompletedCount(Object.values(serverProgressMap).filter(Boolean).length);
   }, [allLessons, serverProgressMap]);
 
   const percent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
