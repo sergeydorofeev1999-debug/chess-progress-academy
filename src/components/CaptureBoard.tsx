@@ -1151,7 +1151,7 @@ export default function CaptureBoard({
         setGameOver(true);
         setFailed(true);
         setMsg('Провалено');
-        return true;
+        return false;
       }
       } // end if (!skipAutoCapture)
       } // end if (!level.autoCaptures || level.autoCaptures.length === 0) && !level.requireCheck
