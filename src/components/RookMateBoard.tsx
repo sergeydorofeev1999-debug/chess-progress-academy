@@ -393,27 +393,6 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
         return;
       }
 
-      // If black king can capture the white rook immediately → instant fail
-      const squaresAfter = g.board();
-      let rookSquare = '';
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          const p = squaresAfter[r][c];
-          if (p && p.type === 'r' && p.color === 'w') {
-            rookSquare = FILES[c] + RANKS[r];
-          }
-        }
-      }
-      if (rookSquare) {
-        const blackMoves = g.moves({ verbose: true });
-        const canCaptureRook = blackMoves.some(m => m.piece === 'k' && m.to === rookSquare);
-        if (canCaptureRook) {
-          setIsStalemate(true);
-          setMessage('Провалено');
-          return;
-        }
-      }
-
       // Black's turn — AI move
       const delayMs = ex.matIn1 ? 1000 : 500;
       setTimeout(() => {
