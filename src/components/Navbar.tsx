@@ -7,9 +7,10 @@ import { Menu, X, Home, BookOpen, LayoutDashboard, Settings, LogIn, LogOut } fro
 
 interface NavbarProps {
   isAdmin: boolean;
+  isCoach: boolean;
 }
 
-export default function Navbar({ isAdmin }: NavbarProps) {
+export default function Navbar({ isAdmin, isCoach }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
 
@@ -63,6 +64,11 @@ export default function Navbar({ isAdmin }: NavbarProps) {
               <Link href="/dashboard" className="hover:text-amber-400 transition">
                 Кабинет
               </Link>
+              {isCoach && (
+                <Link href="/coach" className="hover:text-amber-400 transition">
+                  Тренер
+                </Link>
+              )}
               {isAdmin && (
                 <Link href="/admin" className="hover:text-amber-400 transition">
                   Админ
@@ -110,6 +116,12 @@ export default function Navbar({ isAdmin }: NavbarProps) {
                 onClick={() => setOpen(false)}>
                 <LayoutDashboard size={16} /> Кабинет
               </Link>
+              {isCoach && (
+                <Link href="/coach" className="flex items-center gap-2 py-1 hover:text-amber-400"
+                  onClick={() => setOpen(false)}>
+                  <BookOpen size={16} /> Тренер
+                </Link>
+              )}
               {isAdmin && (
                 <Link href="/admin" className="flex items-center gap-2 py-1 hover:text-amber-400"
                   onClick={() => setOpen(false)}>

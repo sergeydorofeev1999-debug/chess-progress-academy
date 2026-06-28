@@ -1,10 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { courses } from '@/lib/mockData';
+import { courses as mockCourses } from '@/lib/mockData';
 import { Plus, Trash2, Edit3 } from 'lucide-react';
+import Link from 'next/link';
 
-export default function AdminClient() {
+interface AdminClientProps {
+  courses: any[];
+}
+
+export default function AdminClient({ courses }: AdminClientProps) {
   const [activeTab, setActiveTab] = useState<'courses' | 'lessons'>('courses');
 
   return (
@@ -31,9 +36,11 @@ export default function AdminClient() {
       {/* Courses tab */}
       {activeTab === 'courses' && (
         <div>
-          <button className="mb-4 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition">
-            <Plus size={18} /> Создать курс
-          </button>
+          <Link href="/courses/new">
+            <button className="mb-4 flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition">
+              <Plus size={18} /> Создать курс
+            </button>
+          </Link>
 
           <div className="border border-slate-200 rounded-xl overflow-hidden">
             <table className="w-full text-sm">
@@ -41,7 +48,7 @@ export default function AdminClient() {
                 <tr>
                   <th className="px-4 py-3 text-left font-medium">Название</th>
                   <th className="px-4 py-3 text-left font-medium">Уровень</th>
-                  <th className="px-4 py-3 text-left font-medium">Уроков</th>
+                  <th className="px-4 py-3 text-left font-medium">Статус</th>
                   <th className="px-4 py-3 text-right font-medium">Действия</th>
                 </tr>
               </thead>
@@ -49,9 +56,9 @@ export default function AdminClient() {
                 {courses.map(course => (
                   <tr key={course.id} className="hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium">{course.title}</td>
-                    <td className="px-4 py-3 text-slate-600 capitalize">{course.level}</td>
+                    <td className="px-4 py-3 text-slate-600 capitalize">{course.level === 'beginner' ? 'Начинающий' : course.level}</td>
                     <td className="px-4 py-3 text-slate-600">
-                      {course.modules.reduce((sum, m) => sum + m.lessons.length, 0)}
+                      {course.is_published ? 'Опубликован' : 'Черновик'}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button className="text-slate-400 hover:text-slate-600 mr-2"><Edit3 size={16} /></button>
@@ -72,7 +79,7 @@ export default function AdminClient() {
             <Plus size={18} /> Создать урок
           </button>
 
-          {courses.map(course => (
+          {mockCourses.map(course => (
             <div key={course.id} className="mb-6">
               <h3 className="font-semibold mb-2">{course.title}</h3>
               <div className="border border-slate-200 rounded-xl overflow-hidden">

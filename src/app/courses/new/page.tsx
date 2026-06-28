@@ -1,11 +1,11 @@
 import { notFound, redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { getCoachCourses } from '@/lib/data';
-import AdminClient from './AdminClient';
+import { createCourse } from '@/lib/data';
+import CourseForm from './CourseForm';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminPage() {
+export default async function NewCoursePage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -17,15 +17,17 @@ export default async function AdminPage() {
     .from('profiles')
     .select('role')
     .eq('id', user.id)
-    .eq('role', 'admin')
     .maybeSingle();
 
-  if (!profile) {
+  const role = profile?.role;
+  if (role !== 'admin' && role !== 'coach') {
     notFound();
   }
 
-  // Admin sees all courses (including drafts)
-  const courses = await getCoachCourses();
-
-  return <AdminClient courses={courses} />;
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-12">
+      <h1 className="text-3xl font-bold mb-6">Создать курс</h1>
+      <CourseForm />
+    </div>
+  );
 }

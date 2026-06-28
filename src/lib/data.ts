@@ -169,3 +169,129 @@ export async function enrollCurrentUser(courseId: string) {
     .upsert({ user_id: user.id, course_id: courseId });
   if (error) throw error;
 }
+
+// ============================================
+// COACH / ADMIN DATA FUNCTIONS
+// ============================================
+
+/** Admin: get all courses (published + drafts). Coach: get own courses. */
+export async function getCoachCourses() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  // Check role
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const role = profile?.role;
+
+  if (role === 'admin') {
+    // Admin sees everything
+    const { data, error } = await supabase
+      .from('courses')
+      .select('id, title, description, level, is_published, created_at, coach_id')
+      .order('created_at');
+    if (error) throw error;
+    return data || [];
+  }
+
+  if (role === 'coach') {
+    // Coach sees own courses
+    const { data, error } = await supabase
+      .from('courses')
+      .select('id, title, description, level, is_published, created_at')
+      .eq('coach_id', user.id)
+      .order('created_at');
+    if (error) throw error;
+    return data || [];
+  }
+
+  throw new Error('Unauthorized: not a coach or admin');
+}
+
+/** Create a new course (coach or admin). */
+export async function createCourse(courseData: {
+  title: string;
+  description: string;
+  level: string;
+  is_published?: boolean;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const role = profile?.role;
+  if (role !== 'admin' && role !== 'coach') {
+    throw new Error('Unauthorized');
+  }
+
+  const payload: any = {
+    title: courseData.title,
+    description: courseData.description,
+    level: courseData.level,
+    is_published: courseData.is_published ?? false,
+  };
+
+  // Coach: auto-assign coach_id. Admin can create without it.
+  if (role === 'coach') {
+    payload.coach_id = user.id;
+  }
+
+  const { data, error } = await supabase
+    .from('courses')
+    .insert(payload)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/** Update course (coach own, admin any). */
+export async function updateCourse(
+  courseId: string,
+  updates: Partial<{
+    title: string;
+    description: string;
+    level: string;
+    is_published: boolean;
+  }>
+) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data, error } = await supabase
+    .from('courses')
+    .update(updates)
+    .eq('id', courseId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+/** Delete course (RLS enforces ownership). */
+export async function deleteCourse(courseId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { error } = await supabase
+    .from('courses')
+    .delete()
+    .eq('id', courseId);
+
+  if (error) throw error;
+}
