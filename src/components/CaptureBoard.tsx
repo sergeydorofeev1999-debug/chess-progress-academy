@@ -646,12 +646,14 @@ function InlineChessBoard({
     if (!piece || piece.color !== 'w') return;
     pointerStartRef.current = sq;
     justDraggedRef.current = false;
+    // Select piece immediately like LessonClient
+    selectedSquareRef.current = sq;
+    setSelectedSquare(sq);
     const rect = containerRef.current.getBoundingClientRect();
     const fi = FILES.indexOf(sq[0]);
     const ri = RANKS.indexOf(sq[1]);
     const centerX = fi * sqSize + sqSize / 2;
     const centerY = ri * sqSize + sqSize / 2;
-    // Offset = where inside the square the finger is (relative to center)
     const offsetX = e.clientX - rect.left - centerX;
     const offsetY = e.clientY - rect.top - centerY;
     const initState = {
@@ -688,23 +690,30 @@ function InlineChessBoard({
       pointerStartRef.current = null;
       setDragState(null);
       dragStateRef.current = null;
+      justDraggedRef.current = false;
       return;
     }
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const fi = Math.floor(x / sqSize);
-    const ri = Math.floor(y / sqSize);
-    if (fi >= 0 && fi < 8 && ri >= 0 && ri < 8) {
-      const targetSquare = `${FILES[fi]}${RANKS[ri]}`;
-      const start = dragStateRef.current.square;
-      if (start && targetSquare !== start) {
-        onMoveRef.current?.(start, targetSquare);
+    if (!justDraggedRef.current) {
+      // It was a click, not a drag — process it through the click handler
+      click(dragStateRef.current.square);
+    } else {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const fi = Math.floor(x / sqSize);
+      const ri = Math.floor(y / sqSize);
+      if (fi >= 0 && fi < 8 && ri >= 0 && ri < 8) {
+        const targetSquare = `${FILES[fi]}${RANKS[ri]}`;
+        const start = dragStateRef.current.square;
+        if (start && targetSquare !== start) {
+          onMoveRef.current?.(start, targetSquare);
+        }
       }
     }
     pointerStartRef.current = null;
     setDragState(null);
     dragStateRef.current = null;
+    justDraggedRef.current = false;
   };
 
   const handleGlobalCancel = () => {
