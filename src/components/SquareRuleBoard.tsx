@@ -250,23 +250,11 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
     if (nr === 8) {
       if (mode === 'king') {
-        // King chase: auto-promote to queen, then black king captures
+        // King chase: auto-promote to queen, then USER moves black king to capture
         try {
           g.move({ from: ps, to: `${ps[0]}8`, promotion: 'q' });
           setGame(new Chess(g.fen()));
-          setTimeout(() => {
-            if (!mountedRef.current || isCompleteRef.current) return;
-            const g2 = new Chess(g.fen());
-            const targetSq = `${ps[0]}8`;
-            const bk = getBlackKingMoveTowards(g2, targetSq);
-            if (bk) {
-              g2.move({ from: bk.from, to: bk.to });
-              setGame(new Chess(g2.fen()));
-              setIsComplete(true);
-              setMessage(`Король съел ферзя на ${targetSq}! Правило квадрата: король внутри квадрата — догнал.`);
-              onComplete();
-            }
-          }, 500);
+          // Now it's black's turn — user must move king to capture the queen
         } catch {}
       } else {
         // Pawn run: show promotion modal
@@ -322,20 +310,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       setPromotionPending(null);
 
       if (mode === 'king') {
-        // After auto promotion, black king captures the promoted piece
-        setTimeout(() => {
-          if (!mountedRef.current || isCompleteRef.current) return;
-          const g2 = new Chess(g.fen());
-          const targetSq = to;
-          const bk = getBlackKingMoveTowards(g2, targetSq);
-          if (bk) {
-            g2.move({ from: bk.from, to: bk.to });
-            setGame(new Chess(g2.fen()));
-            setIsComplete(true);
-            setMessage(`Король съел фигуру на ${targetSq}! Правило квадрата: король внутри квадрата — догнал.`);
-            onComplete();
-          }
-        }, 500);
+        // After auto promotion in king chase mode, it's now black's turn.
+        // User must move black king to capture the queen manually.
       }
 
       if (mode === 'pawn') {
@@ -384,6 +360,14 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       setGame(new Chess(g1.fen()));
       setSelectedSquare(null);
 
+      // If black king captured a piece → success
+      if (move.captured) {
+        setIsComplete(true);
+        setMessage('Король съел ферзя! Правило квадрата: король внутри квадрата — догнал.');
+        onComplete();
+        return;
+      }
+
       // After user moves black king, schedule auto white pawn move in 1 second
       const t = setTimeout(() => {
         if (!mountedRef.current || isCompleteRef.current) return;
@@ -391,7 +375,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       }, 1000);
       timersRef.current.push(t);
     } catch {}
-  }, [isFail, promotionPending, doAutoWhitePawnMove]);
+  }, [isFail, promotionPending, doAutoWhitePawnMove, onComplete]);
 
   // ═══════════════════════════════════════════════════════════════
   // EXERCISE 2: PAWN RUN MODE (user white pawn, auto black king)
