@@ -248,8 +248,9 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                     if (bk4) g1.move({ from: bk4.from, to: bk4.to });
                     setGame(new Chess(g1.fen()));
                     setDemoPhase(8);
-                    setIsFail(true);
+                    setIsComplete(true);
                     setMessage('Король съел ферзя на a8! Правило квадрата: король внутри квадрата — догнал.');
+                    onComplete();
                   }, 1000);
                 }, 1500);
               }, 1000);
@@ -477,7 +478,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         {isComplete && (
           <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
             <Trophy className="w-5 h-5 inline-block mr-2" />
-            Правило квадрата сработало!
+            {message || 'Правило квадрата сработало!'}
           </div>
         )}
 
@@ -526,13 +527,16 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                       height: sqSize,
                       cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete && !isFail ? 'grab' : 'default',
                       touchAction: 'none',
-                      backgroundColor: isSquareBorder ? SQUARE_FILL : (light ? '#f0d9b5' : '#b58863'),
+                      backgroundColor: light ? '#f0d9b5' : '#b58863',
                       opacity: isDragSource ? 0.3 : 1,
                     }}
                     onClick={() => handleSquareClick(sq)}
                     onPointerDown={(e) => handlePointerDown(e, sq)}
                     onDragStart={(e) => e.preventDefault()}
                   >
+                    {isSquareBorder && (
+                      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: SQUARE_FILL }} />
+                    )}
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
