@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { RotateCcw, Eye, Trophy } from 'lucide-react';
 
@@ -10,8 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN = '8/8/8/8/P3k3/8/8/7K w - - 0 1';
 
-const SQUARE_FILL = 'rgba(255, 200, 0, 0.35)';
-const SQUARE_DOT_FILL = 'rgba(255, 180, 0, 0.50)';
+const SQUARE_FILL = 'rgba(255,255,255,0.22)';
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -26,21 +25,48 @@ function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   );
 }
 
-function calcSquareCells(pawnSq: string): string[] {
+/** Only the BORDER cells of the square (perimeter) */
+function getSquareBorder(pawnSq: string): string[] {
   const pf = FILES.indexOf(pawnSq[0]);
   const pr = parseInt(pawnSq[1]);
-  const side = 8 - pr + 1;
+  const side = 8 - pr + 1; // moves remaining to promotion
+  const maxFile = pf + side - 1;
+  if (maxFile >= 8) return [];
+
   const cells: string[] = [];
-  for (let r = pr; r <= 8; r++) {
-    for (let c = pf; c < pf + side && c < 8; c++) {
-      cells.push(`${FILES[c]}${r}`);
-    }
-  }
-  return cells;
+  // bottom edge
+  for (let c = pf; c <= maxFile; c++) cells.push(`${FILES[c]}${pr}`);
+  // top edge
+  for (let c = pf; c <= maxFile; c++) cells.push(`${FILES[c]}8`);
+  // left edge
+  for (let r = pr; r <= 8; r++) cells.push(`${FILES[pf]}${r}`);
+  // right edge
+  for (let r = pr; r <= 8; r++) cells.push(`${FILES[maxFile]}${r}`);
+
+  // dedupe
+  return [...new Set(cells)];
 }
 
-function isInsideSquare(kingSq: string, squareCells: string[]): boolean {
-  return squareCells.includes(kingSq);
+function getPawnSquare(game: Chess): string | null {
+  const sqs = game.board();
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = sqs[r][c];
+      if (p && p.type === 'p' && p.color === 'w') return `${FILES[c]}${RANKS[r]}`;
+    }
+  }
+  return null;
+}
+
+function getBlackKingSquare(game: Chess): string | null {
+  const sqs = game.board();
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = sqs[r][c];
+      if (p && p.type === 'k' && p.color === 'b') return `${FILES[c]}${RANKS[r]}`;
+    }
+  }
+  return null;
 }
 
 function getBlackKingMoveTowards(game: Chess, targetSq: string): { from: string; to: string } | null {
@@ -76,12 +102,11 @@ interface PointerStart {
 }
 
 export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [game, setGame] = useState<Chess | null>(() => new Chess(START_FEN));
+  const [game, setGame] = useState<Chess>(() => new Chess(START_FEN));
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [demoMode, setDemoMode] = useState(false);
-  const [demoStep, setDemoStep] = useState(0);
-  const [demoComment, setDemoComment] = useState('');
+  const [demoPhase, setDemoPhase] = useState<number>(0);
   const [sqSize, setSqSize] = useState(52);
   const [showSquare, setShowSquare] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -94,13 +119,12 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   const mountedRef = useRef(true);
   const isCompleteRef = useRef(false);
   const demoModeRef = useRef(false);
-  const animRef = useRef<NodeJS.Timeout | null>(null);
+  const timersRef = useRef<NodeJS.Timeout[]>([]);
 
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
 
-  // Responsive square size
   useEffect(() => {
     const update = () => {
       const isMobile = window.innerWidth < 1024;
@@ -115,103 +139,138 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  const clearTimers = useCallback(() => {
+    timersRef.current.forEach(t => clearTimeout(t));
+    timersRef.current = [];
+  }, []);
+
   const reset = useCallback(() => {
-    if (animRef.current) { clearTimeout(animRef.current); animRef.current = null; }
+    clearTimers();
     setGame(new Chess(START_FEN));
     setSelectedSquare(null);
     setMessage('');
     setDemoMode(false);
-    setDemoStep(0);
-    setDemoComment('');
+    setDemoPhase(0);
     setShowSquare(false);
     setIsComplete(false);
     setIsFail(false);
     setWhiteMoves(0);
+  }, [clearTimers]);
+
+  const pawnSq = getPawnSquare(game);
+  const squareCells = pawnSq ? getSquareBorder(pawnSq) : [];
+
+  // ═══════════════════════════════════════════════════════════════
+  // DEMO: step-by-step with pauses
+  // ═══════════════════════════════════════════════════════════════
+  const schedule = useCallback((fn: () => void, delay: number) => {
+    const t = setTimeout(() => { if (mountedRef.current) fn(); }, delay);
+    timersRef.current.push(t);
   }, []);
 
-  const pawnSq = game ? (() => {
-    const sqs = game.board();
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const p = sqs[r][c];
-        if (p && p.type === 'p' && p.color === 'w') return `${FILES[c]}${RANKS[r]}`;
-      }
-    }
-    return null;
-  })() : null;
+  const runDemoSequence = useCallback(() => {
+    // Phase 0: initial position with square shown
+    setShowSquare(true);
+    setDemoPhase(0);
+    setMessage('Квадрат от пешки a4. Король на e4 — на границе.');
 
-  const squareCells = pawnSq ? calcSquareCells(pawnSq) : [];
+    const g1 = new Chess(START_FEN);
 
-  // Demo auto-play: pawn advances, king chases, pawn reaches promotion
-  const demoMoves = useMemo(() => {
-    const steps: { fen: string; comment: string }[] = [];
-    let g = new Chess(START_FEN);
+    // Step 1: white a4→a5
+    schedule(() => {
+      setMessage('');
+      setShowSquare(false);
+      g1.move({ from: 'a4', to: 'a5' });
+      setGame(new Chess(g1.fen()));
+      setDemoPhase(1);
 
-    // Build sequence: white moves pawn, black king chases
-    const sequence = [
-      { white: 'a4a5', promo: undefined, comment: 'Пешка идёт на a5. Квадрат сужается…' },
-      { white: 'a5a6', promo: undefined, comment: 'Король идёт к пешке, но пешка убегает на a6.' },
-      { white: 'a6a7', promo: undefined, comment: 'Король на c5. Пешка на a7.' },
-      { white: 'a7a8', promo: 'q', comment: 'Король на b6. Пешка на a8 — прошла!' },
-    ];
+      // pause 1s, then black moves
+      schedule(() => {
+        const bk = getBlackKingMoveTowards(g1, 'a5');
+        if (bk) g1.move({ from: bk.from, to: bk.to });
+        setGame(new Chess(g1.fen()));
+        setDemoPhase(2);
 
-    for (const step of sequence) {
-      g.move({ from: step.white.slice(0, 2), to: step.white.slice(2, 4), promotion: step.promo });
-      // Black king moves toward pawn
-      const ps = (() => {
-        const sqs = g.board();
-        for (let r = 0; r < 8; r++) {
-          for (let c = 0; c < 8; c++) {
-            const p = sqs[r][c];
-            if (p && p.type === 'p' && p.color === 'w') return `${FILES[c]}${RANKS[r]}`;
-          }
-        }
-        return null;
-      })();
-      if (ps) {
-        const bk = getBlackKingMoveTowards(g, ps);
-        if (bk) g.move({ from: bk.from, to: bk.to });
-      }
-      steps.push({ fen: g.fen(), comment: step.comment });
-    }
-    return steps;
-  }, []);
+        // show new square
+        schedule(() => {
+          setShowSquare(true);
+          setMessage('Квадрат сузился. Король внутри, но пешка убегает…');
+        }, 500);
+
+        // pause then white a6
+        schedule(() => {
+          setMessage('');
+          setShowSquare(false);
+          g1.move({ from: 'a5', to: 'a6' });
+          setGame(new Chess(g1.fen()));
+          setDemoPhase(3);
+
+          // pause 1s, black moves
+          schedule(() => {
+            const bk2 = getBlackKingMoveTowards(g1, 'a6');
+            if (bk2) g1.move({ from: bk2.from, to: bk2.to });
+            setGame(new Chess(g1.fen()));
+            setDemoPhase(4);
+
+            schedule(() => {
+              setShowSquare(true);
+              setMessage('Король на c6. Пешка всё ближе к ферзю…');
+            }, 500);
+
+            schedule(() => {
+              setMessage('');
+              setShowSquare(false);
+              g1.move({ from: 'a6', to: 'a7' });
+              setGame(new Chess(g1.fen()));
+              setDemoPhase(5);
+
+              schedule(() => {
+                const bk3 = getBlackKingMoveTowards(g1, 'a7');
+                if (bk3) g1.move({ from: bk3.from, to: bk3.to });
+                setGame(new Chess(g1.fen()));
+                setDemoPhase(6);
+
+                schedule(() => {
+                  setShowSquare(true);
+                  setMessage('Король на b7. Пешка на a7 — один шаг до ферзя!');
+                }, 500);
+
+                schedule(() => {
+                  setMessage('');
+                  setShowSquare(false);
+                  g1.move({ from: 'a7', to: 'a8', promotion: 'q' });
+                  setGame(new Chess(g1.fen()));
+                  setDemoPhase(7);
+                  setIsComplete(true);
+                  setMessage('Пешка прошла! Король не догнал. Правило квадрата сработало.');
+                  onComplete();
+                }, 1500);
+              }, 1000);
+            }, 1500);
+          }, 1000);
+        }, 1500);
+      }, 1000);
+    }, 1500);
+  }, [schedule, onComplete]);
 
   useEffect(() => {
-    if (!demoMode || !game) return;
-    if (demoStep >= demoMoves.length) {
-      setDemoMode(false);
-      setIsComplete(true);
-      setMessage('Пешка прошла! Король на b6 — не догнал. Правило квадрата сработало.');
-      setDemoComment('');
-      onComplete();
-      return;
-    }
-    const step = demoMoves[demoStep];
-    setDemoComment(step.comment);
-    const timer = setTimeout(() => {
-      if (!mountedRef.current) return;
-      setGame(new Chess(step.fen));
-      setDemoStep(s => s + 1);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [demoMode, demoStep, demoMoves, game, onComplete]);
+    return () => clearTimers();
+  }, [clearTimers]);
 
   const handleShowSquare = useCallback(() => {
-    setShowSquare(true);
-    setMessage('Квадрат от пешки a4 до 8-й горизонтали. Король на e4 — на границе.');
-  }, []);
+    setShowSquare(prev => !prev);
+    setMessage(showSquare ? '' : 'Квадрат от пешки до последней горизонтали. Король внутри — догонит, снаружи — пешка проходит.');
+  }, [showSquare]);
 
   const startDemo = useCallback(() => {
     reset();
-    setShowSquare(true);
     setDemoMode(true);
-    setDemoStep(0);
-  }, [reset]);
+    runDemoSequence();
+  }, [reset, runDemoSequence]);
 
-  // Manual play: process white move (pawn only) then black AI
+  // Manual play: white move then black AI
   const processWhiteMove = useCallback((from: string, to: string) => {
-    if (!game || isCompleteRef.current || demoModeRef.current) return;
+    if (isCompleteRef.current || demoModeRef.current) return;
     if (game.turn() !== 'w') return;
 
     try {
@@ -225,7 +284,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       setWhiteMoves(nextWhiteMoves);
       setMessage('');
 
-      // Check if pawn reached promotion rank
       const toRank = parseInt(to[1]);
       if (toRank === 8) {
         setIsComplete(true);
@@ -234,27 +292,16 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         return;
       }
 
-      // Black's turn — king chases pawn
       setTimeout(() => {
         if (!mountedRef.current) return;
         const g2 = new Chess(fenAfter);
-        const ps = (() => {
-          const sqs = g2.board();
-          for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-              const p = sqs[r][c];
-              if (p && p.type === 'p' && p.color === 'w') return `${FILES[c]}${RANKS[r]}`;
-            }
-          }
-          return null;
-        })();
+        const ps = getPawnSquare(g2);
         if (ps) {
           const bk = getBlackKingMoveTowards(g2, ps);
           if (bk) {
             g2.move({ from: bk.from, to: bk.to });
             setGame(new Chess(g2.fen()));
 
-            // Check if king captured pawn
             const sqsAfter = g2.board();
             let pawnExists = false;
             for (let r = 0; r < 8; r++) {
@@ -266,7 +313,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
             if (!pawnExists) {
               setIsFail(true);
               setMessage('Провалено. Король съел пешку.');
-              return;
             }
           }
         }
@@ -276,34 +322,25 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     }
   }, [game, whiteMoves, onComplete]);
 
-  // Click handler
   const handleSquareClick = useCallback((square: string) => {
     if (demoModeRef.current || isCompleteRef.current || isFail) return;
-    if (!game) return;
     if (game.turn() !== 'w') return;
 
     const piece = game.get(square as any);
-
     if (selectedSquare) {
       if (selectedSquare === square) {
         setSelectedSquare(null);
         return;
       }
       processWhiteMove(selectedSquare, square);
-      if (piece && piece.color === 'w') {
-        setSelectedSquare(square);
-      }
+      if (piece && piece.color === 'w') setSelectedSquare(square);
     } else {
-      if (piece && piece.color === 'w') {
-        setSelectedSquare(square);
-      }
+      if (piece && piece.color === 'w') setSelectedSquare(square);
     }
   }, [game, selectedSquare, processWhiteMove, isFail]);
 
-  // Drag and drop
   const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
     if (isCompleteRef.current || demoModeRef.current || isFail) return;
-    if (!game) return;
     if (game.turn() !== 'w') return;
     const piece = game.get(square as any);
     if (!piece || piece.color !== 'w') return;
@@ -326,9 +363,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           setSelectedSquare(null);
         }
       }
-      if (start.moved) {
-        setDragPos({ x: e.clientX, y: e.clientY });
-      }
+      if (start.moved) setDragPos({ x: e.clientX, y: e.clientY });
     };
 
     const handleGlobalUp = (e: PointerEvent) => {
@@ -365,7 +400,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   }, [game, processWhiteMove]);
 
   const getPieceAt = (sq: string) => {
-    if (!game) return null;
     const p = game.get(sq as any);
     if (!p) return null;
     return { type: p.type.toUpperCase(), color: p.color as 'w' | 'b' };
@@ -373,13 +407,13 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
   const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  const validMoves = selectedSquare && game
+  const validMoves = selectedSquare
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
-    : dragPiece && game
+    : dragPiece
       ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
       : [];
 
-  const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
+  const turnText = game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...';
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
@@ -408,10 +442,10 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           <div className="flex flex-wrap gap-2 justify-center">
             <button
               onClick={handleShowSquare}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${showSquare ? 'bg-slate-600 hover:bg-slate-700 text-white' : 'bg-amber-500 hover:bg-amber-600 text-white'}`}
             >
               <Eye className="w-4 h-4" />
-              Показать квадрат
+              {showSquare ? 'Скрыть квадрат' : 'Показать квадрат'}
             </button>
             <button
               onClick={startDemo}
@@ -423,15 +457,22 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           </div>
         )}
 
-        {demoComment && (
-          <div className="px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 text-center max-w-sm">
-            {demoComment}
-          </div>
-        )}
-
         <div className="text-center font-bold text-slate-700 text-lg">
           {demoMode ? 'Демонстрация…' : turnText}
         </div>
+
+        {message && (
+          <div className={`px-4 py-2 rounded-lg text-sm text-center max-w-sm ${isComplete ? 'bg-green-50 border border-green-200 text-green-800' : isFail ? 'bg-red-50 border border-red-200 text-red-800' : 'bg-blue-50 border border-blue-200 text-blue-800'}`}>
+            {message}
+          </div>
+        )}
+
+        {isComplete && (
+          <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
+            <Trophy className="w-5 h-5 inline-block mr-2" />
+            Правило квадрата сработало!
+          </div>
+        )}
 
         {/* Fail banner */}
         {isFail && (
@@ -448,21 +489,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           </div>
         )}
 
-        {/* Success */}
-        {isComplete && (
-          <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
-            <Trophy className="w-5 h-5 inline-block mr-2" />
-            {message}
-          </div>
-        )}
-
-        {/* Message (non-fail, non-success) */}
-        {message && !isFail && !isComplete && (
-          <div className="px-4 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 text-center max-w-sm">
-            {message}
-          </div>
-        )}
-
         {/* Board */}
         <div className="flex justify-center w-full relative">
           <div
@@ -473,7 +499,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
               touchAction: 'none',
             }}
           >
-            {DISPLAY_RANKS.map((rank, ri) => (
+            {DISPLAY_RANKS.map((rank, ri) =>
               FILES.map((file, fi) => {
                 const sq = `${file}${rank}`;
                 const pieceObj = getPieceAt(sq);
@@ -481,7 +507,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
-                const isSquareCell = showSquare && squareCells.includes(sq);
+                const isSquareBorder = showSquare && squareCells.includes(sq);
 
                 return (
                   <div
@@ -493,7 +519,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                       height: sqSize,
                       cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete && !isFail ? 'grab' : 'default',
                       touchAction: 'none',
-                      backgroundColor: isSquareCell ? SQUARE_FILL : (light ? '#f0d9b5' : '#b58863'),
+                      backgroundColor: isSquareBorder ? SQUARE_FILL : (light ? '#f0d9b5' : '#b58863'),
                       opacity: isDragSource ? 0.3 : 1,
                     }}
                     onClick={() => handleSquareClick(sq)}
@@ -526,19 +552,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                         />
                       </div>
                     )}
-                    {isSquareCell && showSquare && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[15]">
-                        <div
-                          style={{
-                            width: Math.round(sqSize * 0.25),
-                            height: Math.round(sqSize * 0.25),
-                            backgroundColor: SQUARE_DOT_FILL,
-                            borderRadius: '50%',
-                            opacity: 0.7,
-                          }}
-                        />
-                      </div>
-                    )}
                     {pieceObj && !isDragSource && (
                       <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
@@ -547,7 +560,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                   </div>
                 );
               })
-            ))}
+            )}
           </div>
 
           {/* Dragged piece overlay */}
