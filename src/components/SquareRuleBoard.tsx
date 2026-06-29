@@ -10,7 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN = '8/8/8/8/P3k3/8/8/7K w - - 0 1';
 
-const SQUARE_FILL = 'rgba(255,255,255,0.22)';
+const SQUARE_FILL = 'rgba(255,255,255,0.5)';
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
