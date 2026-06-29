@@ -480,8 +480,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         </button>
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-          <p className="font-medium mb-1">Цель:</p>
-          <p>Продвиньте пешку до последней горизонтали. Король будет преследовать.</p>
+          <p>Квадрат от пешки до последней горизонтали. Король внутри — догонит, снаружи — пешка проходит.</p>
         </div>
       </div>
     </div>
