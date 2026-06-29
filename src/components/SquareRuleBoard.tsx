@@ -553,7 +553,9 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
   const validMoves = selectedSquare
     ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
-    : [];
+    : dragPiece
+      ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
+      : [];
 
   const pawnSq = getPawnSquare(game);
   const squareCells = pawnSq ? getSquareBorder(pawnSq) : [];
