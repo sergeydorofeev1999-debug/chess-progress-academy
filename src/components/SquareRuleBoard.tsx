@@ -107,6 +107,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const ptrStart = useRef<{square:string;moved:boolean;pointerId:number;x:number;y:number}|null>(null);
   const gameRef = useRef(game);
+  const justDraggedRef = useRef(false);
 
   const activeStartFen = exercise === 2 ? START_FEN_2 : START_FEN_1;
 
@@ -432,6 +433,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   // ═══════════════════════════════════════════════════════════════
   const handleSquareClick = useCallback((sq: string) => {
     if (isCompleteRef.current || isFail) return;
+    // If this click is the end of a drag, ignore it (move already processed in handleUp)
+    if (justDraggedRef.current) { justDraggedRef.current = false; return; }
     if (exercise === 1) return;
 
     if (exercise === 2 && ex2Mode === 'pawn') {
@@ -470,7 +473,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
-    setSelectedSquare(sq); // <-- FIX: show valid move dots on drag start
   }, [exercise, ex2Mode, isFail]);
 
   useEffect(() => {
@@ -481,7 +483,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       if (!s.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         s.moved = true;
         const p = gameRef.current.get(s.square as any);
-        if (p) { setDragPiece({ square: s.square, type: p.type.toUpperCase(), color: p.color as 'w'|'b' }); setSelectedSquare(null); }
+        if (p) { setDragPiece({ square: s.square, type: p.type.toUpperCase(), color: p.color as 'w'|'b' }); }
       }
       if (s.moved) setDragPos({ x: e.clientX, y: e.clientY });
     };
@@ -496,6 +498,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           else if (exercise === 2 && ex2Mode === 'pawn') processWhiteMoveEx2(s.square, ts);
         }
         setDragPiece(null);
+        justDraggedRef.current = true;  // <-- prevent the follow-up click
+        setSelectedSquare(null);
       }
       ptrStart.current = null;
     };
