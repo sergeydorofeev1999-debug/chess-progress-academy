@@ -241,9 +241,16 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                   g1.move({ from: 'a7', to: 'a8', promotion: 'q' });
                   setGame(new Chess(g1.fen()));
                   setDemoPhase(7);
-                  setIsComplete(true);
-                  setMessage('Пешка прошла! Король не догнал. Правило квадрата сработало.');
-                  onComplete();
+
+                  // pause 1s, then black king captures the queen
+                  schedule(() => {
+                    const bk4 = getBlackKingMoveTowards(g1, 'a8');
+                    if (bk4) g1.move({ from: bk4.from, to: bk4.to });
+                    setGame(new Chess(g1.fen()));
+                    setDemoPhase(8);
+                    setIsFail(true);
+                    setMessage('Король съел ферзя на a8! Правило квадрата: король внутри квадрата — догнал.');
+                  }, 1000);
                 }, 1500);
               }, 1000);
             }, 1500);
