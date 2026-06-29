@@ -191,7 +191,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                     setGame(new Chess(g1.fen())); setDemoPhase(8);
                     setIsComplete(true);
                     setMessage('Король съел ферзя на a8! Правило квадрата: король внутри квадрата — догнал.');
-                    onComplete();
                   }, 1000);
                 }, 1500);
               }, 1000);
@@ -484,7 +483,22 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           </div>
         )}
 
-        {isComplete && (
+        {isComplete && exercise === 1 && (
+          <div className="flex flex-col items-center gap-3">
+            <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
+              <Trophy className="w-5 h-5 inline-block mr-2" />
+              {message || 'Правило квадрата сработало!'}
+            </div>
+            <button
+              onClick={() => switchExercise(2)}
+              className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-bold transition-colors shadow"
+            >
+              Перейти к Упражнению 2 →
+            </button>
+          </div>
+        )}
+
+        {isComplete && exercise === 2 && (
           <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
             <Trophy className="w-5 h-5 inline-block mr-2" />
             {message || 'Правило квадрата сработало!'}
