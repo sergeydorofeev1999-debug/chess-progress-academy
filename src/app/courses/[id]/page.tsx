@@ -34,8 +34,8 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const basicLevelLessons = allLessons.slice(6, 11);
   const advancedLevelLessons = allLessons.slice(11, 17);
   const prepLevelLessons = allLessons.slice(17, 23);
-  const endgameLevelLessons = allLessons.slice(23, 26);
-  const midegameLevelLessons = allLessons.slice(26);
+  const endgameLevelLessons = allLessons.slice(23, 27);
+  const midegameLevelLessons = allLessons.slice(27);
 
   const basicLevelDescriptions = [
     'Съешь чёрную фигуру',
@@ -176,7 +176,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             })}
             progressMap={serverProgressMap}
             courseId={course.id}
-            descriptions={['Мат двумя ладьями']}
+            descriptions={['Мат двумя ладьями', 'Мат ферзём', 'Мат ладьёй', 'Правило квадрата']}
           />
         </div>
 
