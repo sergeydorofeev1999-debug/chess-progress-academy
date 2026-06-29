@@ -13,6 +13,13 @@ const START_FEN_2 = '8/3k4/8/8/7P/8/8/K7 w - - 0 1';
 
 const SQUARE_FILL = 'rgba(255,255,255,0.75)';
 
+const PROMOTION_PIECES = [
+  { code: 'q', name: 'Ферзь' },
+  { code: 'r', name: 'Ладья' },
+  { code: 'b', name: 'Слон' },
+  { code: 'n', name: 'Конь' },
+];
+
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
   return (
@@ -81,18 +88,21 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   const [isFail, setIsFail] = useState(false);
   const [dragPiece, setDragPiece] = useState<{square:string;type:string;color:'w'|'b'}|null>(null);
   const [dragPos, setDragPos] = useState({x:0,y:0});
+  const [promotionPending, setPromotionPending] = useState<{mode:'king'|'pawn';from:string;to:string;afterGameFen:string}|null>(null);
 
   const mountedRef = useRef(true);
   const isCompleteRef = useRef(false);
   const demoModeRef = useRef(false);
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const ptrStart = useRef<{square:string;moved:boolean;pointerId:number;x:number;y:number}|null>(null);
+  const gameRef = useRef(game);
 
   const activeStartFen = exercise === 2 ? START_FEN_2 : START_FEN_1;
 
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { demoModeRef.current = demoMode; }, [demoMode]);
+  useEffect(() => { gameRef.current = game; }, [game]);
 
   useEffect(() => {
     const update = () => {
@@ -121,6 +131,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     setIsComplete(false);
     setIsFail(false);
     setDragPiece(null);
+    setPromotionPending(null);
     if (exercise === 2) setEx2Mode(null);
   }, [clearTimers, activeStartFen, exercise]);
 
@@ -137,6 +148,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     setIsComplete(false);
     setIsFail(false);
     setDragPiece(null);
+    setPromotionPending(null);
     setEx2Mode(null);
   }, [clearTimers]);
 
@@ -199,7 +211,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         }, 1500);
       }, 1000);
     }, 1500);
-  }, [schedule, onComplete]);
+  }, [schedule]);
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
@@ -215,45 +227,149 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   }, [reset, runDemoSequence]);
 
   // ═══════════════════════════════════════════════════════════════
-  // EXERCISE 2: KING CHASE MODE (user black king, auto white pawn)
+  // AUTO PAWN MOVE HELPER
+  // ═══════════════════════════════════════════════════════════════
+  const doAutoWhitePawnMove = useCallback((mode: 'king' | 'pawn', fromGame: Chess) => {
+    if (isCompleteRef.current || isFail) return;
+    const g = new Chess(fromGame.fen());
+    const ps = getPawnSquare(g);
+    if (!ps) return;
+
+    // Check if next rank is promotion
+    const nr = parseInt(ps[1]) + 1;
+    if (nr === 8) {
+      // Trigger promotion modal instead of auto-move
+      setPromotionPending({ mode, from: ps, to: `${ps[0]}8`, afterGameFen: g.fen() });
+      return;
+    }
+
+    if (nr > 8) return;
+    try {
+      g.move({ from: ps, to: `${ps[0]}${nr}` });
+      setGame(new Chess(g.fen()));
+
+      // After auto pawn move, check if black king can capture the pawn
+      if (mode === 'king') {
+        const psAfter = getPawnSquare(g);
+        if (!psAfter) {
+          // Pawn was captured or promoted
+          setIsComplete(true);
+          setMessage('Король догнал пешку! Правило квадрата: король внутри — догонит.');
+          onComplete();
+          return;
+        }
+        if (parseInt(psAfter[1]) === 8) {
+          setIsComplete(true);
+          setMessage('Пешка прошла! Король не догнал.');
+          onComplete();
+          return;
+        }
+      }
+
+      // In pawn-run mode: check if black king ate the pawn
+      if (mode === 'pawn') {
+        const psAfter = getPawnSquare(g);
+        if (!psAfter) {
+          setIsFail(true);
+          setMessage('Провалено. Король съел пешку.');
+          return;
+        }
+      }
+    } catch {}
+  }, [isFail, onComplete]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // PROMOTION HANDLER
+  // ═══════════════════════════════════════════════════════════════
+  const handlePromotion = useCallback((pieceCode: string) => {
+    if (!promotionPending) return;
+    const { from, to, afterGameFen, mode } = promotionPending;
+    const g = new Chess(afterGameFen);
+    try {
+      g.move({ from, to, promotion: pieceCode });
+      setGame(new Chess(g.fen()));
+      setPromotionPending(null);
+
+      if (mode === 'king') {
+        const psAfter = getPawnSquare(g);
+        if (!psAfter) {
+          setIsComplete(true);
+          setMessage('Король догнал пешку! Правило квадрата: король внутри — догонит.');
+          onComplete();
+          return;
+        }
+        if (parseInt(psAfter[1]) === 8) {
+          setIsComplete(true);
+          setMessage('Пешка прошла! Король не догнал.');
+          onComplete();
+          return;
+        }
+      }
+
+      if (mode === 'pawn') {
+        const psAfter = getPawnSquare(g);
+        if (!psAfter) {
+          setIsFail(true);
+          setMessage('Провалено. Король съел пешку.');
+          return;
+        }
+        // After user pawn promotion, trigger black king auto move
+        setTimeout(() => {
+          if (!mountedRef.current || isCompleteRef.current) return;
+          const g2 = new Chess(g.fen());
+          const ps2 = getPawnSquare(g2);
+          if (ps2) {
+            const bk = getBlackKingMoveTowards(g2, ps2);
+            if (bk) {
+              g2.move({ from: bk.from, to: bk.to });
+              setGame(new Chess(g2.fen()));
+              if (!getPawnSquare(g2)) {
+                setIsFail(true);
+                setMessage('Провалено. Король съел пешку.');
+              }
+            }
+          }
+        }, 500);
+      }
+    } catch {
+      setPromotionPending(null);
+    }
+  }, [promotionPending, onComplete]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXERCISE 2: KING CHASE MODE (auto white pawn, user black king)
   // ═══════════════════════════════════════════════════════════════
   const startEx2KingChase = useCallback(() => {
     setEx2Mode('king');
     setShowSquare(true);
-    setMessage('Король на d7 — внутри квадрата пешки h4. Двигайте чёрного короля!');
-    setGame(new Chess(START_FEN_2));
-  }, []);
+    setMessage('Король на d7 — внутри квадрата пешки h4. Белая пешка ходит первой!');
+    const g = new Chess(START_FEN_2);
+    setGame(g);
+    // Auto white pawn move after 1 second
+    const t = setTimeout(() => {
+      if (!mountedRef.current) return;
+      doAutoWhitePawnMove('king', g);
+    }, 1000);
+    timersRef.current.push(t);
+  }, [doAutoWhitePawnMove]);
 
   const processBlackMoveEx2 = useCallback((from: string, to: string) => {
-    if (isCompleteRef.current || isFail) return;
-    const g1 = new Chess(game.fen());
+    if (isCompleteRef.current || isFail || promotionPending) return;
+    const g1 = new Chess(gameRef.current.fen());
     try {
       const move = g1.move({ from, to });
       if (!move) return;
-
-      const ps = getPawnSquare(g1);
-      if (ps) {
-        const nr = parseInt(ps[1]) + 1;
-        if (nr <= 8) {
-          try { g1.move({ from: ps, to: `${ps[0]}${nr}`, promotion: nr === 8 ? 'q' : undefined }); } catch {}
-        }
-      }
       setGame(new Chess(g1.fen()));
+      setSelectedSquare(null);
 
-      const psAfter = getPawnSquare(g1);
-      if (!psAfter) {
-        setIsComplete(true);
-        setMessage('Король догнал пешку! Правило квадрата: король внутри — догонит.');
-        onComplete();
-        return;
-      }
-      if (parseInt(psAfter[1]) === 8) {
-        setIsComplete(true);
-        setMessage('Пешка прошла! Король не догнал.');
-        onComplete();
-      }
+      // After user moves black king, schedule auto white pawn move in 1 second
+      const t = setTimeout(() => {
+        if (!mountedRef.current || isCompleteRef.current) return;
+        doAutoWhitePawnMove('king', g1);
+      }, 1000);
+      timersRef.current.push(t);
     } catch {}
-  }, [game, isFail, onComplete]);
+  }, [isFail, promotionPending, doAutoWhitePawnMove]);
 
   // ═══════════════════════════════════════════════════════════════
   // EXERCISE 2: PAWN RUN MODE (user white pawn, auto black king)
@@ -265,14 +381,21 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   }, []);
 
   const processWhiteMoveEx2 = useCallback((from: string, to: string) => {
-    if (isCompleteRef.current || isFail) return;
+    if (isCompleteRef.current || isFail || promotionPending) return;
     try {
-      const m = game.move({ from, to });
+      // Check if this is a promotion move
+      const toRank = parseInt(to[1]);
+      if (toRank === 8) {
+        setPromotionPending({ mode: 'pawn', from, to, afterGameFen: gameRef.current.fen() });
+        return;
+      }
+
+      const m = gameRef.current.move({ from, to });
       if (!m) return;
-      setGame(new Chess(game.fen()));
+      setGame(new Chess(gameRef.current.fen()));
       setSelectedSquare(null);
 
-      if (parseInt(to[1]) === 8) {
+      if (toRank === 8) {
         setIsComplete(true);
         setMessage('Пешка прошла! Король не догнал.');
         onComplete();
@@ -281,7 +404,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
       setTimeout(() => {
         if (!mountedRef.current) return;
-        const g2 = new Chess(game.fen());
+        const g2 = new Chess(gameRef.current.fen());
         const ps = getPawnSquare(g2);
         if (ps) {
           const bk = getBlackKingMoveTowards(g2, ps);
@@ -296,7 +419,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         }
       }, 500);
     } catch {}
-  }, [game, onComplete]);
+  }, [isFail, promotionPending, onComplete]);
 
   // ═══════════════════════════════════════════════════════════════
   // INTERACTION HANDLERS
@@ -306,8 +429,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     if (exercise === 1) return;
 
     if (exercise === 2 && ex2Mode === 'pawn') {
-      if (game.turn() !== 'w') return;
-      const piece = game.get(sq as any);
+      if (gameRef.current.turn() !== 'w') return;
+      const piece = gameRef.current.get(sq as any);
       if (selectedSquare) {
         if (selectedSquare === sq) { setSelectedSquare(null); return; }
         processWhiteMoveEx2(selectedSquare, sq);
@@ -319,8 +442,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     }
 
     if (exercise === 2 && ex2Mode === 'king') {
-      if (game.turn() !== 'b') return;
-      const piece = game.get(sq as any);
+      if (gameRef.current.turn() !== 'b') return;
+      const piece = gameRef.current.get(sq as any);
       if (selectedSquare) {
         if (selectedSquare === sq) { setSelectedSquare(null); return; }
         processBlackMoveEx2(selectedSquare, sq);
@@ -329,7 +452,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
       }
     }
-  }, [exercise, ex2Mode, game, selectedSquare, processWhiteMoveEx2, processBlackMoveEx2, isFail]);
+  }, [exercise, ex2Mode, selectedSquare, processWhiteMoveEx2, processBlackMoveEx2, isFail]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, sq: string) => {
     if (isCompleteRef.current || isFail) return;
@@ -337,11 +460,11 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     let targetColor: 'w'|'b' = 'w';
     let targetType = 'p';
     if (exercise === 2 && ex2Mode === 'king') { targetColor = 'b'; targetType = 'k'; }
-    if (game.turn() !== targetColor) return;
-    const piece = game.get(sq as any);
+    if (gameRef.current.turn() !== targetColor) return;
+    const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
-  }, [exercise, ex2Mode, game, isFail]);
+  }, [exercise, ex2Mode, isFail]);
 
   useEffect(() => {
     if (exercise === 1) return;
@@ -350,7 +473,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       const dx = e.clientX - s.x, dy = e.clientY - s.y;
       if (!s.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
         s.moved = true;
-        const p = game.get(s.square as any);
+        const p = gameRef.current.get(s.square as any);
         if (p) { setDragPiece({ square: s.square, type: p.type.toUpperCase(), color: p.color as 'w'|'b' }); setSelectedSquare(null); }
       }
       if (s.moved) setDragPos({ x: e.clientX, y: e.clientY });
@@ -380,7 +503,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleCancel);
     };
-  }, [exercise, ex2Mode, game, processBlackMoveEx2, processWhiteMoveEx2]);
+  }, [exercise, ex2Mode, processBlackMoveEx2, processWhiteMoveEx2]);
 
   // ═══════════════════════════════════════════════════════════════
   // RENDER
@@ -432,7 +555,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       </div>
 
       {/* CENTER */}
-      <div className="flex-1 flex flex-col items-center gap-3">
+      <div className="flex-1 flex flex-col items-center gap-3 relative">
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
           Правило квадрата — успеет ли король догнать пешку?
         </div>
@@ -519,6 +642,28 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           </div>
         )}
 
+        {/* PROMOTION MODAL */}
+        {promotionPending && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 rounded-lg">
+            <div className="bg-white rounded-lg p-4 shadow-xl text-center space-y-3 max-w-[260px]">
+              <p className="font-bold text-sm">Превращение пешки!</p>
+              <p className="text-xs text-gray-500">Ваша пешка достигла края доски</p>
+              <div className="flex gap-2 justify-center">
+                {PROMOTION_PIECES.map(({ code, name }) => (
+                  <button
+                    key={code}
+                    onClick={() => handlePromotion(code)}
+                    className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition border border-gray-300"
+                    title={name}
+                  >
+                    <img src={`/pieces/cburnett/w${code.toUpperCase()}.svg`} className="w-8 h-8" draggable={false} alt={name} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Board */}
         <div className="flex justify-center w-full relative">
           <div
@@ -538,7 +683,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
                 const isSquareBorder = showSquare && squareCells.includes(sq);
-                const canInteract = exercise === 2 && ex2Mode !== null && !isComplete && !isFail;
+                const canInteract = exercise === 2 && ex2Mode !== null && !isComplete && !isFail && !promotionPending;
 
                 return (
                   <div
