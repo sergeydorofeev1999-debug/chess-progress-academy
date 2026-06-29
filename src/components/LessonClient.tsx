@@ -18,6 +18,7 @@ import TwoRooksMateBoard from './TwoRooksMateBoard';
 import QueenMateBoard from './QueenMateBoard';
 import RookMateBoard from './RookMateBoard';
 import ForkBoard from './ForkBoard';
+import SquareRuleBoard from './SquareRuleBoard';
 
 interface Lesson {
   id: string;
@@ -1504,6 +1505,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_fork' ? (
           <div className="mb-8">
             <ForkBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_square_rule' ? (
+          <div className="mb-8">
+            <SquareRuleBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
