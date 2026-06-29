@@ -10,7 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN = '8/8/8/8/P3k3/8/8/7K w - - 0 1';
 
-const SQUARE_FILL = 'rgba(255,255,255,0.5)';
+const SQUARE_FILL = 'rgba(255,255,255,0.75)';
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -276,136 +276,17 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     runDemoSequence();
   }, [reset, runDemoSequence]);
 
-  // Manual play: white move then black AI
-  const processWhiteMove = useCallback((from: string, to: string) => {
-    if (isCompleteRef.current || demoModeRef.current) return;
-    if (game.turn() !== 'w') return;
+  // Disabled: no manual piece movement
+  const processWhiteMove = useCallback((_from: string, _to: string) => {}, []);
 
-    try {
-      const move = game.move({ from, to });
-      if (!move) return;
+  const handleSquareClick = useCallback((_square: string) => {}, []);
 
-      const nextWhiteMoves = whiteMoves + 1;
-      const fenAfter = game.fen();
-      setGame(new Chess(fenAfter));
-      setSelectedSquare(null);
-      setWhiteMoves(nextWhiteMoves);
-      setMessage('');
-
-      const toRank = parseInt(to[1]);
-      if (toRank === 8) {
-        setIsComplete(true);
-        setMessage('Пешка прошла! Правило квадрата сработало.');
-        onComplete();
-        return;
-      }
-
-      setTimeout(() => {
-        if (!mountedRef.current) return;
-        const g2 = new Chess(fenAfter);
-        const ps = getPawnSquare(g2);
-        if (ps) {
-          const bk = getBlackKingMoveTowards(g2, ps);
-          if (bk) {
-            g2.move({ from: bk.from, to: bk.to });
-            setGame(new Chess(g2.fen()));
-
-            const sqsAfter = g2.board();
-            let pawnExists = false;
-            for (let r = 0; r < 8; r++) {
-              for (let c = 0; c < 8; c++) {
-                const p = sqsAfter[r][c];
-                if (p && p.type === 'p' && p.color === 'w') pawnExists = true;
-              }
-            }
-            if (!pawnExists) {
-              setIsFail(true);
-              setMessage('Провалено. Король съел пешку.');
-            }
-          }
-        }
-      }, 500);
-    } catch {
-      // invalid move
-    }
-  }, [game, whiteMoves, onComplete]);
-
-  const handleSquareClick = useCallback((square: string) => {
-    if (demoModeRef.current || isCompleteRef.current || isFail) return;
-    if (game.turn() !== 'w') return;
-
-    const piece = game.get(square as any);
-    if (selectedSquare) {
-      if (selectedSquare === square) {
-        setSelectedSquare(null);
-        return;
-      }
-      processWhiteMove(selectedSquare, square);
-      if (piece && piece.color === 'w') setSelectedSquare(square);
-    } else {
-      if (piece && piece.color === 'w') setSelectedSquare(square);
-    }
-  }, [game, selectedSquare, processWhiteMove, isFail]);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
-    if (isCompleteRef.current || demoModeRef.current || isFail) return;
-    if (game.turn() !== 'w') return;
-    const piece = game.get(square as any);
-    if (!piece || piece.color !== 'w') return;
-    if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
-    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-  }, [game, isFail]);
+  const handlePointerDown = useCallback((_e: React.PointerEvent, _square: string) => {}, []);
 
   useEffect(() => {
-    const handleGlobalMove = (e: PointerEvent) => {
-      const start = pointerStartRef.current;
-      if (!start) return;
-      if (e.pointerId !== start.pointerId) return;
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
-        start.moved = true;
-        const piece = game?.get(start.square as any);
-        if (piece) {
-          setDragPiece({ square: start.square, type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' });
-          setSelectedSquare(null);
-        }
-      }
-      if (start.moved) setDragPos({ x: e.clientX, y: e.clientY });
-    };
-
-    const handleGlobalUp = (e: PointerEvent) => {
-      const start = pointerStartRef.current;
-      if (!start) return;
-      if (e.pointerId !== start.pointerId) return;
-      if (start.moved) {
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        const cell = el?.closest('[data-square]') as HTMLElement | null;
-        const targetSquare = cell?.dataset.square || null;
-        if (targetSquare && targetSquare !== start.square) {
-          processWhiteMove(start.square, targetSquare);
-        }
-        setDragPiece(null);
-      }
-      pointerStartRef.current = null;
-    };
-
-    const handleGlobalCancel = (e: PointerEvent) => {
-      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
-        setDragPiece(null);
-        pointerStartRef.current = null;
-      }
-    };
-
-    window.addEventListener('pointermove', handleGlobalMove);
-    window.addEventListener('pointerup', handleGlobalUp);
-    window.addEventListener('pointercancel', handleGlobalCancel);
-    return () => {
-      window.removeEventListener('pointermove', handleGlobalMove);
-      window.removeEventListener('pointerup', handleGlobalUp);
-      window.removeEventListener('pointercancel', handleGlobalCancel);
-    };
-  }, [game, processWhiteMove]);
+    // drag handlers disabled
+    return () => {};
+  }, []);
 
   const getPieceAt = (sq: string) => {
     const p = game.get(sq as any);
@@ -525,7 +406,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                     style={{
                       width: sqSize,
                       height: sqSize,
-                      cursor: pieceObj && pieceObj.color === 'w' && !demoMode && !isComplete && !isFail ? 'grab' : 'default',
+                      cursor: 'default',
                       touchAction: 'none',
                       backgroundColor: light ? '#f0d9b5' : '#b58863',
                       opacity: isDragSource ? 0.3 : 1,
