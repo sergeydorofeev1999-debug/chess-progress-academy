@@ -535,7 +535,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                     onDragStart={(e) => e.preventDefault()}
                   >
                     {isSquareBorder && (
-                      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: SQUARE_FILL }} />
+                      <div className="absolute inset-0 pointer-events-none z-10" style={{ backgroundColor: SQUARE_FILL }} />
                     )}
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
