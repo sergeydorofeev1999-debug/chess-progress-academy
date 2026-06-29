@@ -251,11 +251,19 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
     if (nr === 8) {
       if (mode === 'king') {
-        // King chase: auto-promote to queen, then USER moves black king to capture
+        // King chase: auto-promote to queen, then USER must move black king to capture
         try {
           g.move({ from: ps, to: `${ps[0]}8`, promotion: 'q' });
           setGame(new Chess(g.fen()));
-          // Now it's black's turn — user must move king to capture the queen
+
+          // Check if black king CAN capture the new queen
+          const blackMoves = g.moves({ verbose: true });
+          const canCapture = blackMoves.some(m => m.piece === 'k' && m.color === 'b' && m.captured);
+          if (!canCapture) {
+            setIsFail(true);
+            setMessage('Провалено. Король не успел.');
+          }
+          // Otherwise: user's turn — they must capture the queen manually
         } catch {}
       } else {
         // Pawn run: show promotion modal
@@ -358,6 +366,14 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     try {
       const move = g1.move({ from, to });
       if (!move) return;
+
+      // In king chase mode after pawn promotion: user MUST capture the queen
+      if (ex2Mode === 'king' && !move.captured) {
+        setIsFail(true);
+        setMessage('Провалено. Король должен был съесть ферзя.');
+        return;
+      }
+
       setGame(new Chess(g1.fen()));
       setSelectedSquare(null);
 
@@ -376,7 +392,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       }, 1000);
       timersRef.current.push(t);
     } catch {}
-  }, [isFail, promotionPending, doAutoWhitePawnMove, onComplete]);
+  }, [isFail, promotionPending, doAutoWhitePawnMove, onComplete, ex2Mode]);
 
   // ═══════════════════════════════════════════════════════════════
   // EXERCISE 2: PAWN RUN MODE (user white pawn, auto black king)
@@ -473,6 +489,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
+    setSelectedSquare(sq);
   }, [exercise, ex2Mode, isFail]);
 
   useEffect(() => {
@@ -498,7 +515,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           else if (exercise === 2 && ex2Mode === 'pawn') processWhiteMoveEx2(s.square, ts);
         }
         setDragPiece(null);
-        justDraggedRef.current = true;  // <-- prevent the follow-up click
         setSelectedSquare(null);
       }
       ptrStart.current = null;
