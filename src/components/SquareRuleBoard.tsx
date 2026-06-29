@@ -73,6 +73,17 @@ function getBlackKingMoveTowards(game: Chess, targetSq: string): { from: string;
   return scored[0] ? { from: scored[0].move.from, to: scored[0].move.to } : null;
 }
 
+function getWhitePieceSquare(game: Chess): string | null {
+  const sqs = game.board();
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = sqs[r][c];
+      if (p && p.color === 'w') return `${FILES[c]}${RANKS[r]}`;
+    }
+  }
+  return null;
+}
+
 export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
   const [exercise, setExercise] = useState<1 | 2>(1);
   const [ex2Mode, setEx2Mode] = useState<'king' | 'pawn' | null>(null);
@@ -235,11 +246,32 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const ps = getPawnSquare(g);
     if (!ps) return;
 
-    // Check if next rank is promotion
     const nr = parseInt(ps[1]) + 1;
+
     if (nr === 8) {
-      // Trigger promotion modal instead of auto-move
-      setPromotionPending({ mode, from: ps, to: `${ps[0]}8`, afterGameFen: g.fen() });
+      if (mode === 'king') {
+        // King chase: auto-promote to queen, then black king captures
+        try {
+          g.move({ from: ps, to: `${ps[0]}8`, promotion: 'q' });
+          setGame(new Chess(g.fen()));
+          setTimeout(() => {
+            if (!mountedRef.current || isCompleteRef.current) return;
+            const g2 = new Chess(g.fen());
+            const targetSq = `${ps[0]}8`;
+            const bk = getBlackKingMoveTowards(g2, targetSq);
+            if (bk) {
+              g2.move({ from: bk.from, to: bk.to });
+              setGame(new Chess(g2.fen()));
+              setIsComplete(true);
+              setMessage(`Король съел ферзя на ${targetSq}! Правило квадрата: король внутри квадрата — догнал.`);
+              onComplete();
+            }
+          }, 500);
+        } catch {}
+      } else {
+        // Pawn run: show promotion modal
+        setPromotionPending({ mode, from: ps, to: `${ps[0]}8`, afterGameFen: g.fen() });
+      }
       return;
     }
 
@@ -252,7 +284,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       if (mode === 'king') {
         const psAfter = getPawnSquare(g);
         if (!psAfter) {
-          // Pawn was captured or promoted
           setIsComplete(true);
           setMessage('Король догнал пешку! Правило квадрата: король внутри — догонит.');
           onComplete();
@@ -291,43 +322,34 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       setPromotionPending(null);
 
       if (mode === 'king') {
-        const psAfter = getPawnSquare(g);
-        if (!psAfter) {
-          setIsComplete(true);
-          setMessage('Король догнал пешку! Правило квадрата: король внутри — догонит.');
-          onComplete();
-          return;
-        }
-        if (parseInt(psAfter[1]) === 8) {
-          setIsComplete(true);
-          setMessage('Пешка прошла! Король не догнал.');
-          onComplete();
-          return;
-        }
-      }
-
-      if (mode === 'pawn') {
-        const psAfter = getPawnSquare(g);
-        if (!psAfter) {
-          setIsFail(true);
-          setMessage('Провалено. Король съел пешку.');
-          return;
-        }
-        // After user pawn promotion, trigger black king auto move
+        // After auto promotion, black king captures the promoted piece
         setTimeout(() => {
           if (!mountedRef.current || isCompleteRef.current) return;
           const g2 = new Chess(g.fen());
-          const ps2 = getPawnSquare(g2);
-          if (ps2) {
-            const bk = getBlackKingMoveTowards(g2, ps2);
-            if (bk) {
-              g2.move({ from: bk.from, to: bk.to });
-              setGame(new Chess(g2.fen()));
-              if (!getPawnSquare(g2)) {
-                setIsFail(true);
-                setMessage('Провалено. Король съел пешку.');
-              }
-            }
+          const targetSq = to;
+          const bk = getBlackKingMoveTowards(g2, targetSq);
+          if (bk) {
+            g2.move({ from: bk.from, to: bk.to });
+            setGame(new Chess(g2.fen()));
+            setIsComplete(true);
+            setMessage(`Король съел фигуру на ${targetSq}! Правило квадрата: король внутри квадрата — догнал.`);
+            onComplete();
+          }
+        }, 500);
+      }
+
+      if (mode === 'pawn') {
+        // After user promotion, black king moves to capture the promoted piece
+        setTimeout(() => {
+          if (!mountedRef.current || isCompleteRef.current) return;
+          const g2 = new Chess(g.fen());
+          const targetSq = to; // The square where the promoted piece stands
+          const bk = getBlackKingMoveTowards(g2, targetSq);
+          if (bk) {
+            g2.move({ from: bk.from, to: bk.to });
+            setGame(new Chess(g2.fen()));
+            setIsFail(true);
+            setMessage('Провалено. Король съел фигуру.');
           }
         }, 500);
       }
@@ -464,6 +486,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
+    setSelectedSquare(sq); // <-- FIX: show valid move dots on drag start
   }, [exercise, ex2Mode, isFail]);
 
   useEffect(() => {
