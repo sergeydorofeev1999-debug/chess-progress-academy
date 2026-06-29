@@ -367,11 +367,15 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       const move = g1.move({ from, to });
       if (!move) return;
 
-      // In king chase mode after pawn promotion: user MUST capture the queen
-      if (ex2Mode === 'king' && !move.captured) {
-        setIsFail(true);
-        setMessage('Провалено. Король должен был съесть ферзя.');
-        return;
+      // In king chase mode: after pawn promotes to queen (no pawn on board),
+      // user MUST capture the queen. While pawn still exists, king can move freely.
+      if (ex2Mode === 'king') {
+        const pawnStillOnBoard = getPawnSquare(g1) !== null;
+        if (!pawnStillOnBoard && !move.captured) {
+          setIsFail(true);
+          setMessage('Провалено. Король должен был съесть ферзя.');
+          return;
+        }
       }
 
       setGame(new Chess(g1.fen()));
