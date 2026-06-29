@@ -416,7 +416,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                     onDragStart={(e) => e.preventDefault()}
                   >
                     {isSquareBorder && (
-                      <div className="absolute inset-0 pointer-events-none z-10" style={{ backgroundColor: SQUARE_FILL }} />
+                      <div className="absolute inset-0 pointer-events-none z-[5]" style={{ backgroundColor: SQUARE_FILL }} />
                     )}
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
@@ -445,7 +445,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                       </div>
                     )}
                     {pieceObj && !isDragSource && (
-                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <div className="relative pointer-events-none z-[15]" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
                     )}
