@@ -107,7 +107,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   const timersRef = useRef<NodeJS.Timeout[]>([]);
   const ptrStart = useRef<{square:string;moved:boolean;pointerId:number;x:number;y:number}|null>(null);
   const gameRef = useRef(game);
-  const selectedSquareRef = useRef<string | null>(null);
   const justDraggedRef = useRef(false);
 
   const activeStartFen = exercise === 2 ? START_FEN_2 : START_FEN_1;
@@ -137,7 +136,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     clearTimers();
     setGame(new Chess(activeStartFen));
     setSelectedSquare(null);
-    selectedSquareRef.current = null;
+    
     setMessage('');
     setDemoMode(false);
     setDemoPhase(0);
@@ -155,7 +154,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const fen = num === 2 ? START_FEN_2 : START_FEN_1;
     setGame(new Chess(fen));
     setSelectedSquare(null);
-    selectedSquareRef.current = null;
+    
     setMessage('');
     setDemoMode(false);
     setDemoPhase(0);
@@ -383,7 +382,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
       setGame(new Chess(g1.fen()));
       setSelectedSquare(null);
-      selectedSquareRef.current = null;
+      
 
       // If black king captured a piece → success
       if (move.captured) {
@@ -425,7 +424,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       if (!m) return;
       setGame(new Chess(gameRef.current.fen()));
       setSelectedSquare(null);
-    selectedSquareRef.current = null;
+    
 
       if (toRank === 8) {
         setIsComplete(true);
@@ -465,13 +464,12 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     if (exercise === 2 && ex2Mode === 'pawn') {
       if (gameRef.current.turn() !== 'w') return;
       const piece = gameRef.current.get(sq as any);
-      const sel = selectedSquareRef.current;
-      if (sel) {
-        if (sel === sq) { setSelectedSquare(null); selectedSquareRef.current = null; return; }
-        processWhiteMoveEx2(sel, sq);
-        if (piece && piece.color === 'w' && piece.type === 'p') { setSelectedSquare(sq); selectedSquareRef.current = sq; }
+      if (selectedSquare) {
+        if (selectedSquare === sq) { setSelectedSquare(null); return; }
+        processWhiteMoveEx2(selectedSquare, sq);
+        if (piece && piece.color === 'w' && piece.type === 'p') setSelectedSquare(sq);
       } else {
-        if (piece && piece.color === 'w' && piece.type === 'p') { setSelectedSquare(sq); selectedSquareRef.current = sq; }
+        if (piece && piece.color === 'w' && piece.type === 'p') setSelectedSquare(sq);
       }
       return;
     }
@@ -479,13 +477,12 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     if (exercise === 2 && ex2Mode === 'king') {
       if (gameRef.current.turn() !== 'b') return;
       const piece = gameRef.current.get(sq as any);
-      const sel = selectedSquareRef.current;
-      if (sel) {
-        if (sel === sq) { setSelectedSquare(null); selectedSquareRef.current = null; return; }
-        processBlackMoveEx2(sel, sq);
-        if (piece && piece.color === 'b' && piece.type === 'k') { setSelectedSquare(sq); selectedSquareRef.current = sq; }
+      if (selectedSquare) {
+        if (selectedSquare === sq) { setSelectedSquare(null); return; }
+        processBlackMoveEx2(selectedSquare, sq);
+        if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
       } else {
-        if (piece && piece.color === 'b' && piece.type === 'k') { setSelectedSquare(sq); selectedSquareRef.current = sq; }
+        if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
       }
     }
   }, [exercise, ex2Mode, selectedSquare, processWhiteMoveEx2, processBlackMoveEx2, isFail]);
@@ -500,8 +497,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
-    setSelectedSquare(sq);
-    selectedSquareRef.current = sq;
   }, [exercise, ex2Mode, isFail]);
 
   useEffect(() => {
@@ -528,12 +523,12 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         }
         setDragPiece(null);
         setSelectedSquare(null);
-        selectedSquareRef.current = null;
+        
       }
       ptrStart.current = null;
     };
     const handleCancel = (e: PointerEvent) => {
-      if (ptrStart.current && e.pointerId === ptrStart.current.pointerId) { setDragPiece(null); ptrStart.current = null; selectedSquareRef.current = null; }
+      if (ptrStart.current && e.pointerId === ptrStart.current.pointerId) { setDragPiece(null); ptrStart.current = null;  }
     };
     window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', handleUp);
