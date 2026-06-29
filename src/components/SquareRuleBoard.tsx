@@ -149,14 +149,14 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
     // Build sequence: white moves pawn, black king chases
     const sequence = [
-      { white: 'a4a5', comment: 'Пешка идёт на a5. Квадрат сужается…' },
-      { white: 'a5a6', comment: 'Король идёт к пешке, но пешка убегает на a6.' },
-      { white: 'a6a7', comment: 'Король на c5. Пешка на a7.' },
-      { white: 'a7a8', comment: 'Король на b6. Пешка на a8 — прошла!' },
+      { white: 'a4a5', promo: undefined, comment: 'Пешка идёт на a5. Квадрат сужается…' },
+      { white: 'a5a6', promo: undefined, comment: 'Король идёт к пешке, но пешка убегает на a6.' },
+      { white: 'a6a7', promo: undefined, comment: 'Король на c5. Пешка на a7.' },
+      { white: 'a7a8', promo: 'q', comment: 'Король на b6. Пешка на a8 — прошла!' },
     ];
 
     for (const step of sequence) {
-      g.move({ from: step.white.slice(0, 2), to: step.white.slice(2) });
+      g.move({ from: step.white.slice(0, 2), to: step.white.slice(2, 4), promotion: step.promo });
       // Black king moves toward pawn
       const ps = (() => {
         const sqs = g.board();
@@ -217,13 +217,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     try {
       const move = game.move({ from, to });
       if (!move) return;
-      if (move.piece !== 'p') {
-        // undo and show message
-        game.undo();
-        setMessage('В этом уроке ходите только пешкой!');
-        setGame(new Chess(game.fen()));
-        return;
-      }
 
       const nextWhiteMoves = whiteMoves + 1;
       const fenAfter = game.fen();
@@ -534,7 +527,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                       </div>
                     )}
                     {isSquareCell && showSquare && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-15">
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[15]">
                         <div
                           style={{
                             width: Math.round(sqSize * 0.25),
