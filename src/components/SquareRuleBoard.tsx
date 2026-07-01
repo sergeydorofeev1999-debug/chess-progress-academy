@@ -1430,7 +1430,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
                 const isSquareBorder = showSquare && squareCells.includes(sq);
-                const canInteract = ((exercise === 2 && ex2Mode !== null) || (exercise === 3 && ex3Mode !== null) || (exercise === 4 && ex4Mode !== null) || (exercise === 5 && ex5Mode !== null)) && !isComplete && !isFail && !promotionPending;
+                const canInteract = ((exercise === 2 && ex2Mode !== null) || (exercise === 3 && ex3Mode !== null) || (exercise === 4 && ex4Mode !== null) || (exercise === 5 && ex5Mode !== null) || (exercise === 6 && ex6Mode !== null)) && !isComplete && !isFail && !promotionPending;
 
                 return (
                   <div
@@ -1513,7 +1513,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
 
         {/* Mobile exercise pills */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
-          {[1, 2, 3, 4, 5].map((exId) => {
+          {[1, 2, 3, 4, 5, 6].map((exId) => {
             const earnedStars = exerciseStars[exId] || 0;
             const isCurrent = exId === exercise;
             const isDone = earnedStars > 0;
