@@ -17,7 +17,7 @@ import ChessFootballBoard from './ChessFootballBoard';
 import TwoRooksMateBoard from './TwoRooksMateBoard';
 import QueenMateBoard from './QueenMateBoard';
 import RookMateBoard from './RookMateBoard';
-import ForkBoard from './ForkBoard'; // v2: bishop fork on d5/f7
+import ForkBoard from './ForkBoard'; // v3: dual exercises (rook + bishop fork)
 import SquareRuleBoard from './SquareRuleBoard';
 
 interface Lesson {
