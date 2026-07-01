@@ -12,7 +12,7 @@ const START_FEN_1 = '1n4k1/8/8/8/8/8/8/3R2K1 w - - 0 1';
 const START_FEN_2 = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
 const START_FEN_3 = '8/ppk5/1qp5/7r/8/1Q4P1/5P1P/5RK1 w - - 0 1';
 const START_FEN_4 = 'rnbqkb1r/pp2pppp/3p4/2p5/4n3/2P2N2/PP1PBPPP/RNBQK2R w KQkq - 0 1';
-const START_FEN_5 = '3q1rk1/pppp1pp1/n6p/8/3P4/2P1b3/PP4PP/R2Q1R1K w - - 0 1';
+const START_FEN_5 = '3q1rk1/p1p1pppp/np5p/8/3P4/2P1b3/PP4PP/R2Q1R1K w - - 0 1';
 
 // v4 - star progress tracking
 
