@@ -12,7 +12,7 @@ const START_FEN_1 = '8/8/8/8/P3k3/8/8/7K w - - 0 1';
 const START_FEN_2 = '8/3k4/8/8/7P/8/8/K7 w - - 0 1';
 const START_FEN_3 = '8/8/8/P3k3/8/8/8/7K w - - 0 1';
 const START_FEN_4 = '8/8/8/8/8/1k4P1/8/7K w - - 0 1';
-const START_FEN_5 = '8/5k2/8/P7/8/8/8/7K w - - 0 1';
+const START_FEN_5 = '8/5k2/8/8/P7/8/8/7K w - - 0 1';
 
 const SQUARE_FILL = 'rgba(255,255,255,0.75)';
 
