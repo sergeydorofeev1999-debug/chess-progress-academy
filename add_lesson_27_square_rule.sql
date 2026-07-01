@@ -17,5 +17,5 @@ VALUES (
   27,
   15,
   '8/8/8/8/P3k3/8/8/7K w - - 0 1',
-  '{"type": "interactive_endgame_square"}'
+  '{"type": "interactive_square_rule"}'
 );
