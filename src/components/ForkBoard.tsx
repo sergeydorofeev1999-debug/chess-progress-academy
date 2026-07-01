@@ -592,7 +592,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
               >
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={8} />
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
                   ))}
                 </div>
               </button>
