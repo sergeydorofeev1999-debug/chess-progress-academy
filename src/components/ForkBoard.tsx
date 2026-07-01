@@ -86,6 +86,21 @@ function getBlackAutoCaptureAny(game: Chess): { from: string; to: string } | nul
   return null;
 }
 
+function getBlackSafeCapture(game: Chess): { from: string; to: string } | null {
+  const blackMoves = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
+  for (const m of blackMoves) {
+    const testGame = new Chess(game.fen());
+    testGame.move({ from: m.from, to: m.to });
+    const whiteRecaptures = testGame.moves({ verbose: true }).filter(
+      wm => wm.color === 'w' && wm.to === m.to
+    );
+    if (whiteRecaptures.length === 0) {
+      return { from: m.from, to: m.to };
+    }
+  }
+  return null;
+}
+
 interface DragState {
   square: string;
   type: string;
@@ -253,6 +268,8 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
         if (whiteMoves === 0) {
           if (!isCorrectFirst) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsFail(true);
@@ -285,6 +302,8 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
         if (whiteMoves === 1) {
           if (!isCorrectSecond) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsFail(true);
