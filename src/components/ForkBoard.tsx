@@ -11,6 +11,24 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 const START_FEN_1 = '1n4k1/8/8/8/8/8/8/3R2K1 w - - 0 1';
 const START_FEN_2 = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
 
+function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
+  return (
+    <img
+      src="/images/learn/star.png"
+      alt=""
+      className="shrink-0"
+      style={{
+        width: size,
+        height: size,
+        filter: filled
+          ? 'brightness(1.2) drop-shadow(0 0 1px rgba(255,255,255,0.6))'
+          : 'grayscale(100%) brightness(0.4)',
+      }}
+      draggable={false}
+    />
+  );
+}
+
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
   return (
@@ -79,8 +97,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   const [isComplete, setIsComplete] = useState(false);
   const [whiteMoves, setWhiteMoves] = useState(0);
   const [sqSize, setSqSize] = useState(52);
-  const [ex1Done, setEx1Done] = useState(false);
-  const [ex2Done, setEx2Done] = useState(false);
+  const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
 
   const isCompleteRef = useRef(false);
   const isFailRef = useRef(false);
@@ -90,8 +107,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const pointerStartRef = useRef<PointerStart | null>(null);
 
-  const storageKey1 = lessonId ? `fork_ex1_${lessonId}` : 'fork_ex1';
-  const storageKey2 = lessonId ? `fork_ex2_${lessonId}` : 'fork_ex2';
+  const storageKey = lessonId ? `fork_progress_${lessonId}` : 'fork_progress';
 
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
@@ -99,14 +115,10 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
   useEffect(() => {
     try {
-      const raw1 = localStorage.getItem(storageKey1);
-      if (raw1) { const p = JSON.parse(raw1); if (p.done) setEx1Done(true); }
+      const raw = localStorage.getItem(storageKey);
+      if (raw) setExerciseStars(JSON.parse(raw));
     } catch {}
-    try {
-      const raw2 = localStorage.getItem(storageKey2);
-      if (raw2) { const p = JSON.parse(raw2); if (p.done) setEx2Done(true); }
-    } catch {}
-  }, [storageKey1, storageKey2]);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!game) setGame(new Chess(START_FEN_1));
@@ -137,11 +149,13 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveDone = useCallback((ex: 1 | 2) => {
-    const key = ex === 1 ? storageKey1 : storageKey2;
-    try { localStorage.setItem(key, JSON.stringify({ done: true })); } catch {}
-    if (ex === 1) setEx1Done(true); else setEx2Done(true);
-  }, [storageKey1, storageKey2]);
+  const saveStars = useCallback((ex: 1 | 2, stars: number) => {
+    setExerciseStars(prev => {
+      const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [storageKey]);
 
   const switchExercise = useCallback((num: 1 | 2) => {
     setExercise(num);
@@ -217,7 +231,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           setSelectedSquare(null);
           setIsComplete(true);
           setMessage('Отлично! Двойной удар выполнен.');
-          saveDone(1);
+          saveStars(1, 3);
           return;
         }
       } else {
@@ -260,14 +274,14 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           setSelectedSquare(null);
           setIsComplete(true);
           setMessage('Отлично! Двойной удар выполнен.');
-          saveDone(2);
+          saveStars(2, 3);
           return;
         }
       }
     } catch {
       // Invalid move
     }
-  }, [game, whiteMoves, onComplete, saveDone, exercise]);
+  }, [game, whiteMoves, onComplete, saveStars, exercise]);
 
   const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
@@ -381,25 +395,29 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-[#c5b5d8]">
-          {[1, 2].map((num) => (
-            <button
-              key={num}
-              onClick={() => switchExercise(num as 1 | 2)}
-              className={`flex items-center justify-center px-2 py-1.5 transition ${
-                exercise === num
-                  ? num === 1
-                    ? ex1Done
+          {[1, 2].map((num) => {
+            const earned = exerciseStars[num] || 0;
+            return (
+              <button
+                key={num}
+                onClick={() => switchExercise(num as 1 | 2)}
+                className={`flex items-center justify-center gap-1 px-2 py-1.5 transition ${
+                  exercise === num
+                    ? earned >= 3
                       ? 'bg-emerald-500 text-white'
                       : 'bg-blue-500 text-white'
-                    : ex2Done
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-blue-500 text-white'
-                  : 'bg-white text-slate-700 hover:bg-slate-50'
-              } cursor-pointer border-b border-[#c5b5d8] last:border-b-0`}
-            >
-              <span className="text-xs font-medium">Упражнение {num}</span>
-            </button>
-          ))}
+                    : 'bg-white text-slate-700 hover:bg-slate-50'
+                } cursor-pointer border-b border-[#c5b5d8] last:border-b-0`}
+              >
+                <span className="text-xs font-medium">Упражнение {num}</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map(s => (
+                    <StarPng key={s} filled={earned > 0 && s <= earned} size={10} />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         <button
@@ -552,21 +570,29 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
         {/* Mobile exercise nav */}
         <div className="flex lg:hidden gap-1 justify-center mt-2">
-          {[1, 2].map((num) => (
-            <button
-              key={num}
-              onClick={() => switchExercise(num as 1 | 2)}
-              className={`px-3 py-1 rounded text-xs font-medium transition ${
-                exercise === num
-                  ? num === 1
-                    ? ex1Done ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
-                    : ex2Done ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-              }`}
-            >
-              {num}
-            </button>
-          ))}
+          {[1, 2].map((num) => {
+            const earned = exerciseStars[num] || 0;
+            return (
+              <button
+                key={num}
+                onClick={() => switchExercise(num as 1 | 2)}
+                className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition ${
+                  exercise === num
+                    ? earned >= 3
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
+                }`}
+              >
+                <span>{num}</span>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map(s => (
+                    <StarPng key={s} filled={earned > 0 && s <= earned} size={8} />
+                  ))}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Completion banner */}
@@ -576,7 +602,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise === 1 && !ex2Done && (
+            {exercise === 1 && (exerciseStars[2] || 0) < 3 && (
               <button
                 onClick={() => switchExercise(2)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
@@ -584,7 +610,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
                 Перейти к Упражнению 2 →
               </button>
             )}
-            {exercise === 2 && ex1Done && (
+            {exercise === 2 && (exerciseStars[1] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
