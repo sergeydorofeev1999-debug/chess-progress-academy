@@ -307,7 +307,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          Двойной удар — съешьте пешку на d5 с шахом, затем съешьте ладью на f7
+          Двойной удар — съешьте пешку на d5 с шахом, затем съешьте ладью на f7 [v2]
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
