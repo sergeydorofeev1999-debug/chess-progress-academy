@@ -1046,7 +1046,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } cursor-pointer`}
               >
-                <span className="font-medium">{exId}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map((s) => (
                     <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
