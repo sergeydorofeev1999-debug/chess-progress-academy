@@ -13,6 +13,7 @@ const START_FEN_2 = '8/3k4/8/8/7P/8/8/K7 w - - 0 1';
 const START_FEN_3 = '8/8/8/P3k3/8/8/8/7K w - - 0 1';
 const START_FEN_4 = '8/8/8/8/8/1k4P1/8/7K w - - 0 1';
 const START_FEN_5 = '8/5k2/8/8/P7/8/8/7K w - - 0 1';
+const START_FEN_6 = '8/8/5p2/8/8/2k4P/8/K7 w - - 0 1';
 
 const SQUARE_FILL = 'rgba(255,255,255,0.75)';
 
@@ -106,11 +107,12 @@ function getWhitePieceSquare(game: Chess): string | null {
 }
 
 export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [ex2Mode, setEx2Mode] = useState<'king' | 'pawn' | null>(null);
   const [ex3Mode, setEx3Mode] = useState<'king' | 'pawn' | null>(null);
   const [ex4Mode, setEx4Mode] = useState<'king' | 'pawn' | null>(null);
   const [ex5Mode, setEx5Mode] = useState<'king' | 'pawn' | null>(null);
+  const [ex6Mode, setEx6Mode] = useState<'king' | 'pawn' | null>(null);
 
   const [game, setGame] = useState<Chess>(() => new Chess(START_FEN_1));
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   const gameRef = useRef(game);
   const justDraggedRef = useRef(false);
 
-  const activeStartFen = exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_1;
+  const activeStartFen = exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : START_FEN_1;
 
   useEffect(() => () => { mountedRef.current = false; }, []);
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
@@ -190,12 +192,13 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     if (exercise === 3) setEx3Mode(null);
     if (exercise === 4) setEx4Mode(null);
     if (exercise === 5) setEx5Mode(null);
+    if (exercise === 6) setEx6Mode(null);
   }, [clearTimers, activeStartFen, exercise]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
     setExercise(num);
     clearTimers();
-    const fen = num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_1;
+    const fen = num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : START_FEN_1;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -210,6 +213,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     setEx3Mode(null);
     setEx4Mode(null);
     setEx5Mode(null);
+    setEx6Mode(null);
   }, [clearTimers]);
 
   // ═══════════════════════════════════════════════════════════════
@@ -802,6 +806,99 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   }, [isFail, promotionPending, onComplete, saveStars]);
 
   // ═══════════════════════════════════════════════════════════════
+  // EXERCISE 6: KING CHASE MODE (auto white pawn, user black king)
+  // ═══════════════════════════════════════════════════════════════
+  const startEx6KingChase = useCallback(() => {
+    setEx6Mode('king');
+    setMessage('Король на c3 — внутри квадрата пешки h3. Но чёрная пешка f6 — помеха! Белая пешка ходит первой!');
+    const g = new Chess(START_FEN_6);
+    setGame(g);
+    const t = setTimeout(() => {
+      if (!mountedRef.current) return;
+      doAutoWhitePawnMove('king', g);
+    }, 1000);
+    timersRef.current.push(t);
+  }, [doAutoWhitePawnMove]);
+
+  const processBlackMoveEx6 = useCallback((from: string, to: string) => {
+    if (isCompleteRef.current || isFail || promotionPending) return;
+    const g1 = new Chess(gameRef.current.fen());
+    try {
+      const move = g1.move({ from, to });
+      if (!move) return;
+      if (ex6Mode === 'king') {
+        const pawnStillOnBoard = getPawnSquare(g1) !== null;
+        if (!pawnStillOnBoard && !move.captured) {
+          setIsFail(true);
+          setMessage('Провалено. Король должен был съесть ферзя.');
+          return;
+        }
+      }
+      setGame(new Chess(g1.fen()));
+      setSelectedSquare(null);
+      if (move.captured) {
+        setIsComplete(true);
+        saveStars(6, 3);
+        setMessage('Король съел ферзя! Правило квадрата: король внутри квадрата — догнал.');
+        onComplete();
+        return;
+      }
+      const t = setTimeout(() => {
+        if (!mountedRef.current || isCompleteRef.current) return;
+        doAutoWhitePawnMove('king', g1);
+      }, 1000);
+      timersRef.current.push(t);
+    } catch {}
+  }, [isFail, promotionPending, doAutoWhitePawnMove, onComplete, ex6Mode, saveStars]);
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXERCISE 6: PAWN RUN MODE (user white pawn, auto black king)
+  // ═══════════════════════════════════════════════════════════════
+  const startEx6PawnRun = useCallback(() => {
+    setEx6Mode('pawn');
+    setGame(new Chess(START_FEN_6));
+    setMessage('Ведите белую пешку h3 к последней горизонтали. Король преследует…');
+  }, []);
+
+  const processWhiteMoveEx6 = useCallback((from: string, to: string) => {
+    if (isCompleteRef.current || isFail || promotionPending) return;
+    try {
+      const toRank = parseInt(to[1]);
+      if (toRank === 8) {
+        setPromotionPending({ mode: 'pawn', from, to, afterGameFen: gameRef.current.fen() });
+        return;
+      }
+      const m = gameRef.current.move({ from, to });
+      if (!m) return;
+      setGame(new Chess(gameRef.current.fen()));
+      setSelectedSquare(null);
+      if (toRank === 8) {
+        setIsComplete(true);
+        saveStars(6, 3);
+        setMessage('Пешка прошла! Король не догнал.');
+        onComplete();
+        return;
+      }
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        const g2 = new Chess(gameRef.current.fen());
+        const ps = getPawnSquare(g2);
+        if (ps) {
+          const bk = getBlackKingMoveTowards(g2, ps);
+          if (bk) {
+            g2.move({ from: bk.from, to: bk.to });
+            setGame(new Chess(g2.fen()));
+            if (!getPawnSquare(g2)) {
+              setIsFail(true);
+              setMessage('Провалено. Король съел пешку.');
+            }
+          }
+        }
+      }, 500);
+    } catch {}
+  }, [isFail, promotionPending, onComplete, saveStars]);
+
+  // ═══════════════════════════════════════════════════════════════
   // INTERACTION HANDLERS
   // ═══════════════════════════════════════════════════════════════
   const handleSquareClick = useCallback((sq: string) => {
@@ -909,7 +1006,32 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
       }
     }
-  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, selectedSquare, processWhiteMoveEx2, processBlackMoveEx2, processWhiteMoveEx3, processBlackMoveEx3, processWhiteMoveEx4, processBlackMoveEx4, processWhiteMoveEx5, processBlackMoveEx5, isFail]);
+
+    if (exercise === 6 && ex6Mode === 'pawn') {
+      if (gameRef.current.turn() !== 'w') return;
+      const piece = gameRef.current.get(sq as any);
+      if (selectedSquare) {
+        if (selectedSquare === sq) { setSelectedSquare(null); return; }
+        processWhiteMoveEx6(selectedSquare, sq);
+        if (piece && piece.color === 'w' && piece.type === 'p') setSelectedSquare(sq);
+      } else {
+        if (piece && piece.color === 'w' && piece.type === 'p') setSelectedSquare(sq);
+      }
+      return;
+    }
+
+    if (exercise === 6 && ex6Mode === 'king') {
+      if (gameRef.current.turn() !== 'b') return;
+      const piece = gameRef.current.get(sq as any);
+      if (selectedSquare) {
+        if (selectedSquare === sq) { setSelectedSquare(null); return; }
+        processBlackMoveEx6(selectedSquare, sq);
+        if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
+      } else {
+        if (piece && piece.color === 'b' && piece.type === 'k') setSelectedSquare(sq);
+      }
+    }
+  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, ex6Mode, selectedSquare, processWhiteMoveEx2, processBlackMoveEx2, processWhiteMoveEx3, processBlackMoveEx3, processWhiteMoveEx4, processBlackMoveEx4, processWhiteMoveEx5, processBlackMoveEx5, processWhiteMoveEx6, processBlackMoveEx6, isFail]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, sq: string) => {
     if (isCompleteRef.current || isFail) return;
@@ -920,11 +1042,12 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     if (exercise === 3 && ex3Mode === 'king') { targetColor = 'b'; targetType = 'k'; }
     if (exercise === 4 && ex4Mode === 'king') { targetColor = 'b'; targetType = 'k'; }
     if (exercise === 5 && ex5Mode === 'king') { targetColor = 'b'; targetType = 'k'; }
+    if (exercise === 6 && ex6Mode === 'king') { targetColor = 'b'; targetType = 'k'; }
     if (gameRef.current.turn() !== targetColor) return;
     const piece = gameRef.current.get(sq as any);
     if (!piece || piece.color !== targetColor || piece.type !== targetType) return;
     ptrStart.current = { square: sq, moved: false, pointerId: e.pointerId, x: e.clientX, y: e.clientY };
-  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, isFail]);
+  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, ex6Mode, isFail]);
 
   useEffect(() => {
     if (exercise === 1) return;
@@ -953,6 +1076,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           else if (exercise === 4 && ex4Mode === 'pawn') processWhiteMoveEx4(s.square, ts);
           else if (exercise === 5 && ex5Mode === 'king') processBlackMoveEx5(s.square, ts);
           else if (exercise === 5 && ex5Mode === 'pawn') processWhiteMoveEx5(s.square, ts);
+          else if (exercise === 6 && ex6Mode === 'king') processBlackMoveEx6(s.square, ts);
+          else if (exercise === 6 && ex6Mode === 'pawn') processWhiteMoveEx6(s.square, ts);
         }
         setDragPiece(null);
         setSelectedSquare(null);
@@ -970,7 +1095,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       window.removeEventListener('pointerup', handleUp);
       window.removeEventListener('pointercancel', handleCancel);
     };
-  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, processBlackMoveEx2, processWhiteMoveEx2, processBlackMoveEx3, processWhiteMoveEx3, processBlackMoveEx4, processWhiteMoveEx4, processBlackMoveEx5, processWhiteMoveEx5]);
+  }, [exercise, ex2Mode, ex3Mode, ex4Mode, ex5Mode, ex6Mode, processBlackMoveEx2, processWhiteMoveEx2, processBlackMoveEx3, processWhiteMoveEx3, processBlackMoveEx4, processWhiteMoveEx4, processBlackMoveEx5, processWhiteMoveEx5, processBlackMoveEx6, processWhiteMoveEx6]);
 
   // ═══════════════════════════════════════════════════════════════
   // RENDER
@@ -1001,6 +1126,8 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
     exercise === 4 && ex4Mode === 'pawn' ? 'Ваш ход белой пешкой' :
     exercise === 5 && ex5Mode === 'king' ? 'Ваш ход чёрным королём' :
     exercise === 5 && ex5Mode === 'pawn' ? 'Ваш ход белой пешкой' :
+    exercise === 6 && ex6Mode === 'king' ? 'Ваш ход чёрным королём' :
+    exercise === 6 && ex6Mode === 'pawn' ? 'Ваш ход белой пешкой' :
     'Выберите режим';
 
   return (
@@ -1008,14 +1135,14 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
       {/* LEFT */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
-          {[1, 2, 3, 4, 5].map((exId) => {
+          {[1, 2, 3, 4, 5, 6].map((exId) => {
             const earnedStars = exerciseStars[exId] || 0;
             const isCurrent = exId === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={exId}
-                onClick={() => switchExercise(exId as 1 | 2 | 3 | 4 | 5)}
+                onClick={() => switchExercise(exId as 1 | 2 | 3 | 4 | 5 | 6)}
                 className={`flex items-center justify-center px-2 py-1.5 transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -1140,6 +1267,24 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
           </div>
         )}
 
+        {/* EXERCISE 6 controls */}
+        {exercise === 6 && !ex6Mode && !isComplete && !isFail && (
+          <div className="flex flex-wrap gap-2 justify-center">
+            <button
+              onClick={startEx6KingChase}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Король догонит
+            </button>
+            <button
+              onClick={startEx6PawnRun}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Пешка пройдёт
+            </button>
+          </div>
+        )}
+
         <div className="text-center font-bold text-slate-700 text-lg">{turnText}</div>
 
         {message && (
@@ -1209,6 +1354,21 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
         )}
 
         {isComplete && exercise === 5 && (
+          <div className="flex flex-col items-center gap-3">
+            <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
+              <Trophy className="w-5 h-5 inline-block mr-2" />
+              {message || 'Правило квадрата сработало!'}
+            </div>
+            <button
+              onClick={() => switchExercise(6)}
+              className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-bold transition-colors shadow"
+            >
+              Перейти к Упражнению 6 →
+            </button>
+          </div>
+        )}
+
+        {isComplete && exercise === 6 && (
           <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-green-500">
             <Trophy className="w-5 h-5 inline-block mr-2" />
             {message || 'Правило квадрата сработало!'}
@@ -1360,7 +1520,7 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
             return (
               <button
                 key={exId}
-                onClick={() => switchExercise(exId as 1 | 2 | 3 | 4 | 5)}
+                onClick={() => switchExercise(exId as 1 | 2 | 3 | 4 | 5 | 6)}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition ${
                   isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                 } cursor-pointer`}
