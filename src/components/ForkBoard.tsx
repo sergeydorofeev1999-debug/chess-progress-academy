@@ -396,27 +396,29 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-[#c5b5d8]">
+        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
           {[1, 2].map((num) => {
-            const earned = exerciseStars[num] || 0;
+            const earnedStars = exerciseStars[num] || 0;
+            const isCurrent = num === exercise;
+            const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
                 onClick={() => switchExercise(num as 1 | 2)}
-                className={`flex items-center justify-center gap-1 px-2 py-1.5 transition ${
-                  exercise === num
-                    ? earned >= 3
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-blue-500 text-white'
-                    : 'bg-white text-slate-700 hover:bg-slate-50'
-                } cursor-pointer border-b border-[#c5b5d8] last:border-b-0`}
+                className={`flex items-center justify-center px-2 py-1.5 transition ${
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
               >
-                <span className="text-xs font-medium">Упражнение {num}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earned > 0 && s <= earned} size={10} />
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
                   ))}
                 </div>
+                <span className="ml-2 text-xs font-medium">{num}</span>
               </button>
             );
           })}
@@ -573,23 +575,25 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
         {/* Mobile exercise nav */}
         <div className="flex lg:hidden gap-1 justify-center mt-2">
           {[1, 2].map((num) => {
-            const earned = exerciseStars[num] || 0;
+            const earnedStars = exerciseStars[num] || 0;
+            const isCurrent = num === exercise;
+            const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
                 onClick={() => switchExercise(num as 1 | 2)}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition ${
-                  exercise === num
-                    ? earned >= 3
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-blue-500 text-white'
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
                     : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                 }`}
               >
                 <span>{num}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earned > 0 && s <= earned} size={8} />
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={8} />
                   ))}
                 </div>
               </button>
