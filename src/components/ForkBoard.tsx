@@ -411,14 +411,6 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
             
             if (blackMove) {
               g.move({ from: blackMove.from, to: blackMove.to });
-              const autoCap = getBlackSafeCapture(g);
-              if (autoCap) {
-                g.move({ from: autoCap.from, to: autoCap.to });
-                setGame(new Chess(g.fen()));
-                setIsFail(true);
-                setMessage('Провалено');
-                return;
-              }
               setGame(new Chess(g.fen()));
             }
           }, 500);
@@ -741,14 +733,14 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
         {/* Mobile exercise nav */}
         <div className="flex lg:hidden gap-1 justify-center mt-2">
-          {[1, 2].map((num) => {
+          {[1, 2, 3, 4].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2)}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4)}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -774,15 +766,15 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise === 1 && (exerciseStars[2] || 0) < 3 && (
+            {exercise < 4 && (
               <button
-                onClick={() => switchExercise(2)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
-                Перейти к Упражнению 2 →
+                Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 2 && (exerciseStars[1] || 0) >= 3 && (
+            {exercise === 4 && (exerciseStars[4] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
