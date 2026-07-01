@@ -11,6 +11,8 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 const START_FEN_1 = '1n4k1/8/8/8/8/8/8/3R2K1 w - - 0 1';
 const START_FEN_2 = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
 
+// v4 - star progress tracking
+
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
     <img
