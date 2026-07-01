@@ -590,7 +590,6 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
                     : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                 }`}
               >
-                <span>{num}</span>
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
                     <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={8} />
