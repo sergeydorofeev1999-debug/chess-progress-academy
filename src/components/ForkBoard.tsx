@@ -8,7 +8,7 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-const START_FEN = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
+const START_FEN = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1'; // v2: black rook on f7
 
 function PieceImg({ type, color }: { type: string; color: 'w' | 'b' }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
@@ -43,6 +43,8 @@ interface PointerStart {
   moved: boolean;
   pointerId: number;
 }
+
+export const FORK_BOARD_VERSION = '2.0'; // bust cache
 
 export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
   const [game, setGame] = useState<Chess | null>(null);
