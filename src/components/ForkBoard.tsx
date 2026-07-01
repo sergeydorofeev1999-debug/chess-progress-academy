@@ -76,6 +76,16 @@ function getBlackAutoCapture(game: Chess): { from: string; to: string } | null {
   return null;
 }
 
+function getBlackAutoCaptureAny(game: Chess): { from: string; to: string } | null {
+  const blackMoves = game.moves({ verbose: true }).filter(m => m.color === 'b');
+  for (const m of blackMoves) {
+    if (m.captured) {
+      return { from: m.from, to: m.to };
+    }
+  }
+  return null;
+}
+
 interface DragState {
   square: string;
   type: string;
@@ -258,6 +268,15 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
             const blackMove = getBlackKingMove(g);
             if (blackMove) {
               g.move({ from: blackMove.from, to: blackMove.to });
+              // Auto-capture check: if black can capture any white piece safely
+              const autoCap = getBlackAutoCaptureAny(g);
+              if (autoCap) {
+                g.move({ from: autoCap.from, to: autoCap.to });
+                setGame(new Chess(g.fen()));
+                setIsFail(true);
+                setMessage('Провалено');
+                return;
+              }
               setGame(new Chess(g.fen()));
             }
           }, 500);
