@@ -10,6 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = '1n4k1/8/8/8/8/8/8/3R2K1 w - - 0 1';
 const START_FEN_2 = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
+const START_FEN_3 = '8/ppk5/1qp5/4r3/8/1Q4P1/5P1P/5RK1 w - - 0 1';
 
 // v4 - star progress tracking
 
@@ -116,7 +117,7 @@ interface PointerStart {
 }
 
 export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -167,7 +168,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : START_FEN_2;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : START_FEN_3;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -176,7 +177,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -184,9 +185,9 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : START_FEN_2;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : START_FEN_3;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -261,7 +262,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           saveStars(1, 3);
           return;
         }
-      } else {
+      } else if (exercise === 2) {
         // EXERCISE 2: Bishop fork
         const isCorrectFirst = from === 'g2' && to === 'd5' && move.piece === 'b';
         const isCorrectSecond = from === 'd5' && to === 'f7' && move.piece === 'b';
@@ -315,6 +316,61 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           setIsComplete(true);
           setMessage('Отлично! Двойной удар выполнен.');
           saveStars(2, 3);
+          return;
+        }
+      } else {
+        // EXERCISE 3: Queen fork
+        const isCorrectFirst = from === 'b3' && to === 'f7' && move.piece === 'q';
+        const isCorrectSecond = from === 'f7' && to === 'h5' && move.piece === 'q';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMove = getBlackKingMove(g);
+            if (blackMove) {
+              g.move({ from: blackMove.from, to: blackMove.to });
+              const autoCap = getBlackSafeCapture(g);
+              if (autoCap) {
+                g.move({ from: autoCap.from, to: autoCap.to });
+                setGame(new Chess(g.fen()));
+                setIsFail(true);
+                setMessage('Провалено');
+                return;
+              }
+              setGame(new Chess(g.fen()));
+            }
+          }, 500);
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Двойной удар выполнен.');
+          saveStars(3, 3);
           return;
         }
       }
@@ -435,14 +491,14 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
-          {[1, 2].map((num) => {
+          {[1, 2, 3].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2)}
+                onClick={() => switchExercise(num as 1 | 2 | 3)}
                 className={`flex items-center justify-center px-2 py-1.5 transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -475,7 +531,9 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
           {exercise === 1
             ? 'Двойной удар — поставьте шах ладьёй на d8, затем съешьте коня на b8'
-            : 'Двойной удар — съешьте пешку на d5 с шахом, затем съешьте ладью на f7'}
+            : exercise === 2
+            ? 'Двойной удар — съешьте пешку на d5 с шахом, затем съешьте ладью на f7'
+            : 'Двойной удар — поставьте шах ферзём на f7, затем съешьте ладью на h5'}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
