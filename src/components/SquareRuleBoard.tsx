@@ -506,7 +506,6 @@ export default function SquareRuleBoard({ onComplete, lessonId }: { onComplete: 
   // ═══════════════════════════════════════════════════════════════
   const startEx3KingChase = useCallback(() => {
     setEx3Mode('king');
-    setShowSquare(true);
     setMessage('Король на e5 — внутри квадрата пешки a5. Белая пешка ходит первой!');
     const g = new Chess(START_FEN_3);
     setGame(g);
