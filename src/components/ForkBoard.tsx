@@ -12,12 +12,15 @@ const START_FEN_1 = '1n4k1/8/8/8/8/8/8/3R2K1 w - - 0 1';
 const START_FEN_2 = '8/1k3r2/8/3p4/8/6P1/5PBP/6K1 w - - 0 1';
 const START_FEN_3 = '8/ppk5/1qp5/7r/8/1Q4P1/5P1P/5RK1 w - - 0 1';
 const START_FEN_4 = 'rnbqkb1r/pp2pppp/3p4/2p5/4n3/2P2N2/PP1PBPPP/RNBQK2R w KQkq - 0 1';
-const START_FEN_5 = '3q1rk1/p1p1pppp/np5p/8/3P4/2P1b3/PP4PP/R2Q1R1K w - - 0 1';
+const START_FEN_5 = '3q1rk1/p1p2pp1/np5p/8/3P4/2P1b3/PP4PP/R2Q1R1K w - - 0 1';
 const START_FEN_6 = '8/8/3k1r2/8/3PP3/8/8/K7 w - - 0 1';
-const START_FEN_7 = 'rnbqk1r1/ppp2ppp/3bpn2/3p4/3PP3/2N2N2/PPP2PPP/R1BQKBR1 w KQkq - 0 1';
+const START_FEN_7 = 'rnbqk2r/ppp2ppp/3bpn2/3p4/3PP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 0 1';
 
 const START_FEN_8 = 'r3k3/8/8/3N4/8/8/8/7K w - - 0 1';
-const START_FEN_9 = '2kr3r/pb1n1pp1/2p3q1/5N2/2p1P1p1/2N3P1/PP3PB1/R1BQRK2 w - - 0 1';
+const START_FEN_9 = '2kr3r/pb1n1pp1/1pp3q1/5N2/2p1P1p1/2N3P1/PP3PB1/R1BQRK2 w - - 0 1';
+const START_FEN_10 = 'r1bk1bnr/pp3ppp/1qn1p3/1N1p4/3P1B2/8/PPP2PPP/R2QKBNR w KQkq - 0 1';
+const START_FEN_11 = '3k4/5p2/R2P4/3r4/PP1b3p/5KP1/6P1/8 w - - 0 1';
+const START_FEN_12 = 'R7/3b1kp1/2p1n1Np/7P/P1PpB1r1/3P4/1r6/R4K2 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
@@ -122,7 +125,7 @@ interface PointerStart {
 }
 
 export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -173,7 +176,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : START_FEN_9;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : exercise === 9 ? START_FEN_9 : exercise === 10 ? START_FEN_10 : exercise === 11 ? START_FEN_11 : START_FEN_12;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -182,7 +185,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -190,9 +193,9 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : START_FEN_9;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -534,7 +537,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           saveStars(6, 3);
           return;
         }
-      } else {
+      } else if (exercise === 7) {
         // EXERCISE 7: Pawn fork from modified starting position — e4-e5 attacks Nf6 and Bd6
         const isCorrectFirst = from === 'e4' && to === 'e5' && move.piece === 'p';
         const isCorrectSecond = (from === 'e5' && to === 'f6' && move.piece === 'p') || (from === 'e5' && to === 'd6' && move.piece === 'p');
@@ -630,7 +633,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           saveStars(8, 3);
           return;
         }
-      } else {
+      } else if (exercise === 9) {
         // EXERCISE 9: Knight fork — Nf5-e7+ attacks Kc8 and Qg6, then Nxg6
         const isCorrectFirst = from === 'f5' && to === 'e7' && move.piece === 'n';
         const isCorrectSecond = from === 'e7' && to === 'g6' && move.piece === 'n';
@@ -675,6 +678,161 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           setIsComplete(true);
           setMessage('Отлично! Двойной удар выполнен.');
           saveStars(9, 3);
+          return;
+        }
+      } else if (exercise === 10) {
+        // EXERCISE 10: Bishop fork — Bf4-c7+ attacks Qb6 and Nc6, then Bxb6
+        const isCorrectFirst = from === 'f4' && to === 'c7' && move.piece === 'b';
+        const isCorrectSecond = from === 'c7' && to === 'b6' && move.piece === 'b';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMoves = g.moves({ verbose: true }).filter(m => m.color === 'b');
+            const nonQueenMoves = blackMoves.filter(m => m.piece !== 'q');
+            const blackMove = nonQueenMoves.length > 0 ? nonQueenMoves[Math.floor(Math.random() * nonQueenMoves.length)] : blackMoves[Math.floor(Math.random() * blackMoves.length)];
+            if (blackMove) {
+              g.move({ from: blackMove.from, to: blackMove.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 500);
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Двойной удар выполнен.');
+          saveStars(10, 3);
+          return;
+        }
+      } else if (exercise === 11) {
+        // EXERCISE 11: King fork — Kf3-e4 attacks Rd5 and Bd4
+        const isCorrectFirst = from === 'f3' && to === 'e4' && move.piece === 'k';
+        const isCorrectSecond = (from === 'e4' && to === 'd5' && move.piece === 'k') || (from === 'e4' && to === 'd4' && move.piece === 'k');
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMoves = g.moves({ verbose: true }).filter(m => m.color === 'b');
+            const nonQueenMoves = blackMoves.filter(m => m.piece !== 'q');
+            const blackMove = nonQueenMoves.length > 0 ? nonQueenMoves[Math.floor(Math.random() * nonQueenMoves.length)] : blackMoves[Math.floor(Math.random() * blackMoves.length)];
+            if (blackMove) {
+              g.move({ from: blackMove.from, to: blackMove.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 500);
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Двойной удар выполнен.');
+          saveStars(11, 3);
+          return;
+        }
+      } else if (exercise === 12) {
+        // EXERCISE 12: Knight fork — Ng6-e5 attacks Rg4 and Re6, then Nxg4
+        const isCorrectFirst = from === 'g6' && to === 'e5' && move.piece === 'n';
+        const isCorrectSecond = from === 'e5' && to === 'g4' && move.piece === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            const isCheck = g.isCheck();
+            if (isCheck) {
+              const kingMoves = g.moves({ verbose: true }).filter(m => m.color === 'b' && m.piece === 'k');
+              if (kingMoves.length > 0) {
+                const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+                g.move({ from: kingMove.from, to: kingMove.to });
+                setGame(new Chess(g.fen()));
+                setSelectedSquare(null);
+                setIsFail(true);
+                setMessage('Провалено');
+                return;
+              }
+            }
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'f7', to: 'e7' });
+            setGame(new Chess(g.fen()));
+          }, 500);
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            const safeCap = getBlackSafeCapture(g);
+            if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Двойной удар выполнен.');
+          saveStars(12, 3);
           return;
         }
       }
@@ -795,21 +953,21 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
                 className={`flex items-center justify-center px-2 py-1.5 transition ${
                   isCurrent
-                    ? 'bg-blue-500 text-white cursor-pointer hover:brightness-110'
+                    ? 'bg-blue-500 text-white'
                     : isDone
-                    ? 'bg-emerald-500 text-white cursor-pointer hover:brightness-110'
-                    : 'bg-gray-200 text-gray-500 cursor-pointer hover:brightness-110'
-                }`}
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
               >
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
@@ -849,7 +1007,15 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
             ? 'Двойной удар — сходите пешкой e4-e5, затем съешьте коня на f6 или слона на d6'
             : exercise === 8
             ? 'Двойной удар — сходите конём d5-c7 с шахом, затем съешьте ладью на a8'
-            : 'Двойной удар — сходите конём f5-e7 с шахом, затем съешьте ферзя на g6'}
+            : exercise === 9
+            ? 'Двойной удар — сходите конём f5-e7 с шахом, затем съешьте ферзя на g6'
+            : exercise === 10
+            ? 'Двойной удар — сходите слоном f4-c7 с шахом, затем съешьте ферзя на b6'
+            : exercise === 11
+            ? 'Двойной удар — сходите королём f3-e4, затем съешьте ладью на d5 или слона на d4'
+            : exercise === 12
+            ? 'Двойной удар — сходите конём g6-e5, затем съешьте ладью на g4'
+            : ''}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
@@ -995,30 +1161,34 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
             ? 'Сходите пешкой e4-e5, а затем съешьте коня на f6 или слона на d6.'
             : exercise === 8
             ? 'Сходите конём d5-c7 с шахом, а затем съешьте ладью на a8.'
-            : 'Сходите конём f5-e7 с шахом, а затем съешьте ферзя на g6.'}</p>
+            : exercise === 9
+            ? 'Сходите конём f5-e7 с шахом, а затем съешьте ферзя на g6.'
+            : exercise === 10
+            ? 'Сходите слоном f4-c7 с шахом, а затем съешьте ферзя на b6.'
+            : exercise === 11
+            ? 'Сходите королём f3-e4, а затем съешьте ладью на d5 или слона на d4.'
+            : exercise === 12
+            ? 'Сходите конём g6-e5, а затем съешьте ладью на g4.'
+            : ''}</p>
         </div>
 
         {/* Mobile exercise nav */}
-        <div className="flex lg:hidden gap-1 justify-center mt-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+        <div className="flex lg:hidden flex-wrap gap-1 justify-center mt-2 max-w-[360px] mx-auto">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)}
-                className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition ${
-                  isCurrent
-                    ? 'bg-blue-500 text-white'
-                    : isDone
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                }`}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
+                className={`flex items-center justify-center gap-0.5 px-1 py-1 rounded text-xs transition w-[calc(16.67%-4px)] ${
+                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                } cursor-pointer`}
               >
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
                   ))}
                 </div>
               </button>
@@ -1041,7 +1211,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
                 Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 9 && (exerciseStars[9] || 0) >= 3 && (
+            {exercise === 12 && (exerciseStars[12] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
