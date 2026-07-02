@@ -519,7 +519,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             setGame(new Chess(g.fen()));
           }, 1000);
 
-          setMessage('Связка! Теперь надавите пешкой.');
+          setMessage('');
           return;
         }
 
