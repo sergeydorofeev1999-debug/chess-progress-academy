@@ -455,7 +455,8 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           setTimeout(() => {
             if (!mountedRef.current) return;
             // After f4, black must respond. Knight is pinned, can't move.
-            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+            // Exclude f6-f5 because it leaves the knight completely undefended.
+            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && !(m.from === 'f6' && m.to === 'f5'));
             if (blackMoves.length > 0) {
               const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
               g.move({ from: randomMove.from, to: randomMove.to });
