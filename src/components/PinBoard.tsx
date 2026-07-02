@@ -12,7 +12,7 @@ const START_FEN_1 = '4k3/8/8/4b3/8/8/3R4/1K6 w - - 0 1';
 const START_FEN_2 = '1k6/8/8/4r3/Q7/8/8/6K1 w - - 0 1';
 const START_FEN_3 = '6k1/8/8/3q4/8/1P6/K7/5B2 w - - 0 1';
 const START_FEN_4 = '4k3/6pp/5p2/4n3/8/7P/5PP1/4R1K1 w - - 0 1';
-const START_FEN_5 = '8/B6p/1r6/2k4p/8/5P2/6K1/8 w - - 0 1';
+const START_FEN_5 = '8/B5kp1/8/4r2p/8/5P2/6K1/8 w - - 0 1';
 const START_FEN_6 = '8/8/3k1r2/8/3PP3/8/8/K7 w - - 0 1';
 const START_FEN_7 = 'rnbqk2r/ppp2ppp/3bpn2/3p4/3PP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 0 1';
 
