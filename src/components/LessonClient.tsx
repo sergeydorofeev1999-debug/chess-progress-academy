@@ -19,6 +19,7 @@ import QueenMateBoard from './QueenMateBoard';
 import RookMateBoard from './RookMateBoard';
 import ForkBoard from './ForkBoard'; // v4: star progress tracking
 import PinBoard from './PinBoard';
+import DiscoveredAttackBoard from './DiscoveredAttackBoard';
 import SquareRuleBoard from './SquareRuleBoard';
 
 interface Lesson {
@@ -1517,6 +1518,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_pin' ? (
           <div className="mb-8">
             <PinBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_discovered_attack' ? (
+          <div className="mb-8">
+            <DiscoveredAttackBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
