@@ -493,9 +493,9 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             setSelectedSquare(null);
             return;
           }
+          // Do NOT update whiteMoves or game here — wait until after black plays
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
 
           setTimeout(() => {
             if (!mountedRef.current) return;
@@ -509,6 +509,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
               g.move({ from: randomKingMove.from, to: randomKingMove.to });
             }
             setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves); // Update whiteMoves AFTER black responds
           }, 1000);
 
           setMessage('');
@@ -524,7 +525,6 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           }
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
 
           setTimeout(() => {
             if (!mountedRef.current) return;
@@ -535,6 +535,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
               g.move({ from: randomMove.from, to: randomMove.to });
               setGame(new Chess(g.fen()));
             }
+            setWhiteMoves(nextWhiteMoves); // Update whiteMoves AFTER black responds
           }, 1000);
 
           setMessage('');
