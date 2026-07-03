@@ -10,37 +10,33 @@ const supabase = createBrowserClient(
 );
 
 export default function BoardEditorPage() {
-  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    async function checkAdmin() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          window.location.href = '/auth';
-          return;
-        }
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-
-        if (!profile) {
-          window.location.href = '/';
-          return;
-        }
-        setIsAdmin(true);
-      } finally {
-        setLoading(false);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) {
+        window.location.href = '/auth';
+        return;
       }
-    }
-    checkAdmin();
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle()
+        .then(({ data: profile }) => {
+          if (!profile) {
+            window.location.href = '/';
+            return;
+          }
+          setIsAdmin(true);
+          setChecked(true);
+        });
+    });
   }, []);
 
-  if (loading) {
+  if (!checked) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
@@ -48,17 +44,7 @@ export default function BoardEditorPage() {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="max-w-md mx-auto px-4 py-16">
-        <h1 className="text-2xl font-bold mb-4 text-center">Редактор позиций</h1>
-        <p className="text-slate-600 mb-4 text-center">Требуется вход как администратор</p>
-        <a href="/auth" className="block w-full text-center bg-slate-900 text-white font-semibold py-3 rounded-lg">
-          Войти
-        </a>
-      </div>
-    );
-  }
+  if (!isAdmin) return null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
