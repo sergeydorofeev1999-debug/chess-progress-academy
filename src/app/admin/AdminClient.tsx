@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { courses as mockCourses } from '@/lib/mockData';
-import { Plus, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Trash2, Edit3, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 
 interface AdminClientProps {
@@ -17,7 +17,7 @@ export default function AdminClient({ courses }: AdminClientProps) {
       <h1 className="text-3xl font-bold mb-6">Админ-панель</h1>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap items-center">
         {(['courses', 'lessons'] as const).map(tab => (
           <button
             key={tab}
@@ -31,6 +31,11 @@ export default function AdminClient({ courses }: AdminClientProps) {
             {tab === 'courses' ? 'Курсы' : 'Уроки'}
           </button>
         ))}
+        <Link href="/admin/board" className="ml-auto">
+          <button className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition bg-amber-500 hover:bg-amber-600 text-slate-900">
+            <LayoutGrid size={18} /> Редактор позиций
+          </button>
+        </Link>
       </div>
 
       {/* Courses tab */}
