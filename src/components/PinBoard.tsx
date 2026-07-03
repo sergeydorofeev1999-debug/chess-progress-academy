@@ -1125,3 +1125,4 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
     </div>
   );
 }
+
