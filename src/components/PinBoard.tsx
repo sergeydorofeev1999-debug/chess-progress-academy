@@ -17,6 +17,9 @@ const START_FEN_6 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
 const START_FEN_7 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
 const START_FEN_8 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1';
 const START_FEN_9 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1';
+const START_FEN_10 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1';
+const START_FEN_11 = '7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1';
+const START_FEN_12 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
@@ -153,7 +156,7 @@ interface PointerStart {
 }
 
 export default function PinBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -204,7 +207,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : START_FEN_9;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : exercise === 9 ? START_FEN_9 : exercise === 10 ? START_FEN_10 : exercise === 11 ? START_FEN_11 : START_FEN_12;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -213,7 +216,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -221,9 +224,9 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : START_FEN_9;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -852,6 +855,116 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           saveStars(9, 3);
           return;
         }
+      } else if (exercise === 10) {
+        // EXERCISE 10: Knight mate with pin — Ne4xf6#, pawn e7 can't capture because pinned by Qe2
+        // FEN: r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1
+        const isCorrectFirst = from === 'e4' && to === 'f6' && move.piece === 'n' && move.captured === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const safeCap = getBlackSafeCapture(g);
+              if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          // Check if it's checkmate
+          if (g.isCheckmate()) {
+            setIsComplete(true);
+            setMessage('Мат! Отлично!');
+            saveStars(10, 3);
+            return;
+          }
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After Nxf6, if not mate (e.g. some edge case), try to continue
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+      } else if (exercise === 11) {
+        // EXERCISE 11: Rook mate with pin — Rf1-f8#, queen can't capture because pinned by Bc3
+        // FEN: 7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1
+        const isCorrectFirst = from === 'f1' && to === 'f8' && move.piece === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const safeCap = getBlackSafeCapture(g);
+              if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          if (g.isCheckmate()) {
+            setIsComplete(true);
+            setMessage('Мат! Отлично!');
+            saveStars(11, 3);
+            return;
+          }
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+      } else if (exercise === 12) {
+        // EXERCISE 12: Rook mate with pin — Rg6xa6#, pawn b7 can't capture because pinned by Bf3
+        // FEN: kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1
+        const isCorrectFirst = from === 'g6' && to === 'a6' && move.piece === 'r' && move.captured === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const safeCap = getBlackSafeCapture(g);
+              if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          if (g.isCheckmate()) {
+            setIsComplete(true);
+            setMessage('Мат! Отлично!');
+            saveStars(12, 3);
+            return;
+          }
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
       }
     } catch {
       // Invalid move
@@ -970,7 +1083,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
@@ -1026,6 +1139,12 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             ? 'Связка — слон b5 связка ферзя, ферзь забирает слона, конь забирает ферзя'
             : exercise === 9
             ? 'Связка — ферзь e4 связывает ладью, ладья h8 защищает, пешка c4, король уходит, пешка ест ладью'
+            : exercise === 10
+            ? 'Мат связкой — конь e4 съедает коня f6, пешка e7 связана'
+            : exercise === 11
+            ? 'Мат связкой — ладья f1-f8, ферзь g7 связан'
+            : exercise === 12
+            ? 'Мат связкой — ладья g6 съедает коня a6, пешка b7 связана'
             : ''}
         </div>
 
@@ -1174,12 +1293,18 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           ? 'Слон f1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
           : exercise === 9
           ? 'Ферзь a4-e4 связывает ладью. Ладья h8-d8 защищает. Пешка c2-c4, король уходит. Пешка c4xd5.'
+          : exercise === 10
+          ? 'Конь e4 съедает коня f6 — мат! Пешка e7 связана ферзём e2.'
+          : exercise === 11
+          ? 'Ладья f1-f8 — мат! Ферзь g7 связан слоном c3.'
+          : exercise === 12
+          ? 'Ладья g6 съедает коня a6 — мат! Пешка b7 связана слоном f3.'
           : ''}</p>
         </div>
 
         {/* Mobile exercise pills */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
@@ -1208,15 +1333,15 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise < 9 && (
+            {exercise < 12 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
                 Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 9 && (exerciseStars[9] || 0) >= 3 && (
+            {exercise === 12 && (exerciseStars[12] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
