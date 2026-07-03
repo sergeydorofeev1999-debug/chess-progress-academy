@@ -537,12 +537,14 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             }
           }, 1000);
 
-          setMessage('Заберите ладью!');
+          setMessage('');
           return;
         }
 
         if (whiteMoves === 2) {
-          if (!isCorrectThird) {
+          const isCorrectThirdBishop = from === 'd4' && to === 'e5' && move.piece === 'b';
+          const isCorrectThirdPawn = from === 'f4' && to === 'e5' && move.piece === 'p';
+          if (!isCorrectThirdBishop && !isCorrectThirdPawn) {
             setSelectedSquare(null);
             setIsFail(true);
             setMessage('Провалено');
