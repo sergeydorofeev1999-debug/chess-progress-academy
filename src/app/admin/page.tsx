@@ -4,6 +4,7 @@ import { getCoachCourses } from '@/lib/data';
 import AdminClient from './AdminClient';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function AdminPage() {
   const supabase = await createClient();
@@ -24,8 +25,12 @@ export default async function AdminPage() {
     notFound();
   }
 
-  // Admin sees all courses (including drafts)
   const courses = await getCoachCourses();
 
-  return <AdminClient courses={courses} />;
+  return (
+    <>
+      <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+      <AdminClient courses={courses} />
+    </>
+  );
 }
