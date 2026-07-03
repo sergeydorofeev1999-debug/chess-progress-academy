@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import BoardEditor from '@/components/board/BoardEditor';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,7 +11,6 @@ const supabase = createClient(
 export default function BoardEditorPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkAdmin() {
@@ -34,8 +32,6 @@ export default function BoardEditorPage() {
           return;
         }
         setIsAdmin(true);
-      } catch (e: any) {
-        setError(e?.message || 'Ошибка загрузки');
       } finally {
         setLoading(false);
       }
@@ -51,20 +47,11 @@ export default function BoardEditorPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <h1 className="text-2xl font-bold mb-4">Ошибка</h1>
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   if (!isAdmin) {
     return (
       <div className="max-w-md mx-auto px-4 py-16">
         <h1 className="text-2xl font-bold mb-4 text-center">Редактор позиций</h1>
-        <p className="text-slate-600 mb-4 text-center">Требуется вход как администратор</p>
+        <p className="text-slate-600 mb-4 text-center">Требуется вход</p>
         <a href="/auth" className="block w-full text-center bg-slate-900 text-white font-semibold py-3 rounded-lg">
           Войти
         </a>
@@ -75,7 +62,9 @@ export default function BoardEditorPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Редактор позиций</h1>
-      <BoardEditor />
+      <div className="p-8 bg-green-100 rounded-lg">
+        <p className="text-xl font-bold text-green-800">✅ Редактор загружен! Проверьте — видите ли вы этот текст?</p>
+      </div>
     </div>
   );
 }
