@@ -935,6 +935,38 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
         const isCorrectFirst = from === 'g6' && to === 'a6' && move.piece === 'r' && move.captured === 'n';
 
         if (whiteMoves === 0) {
+          // Wrong: bishop f3xb7 — black rook b8xb7
+          if (from === 'f3' && to === 'b7' && move.piece === 'b') {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const rookCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'b7');
+              if (rookCap) {
+                g.move({ from: rookCap.from, to: rookCap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+
+          // Wrong: rook g7xb7 — black rook b8xb7
+          if (from === 'g7' && to === 'b7' && move.piece === 'r') {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const rookCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'b7');
+              if (rookCap) {
+                g.move({ from: rookCap.from, to: rookCap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
