@@ -12,27 +12,33 @@ const supabase = createClient(
 export default function BoardEditorPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkAdmin() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        window.location.href = '/auth';
-        return;
-      }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .eq('role', 'admin')
-        .maybeSingle();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = '/auth';
+          return;
+        }
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
 
-      if (!profile) {
-        window.location.href = '/';
-        return;
+        if (!profile) {
+          window.location.href = '/';
+          return;
+        }
+        setIsAdmin(true);
+      } catch (e: any) {
+        setError(e?.message || 'Ошибка загрузки');
+      } finally {
+        setLoading(false);
       }
-      setIsAdmin(true);
-      setLoading(false);
     }
     checkAdmin();
   }, []);
@@ -41,6 +47,15 @@ export default function BoardEditorPage() {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12">
+        <h1 className="text-2xl font-bold mb-4">Ошибка</h1>
+        <p className="text-red-600">{error}</p>
       </div>
     );
   }
