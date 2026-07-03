@@ -54,6 +54,10 @@ function parseInteractiveConfig(videoUrl: string | null | object) {
       return null;
     }
   }
+  // Legacy string identifiers like "interactive_square_rule"
+  if (typeof videoUrl === 'string' && videoUrl.startsWith('interactive_')) {
+    return { type: videoUrl };
+  }
   return null;
 }
 

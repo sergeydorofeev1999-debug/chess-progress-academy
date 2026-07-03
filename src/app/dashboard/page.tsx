@@ -9,6 +9,18 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Check if user is admin
+  let isAdmin = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+    isAdmin = !!profile;
+  }
+
   if (!user) {
     return (
       <div className="max-w-6xl mx-auto px-4 py-12 text-center">
@@ -45,6 +57,20 @@ export default async function DashboardPage() {
     <div className="max-w-6xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">Мой кабинет</h1>
       <p className="text-slate-600 mb-8">Отслеживай свой прогресс обучения</p>
+
+      {isAdmin && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-amber-800">Режим администратора</p>
+              <p className="text-sm text-amber-700">Доступ к редактированию позиций</p>
+            </div>
+            <Link href="/admin/board" className="bg-amber-500 hover:bg-amber-600 text-slate-900 font-medium px-4 py-2 rounded-lg transition">
+              📝 Редактор позиций
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-10">
         {[
