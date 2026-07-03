@@ -69,13 +69,13 @@ export function boardToFen(board: BoardMap, meta: FenMeta): string {
   return `${rows.join('/')} ${turn} ${castling || '-'} ${enPassant || '-'} ${halfmove} ${fullmove}`;
 }
 
+import { validateFen } from 'chess.js';
+
 export function validateBoardFen(fen: string): { ok: boolean; error?: string } {
   try {
-    // Lazy import to avoid bundling chess.js on server if not needed
-    const { validateFen } = require('chess.js');
     return validateFen(fen);
   } catch {
-    return { ok: false, error: 'chess.js not available' };
+    return { ok: false, error: 'validation failed' };
   }
 }
 

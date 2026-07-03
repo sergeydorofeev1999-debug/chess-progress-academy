@@ -45,7 +45,17 @@ export default function BoardEditorPage() {
     );
   }
 
-  if (!isAdmin) return null;
+  if (!isAdmin) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16">
+        <h1 className="text-2xl font-bold mb-4 text-center">Редактор позиций</h1>
+        <p className="text-slate-600 mb-4 text-center">Требуется вход как администратор</p>
+        <a href="/auth" className="block w-full text-center bg-slate-900 text-white font-semibold py-3 rounded-lg">
+          Войти
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
