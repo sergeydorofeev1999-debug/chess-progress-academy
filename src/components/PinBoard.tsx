@@ -13,7 +13,7 @@ const START_FEN_2 = '1k6/8/8/4r3/Q7/8/8/6K1 w - - 0 1';
 const START_FEN_3 = '6k1/8/8/3q4/8/1P6/K7/5B2 w - - 0 1';
 const START_FEN_4 = '4k3/6pp/5p2/4n3/8/7P/5PP1/4R1K1 w - - 0 1';
 const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';
-const START_FEN_6 = '6k1/6pp/1p2r1p1/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
+const START_FEN_6 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
 const START_FEN_7 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
