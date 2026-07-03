@@ -15,8 +15,8 @@ const START_FEN_4 = '4k3/6pp/5p2/4n3/8/7P/5PP1/4R1K1 w - - 0 1';
 const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';
 const START_FEN_6 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
 const START_FEN_7 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
-const START_FEN_8 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1';
-const START_FEN_9 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1';
+const START_FEN_8 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1';
+const START_FEN_9 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1';
 const START_FEN_10 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1';
 const START_FEN_11 = '7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1';
 const START_FEN_12 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1';
@@ -698,7 +698,107 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           return;
         }
       } else if (exercise === 8) {
-        // EXERCISE 8: Bishop f1-b5 pins black queen, queen takes bishop, knight takes queen
+        // EXERCISE 8: Queen pin + push — Qa4-e4 pins Rd5, Rh8-d8 defends, c2-c4 push, K escapes, c4xd5
+        // FEN: 7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1
+        const isCorrectFirst = from === 'a4' && to === 'e4' && move.piece === 'q';
+        const isCorrectSecond = from === 'c2' && to === 'c4' && move.piece === 'p';
+        const isCorrectThird = from === 'c4' && to === 'd5' && move.piece === 'p' && move.captured === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const safeCap = getBlackSafeCapture(g);
+              if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After Qe4 pin, black rook h8-d8 defends the pinned rook
+            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r');
+            const rookToD8 = rookMoves.find((m: any) => m.to === 'd8');
+            if (rookToD8) {
+              g.move({ from: rookToD8.from, to: rookToD8.to });
+            } else if (rookMoves.length > 0) {
+              const rookMove = rookMoves[Math.floor(Math.random() * rookMoves.length)];
+              g.move({ from: rookMove.from, to: rookMove.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          // If queen immediately captures rook on d5 instead of push, black rook d8 takes queen
+          if (from === 'e4' && to === 'd5' && move.piece === 'q') {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              // Black rook d8 captures queen on d5
+              const rookCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'd5');
+              if (rookCap) {
+                g.move({ from: rookCap.from, to: rookCap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After c4 push, black king escapes pin: a7, b8, c8 or c7
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const preferredKingSquares = ['a7', 'b8', 'c8', 'c7'];
+            const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
+            if (preferred) {
+              g.move({ from: preferred.from, to: preferred.to });
+            } else if (kingMoves.length > 0) {
+              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: kingMove.from, to: kingMove.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 2) {
+          if (!isCorrectThird) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Связка выполнена.');
+          saveStars(8, 3);
+          return;
+        }
+      } else if (exercise === 9) {
+        // EXERCISE 9: Bishop f1-b5 pins black queen, queen takes bishop, knight takes queen
         // FEN: rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1
         const isCorrectFirst = from === 'f1' && to === 'b5' && move.piece === 'b';
         const isCorrectSecond = from === 'c3' && to === 'b5' && move.piece === 'n' && move.captured === 'q';
@@ -743,106 +843,6 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
 
         if (whiteMoves === 1) {
           if (!isCorrectSecond) {
-            setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setIsComplete(true);
-          setMessage('Отлично! Связка выполнена.');
-          saveStars(8, 3);
-          return;
-        }
-      } else if (exercise === 9) {
-        // EXERCISE 9: Queen pin + push — Qa4-e4 pins Rd5, Rh8-d8 defends, c2-c4 push, K escapes, c4xd5
-        // FEN: 7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1
-        const isCorrectFirst = from === 'a4' && to === 'e4' && move.piece === 'q';
-        const isCorrectSecond = from === 'c2' && to === 'c4' && move.piece === 'p';
-        const isCorrectThird = from === 'c4' && to === 'd5' && move.piece === 'p' && move.captured === 'r';
-
-        if (whiteMoves === 0) {
-          if (!isCorrectFirst) {
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              const safeCap = getBlackSafeCapture(g);
-              if (safeCap) g.move({ from: safeCap.from, to: safeCap.to });
-              setGame(new Chess(g.fen()));
-              setIsFail(true);
-              setMessage('Провалено');
-            }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            // After Qe4 pin, black rook h8-d8 defends the pinned rook
-            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r');
-            const rookToD8 = rookMoves.find((m: any) => m.to === 'd8');
-            if (rookToD8) {
-              g.move({ from: rookToD8.from, to: rookToD8.to });
-            } else if (rookMoves.length > 0) {
-              const rookMove = rookMoves[Math.floor(Math.random() * rookMoves.length)];
-              g.move({ from: rookMove.from, to: rookMove.to });
-            }
-            setGame(new Chess(g.fen()));
-          }, 1000);
-
-          return;
-        }
-
-        if (whiteMoves === 1) {
-          if (!isCorrectSecond) {
-            setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            // After c4 push, black king escapes pin: a7, b8, c8 or c7
-            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
-            const preferredKingSquares = ['a7', 'b8', 'c8', 'c7'];
-            const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
-            if (preferred) {
-              g.move({ from: preferred.from, to: preferred.to });
-            } else if (kingMoves.length > 0) {
-              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
-              g.move({ from: kingMove.from, to: kingMove.to });
-            }
-            setGame(new Chess(g.fen()));
-          }, 1000);
-
-          return;
-        }
-
-        if (whiteMoves === 2) {
-          // If queen captures instead of pawn, black rook on d8 takes queen and fail
-          if (from === 'e4' && to === 'd5' && move.piece === 'q') {
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              // Black rook d8 captures queen on d5
-              const rookCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'd5');
-              if (rookCap) {
-                g.move({ from: rookCap.from, to: rookCap.to });
-                setGame(new Chess(g.fen()));
-              }
-              setIsFail(true);
-              setMessage('Провалено');
-            }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-          if (!isCorrectThird) {
             setSelectedSquare(null);
             setIsFail(true);
             setMessage('Провалено');
@@ -1081,8 +1081,8 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
-      <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
+      <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
+        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
@@ -1091,7 +1091,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
               <button
                 key={num}
                 onClick={() => switchExercise(num as 1)}
-                className={`flex items-center justify-center px-2 py-1.5 transition ${
+                className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
                     : isDone
@@ -1104,7 +1104,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
                     <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
                   ))}
                 </div>
-                <span className="ml-2 text-xs font-medium">{num}</span>
+                <span className="ml-1 text-xs font-medium">{num}</span>
               </button>
             );
           })}
@@ -1136,9 +1136,9 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             : exercise === 7
             ? 'Нажим — пешка d4-d5, затем заберите коня пешкой'
             : exercise === 8
-            ? 'Связка — слон b5 связка ферзя, ферзь забирает слона, конь забирает ферзя'
-            : exercise === 9
             ? 'Связка — ферзь e4 связывает ладью, ладья h8 защищает, пешка c4, король уходит, пешка ест ладью'
+            : exercise === 9
+            ? 'Связка — слон b5 связка ферзя, ферзь забирает слона, конь забирает ферзя'
             : exercise === 10
             ? 'Мат связкой — конь e4 съедает коня f6, пешка e7 связана'
             : exercise === 11
@@ -1290,9 +1290,9 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           : exercise === 7
           ? 'Пешка d4-d5 нажим. Затем заберите коня на c6 пешкой.'
           : exercise === 8
-          ? 'Слон f1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
-          : exercise === 9
           ? 'Ферзь a4-e4 связывает ладью. Ладья h8-d8 защищает. Пешка c2-c4, король уходит. Пешка c4xd5.'
+          : exercise === 9
+          ? 'Слон f1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
           : exercise === 10
           ? 'Конь e4 съедает коня f6 — мат! Пешка e7 связана ферзём e2.'
           : exercise === 11
@@ -1302,28 +1302,52 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           : ''}</p>
         </div>
 
-        {/* Mobile exercise pills */}
-        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
-            const earnedStars = exerciseStars[num] || 0;
-            const isCurrent = num === exercise;
-            const isDone = earnedStars > 0;
-            return (
-              <button
-                key={num}
-                onClick={() => switchExercise(num as 1)}
-                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                } cursor-pointer`}
-              >
-                <div className="flex gap-0.5">
-                  {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
-                  ))}
-                </div>
-              </button>
-            );
-          })}
+        {/* Mobile exercise pills — 2 rows of 6 */}
+        <div className="flex lg:hidden flex-col items-center gap-1 w-full">
+          <div className="flex gap-1 justify-center w-full">
+            {[1, 2, 3, 4, 5, 6].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 justify-center w-full">
+            {[7, 8, 9, 10, 11, 12].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Completion banner */}
