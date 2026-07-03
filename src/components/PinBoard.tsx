@@ -695,9 +695,9 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           return;
         }
       } else if (exercise === 8) {
-        // EXERCISE 8: Bishop c1-b5 pins black queen, queen takes bishop, knight takes queen
+        // EXERCISE 8: Bishop f1-b5 pins black queen, queen takes bishop, knight takes queen
         // FEN: rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1
-        const isCorrectFirst = from === 'c1' && to === 'b5' && move.piece === 'b';
+        const isCorrectFirst = from === 'f1' && to === 'b5' && move.piece === 'b';
         const isCorrectSecond = from === 'c3' && to === 'b5' && move.piece === 'n' && move.captured === 'q';
 
         if (whiteMoves === 0) {
@@ -1171,7 +1171,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           : exercise === 7
           ? 'Пешка d4-d5 нажим. Затем заберите коня на c6 пешкой.'
           : exercise === 8
-          ? 'Слон c1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
+          ? 'Слон f1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
           : exercise === 9
           ? 'Ферзь a4-e4 связывает ладью. Ладья h8-d8 защищает. Пешка c2-c4, король уходит. Пешка c4xd5.'
           : ''}</p>
