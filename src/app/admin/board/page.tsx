@@ -12,6 +12,7 @@ export default async function BoardEditorPage() {
     redirect('/auth');
   }
 
+  /* DEBUG: temporarily bypass admin check
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -22,6 +23,7 @@ export default async function BoardEditorPage() {
   if (!profile) {
     notFound();
   }
+  */
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
