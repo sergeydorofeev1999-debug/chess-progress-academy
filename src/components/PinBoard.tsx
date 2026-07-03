@@ -714,6 +714,7 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           }
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
 
           setTimeout(() => {
             if (!mountedRef.current) return;
@@ -730,7 +731,6 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
               }
             }
             setGame(new Chess(g.fen()));
-            setWhiteMoves(nextWhiteMoves);
           }, 1000);
 
           setMessage('');
