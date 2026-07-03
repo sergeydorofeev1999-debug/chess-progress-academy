@@ -1,29 +1,51 @@
-import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import BoardEditor from '@/components/board/BoardEditor';
 
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-export default async function BoardEditorPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export default function BoardEditorPage() {
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  if (!user) {
-    redirect('/auth');
+  useEffect(() => {
+    async function checkAdmin() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = '/auth';
+        return;
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+
+      if (!profile) {
+        window.location.href = '/';
+        return;
+      }
+      setIsAdmin(true);
+      setLoading(false);
+    }
+    checkAdmin();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-12 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
-  /* DEBUG: temporarily bypass admin check
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle();
-
-  if (!profile) {
-    notFound();
-  }
-  */
+  if (!isAdmin) return null;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
