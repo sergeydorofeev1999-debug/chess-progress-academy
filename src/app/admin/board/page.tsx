@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import BoardEditor from '@/components/board/BoardEditor';
 
-const supabase = createClient(
+const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
@@ -51,7 +52,7 @@ export default function BoardEditorPage() {
     return (
       <div className="max-w-md mx-auto px-4 py-16">
         <h1 className="text-2xl font-bold mb-4 text-center">Редактор позиций</h1>
-        <p className="text-slate-600 mb-4 text-center">Требуется вход</p>
+        <p className="text-slate-600 mb-4 text-center">Требуется вход как администратор</p>
         <a href="/auth" className="block w-full text-center bg-slate-900 text-white font-semibold py-3 rounded-lg">
           Войти
         </a>
@@ -62,9 +63,7 @@ export default function BoardEditorPage() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Редактор позиций</h1>
-      <div className="p-8 bg-green-100 rounded-lg">
-        <p className="text-xl font-bold text-green-800">✅ Редактор загружен! Проверьте — видите ли вы этот текст?</p>
-      </div>
+      <BoardEditor />
     </div>
   );
 }
