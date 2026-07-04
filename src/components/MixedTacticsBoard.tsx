@@ -10,7 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = '8/4k3/8/2pn2b1/3p4/3P2P1/1P2K3/5R2 w - - 0 1';
 const START_FEN_2 = 'k7/8/2n5/8/1P6/8/4B3/1K6 w - - 0 1';
-const START_FEN_3 = '4k3/3n4/8/8/4B3/8/8/4K3 w - - 0 1';
+const START_FEN_3 = 'r4rk1/pp3p1p/1n2q1p1/4p3/2PP4/P6P/BP2QPP1/R2R2K1 w - - 0 1';
 const START_FEN_4 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
 const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';
 const START_FEN_6 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
@@ -325,27 +325,23 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
       } else if (exercise === 3) {
-        // EXERCISE 3: Pin — Bf1-c7 pins Nd7, then Bxd7
-        const isCorrectFirst = from === 'f1' && to === 'c7' && move.piece === 'b';
-        const isCorrectSecond = from === 'c7' && to === 'd7' && move.piece === 'b';
+        // EXERCISE 3: Discovered attack — c4-c5 opens Ba2 on Qe6, queen escapes, then c5xb6
+        const isCorrectFirst = from === 'c4' && to === 'c5' && move.piece === 'p';
+        const isCorrectSecond = from === 'c5' && to === 'b6' && move.piece === 'p' && move.captured === 'n';
 
         if (whiteMoves === 0) {
           if (!isCorrectFirst) {
-            const cap = getBestBlackCapture(g);
-            if (cap) {
-              setTimeout(() => {
-                if (!mountedRef.current) return;
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
                 g.move({ from: cap.from, to: cap.to });
                 setGame(new Chess(g.fen()));
-                setIsFail(true);
-                setMessage('Провалено');
-              }, 1000);
-              setSelectedSquare(null);
-              return;
-            }
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
             setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
             return;
           }
           setGame(new Chess(g.fen()));
@@ -354,20 +350,24 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            const queenCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'q' && m.to === 'c7');
-            if (queenCap) {
-              g.move({ from: queenCap.from, to: queenCap.to });
-              setGame(new Chess(g.fen()));
+            const queenMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'q');
+            const preferred = ['f6', 'c6', 'e7'];
+            const escape = queenMoves.find((m: any) => preferred.includes(m.to));
+            if (escape) {
+              g.move({ from: escape.from, to: escape.to });
+            } else if (queenMoves.length > 0) {
+              const qm = queenMoves[Math.floor(Math.random() * queenMoves.length)];
+              g.move({ from: qm.from, to: qm.to });
             }
+            setGame(new Chess(g.fen()));
           }, 1000);
 
+          setMessage('');
           return;
         }
 
         if (whiteMoves === 1) {
-          const isPawnCapture = move.piece === 'p' && to === 'c7';
-          if (!isPawnCapture) {
-            setGame(new Chess(g.fen()));
+          if (!isCorrectSecond) {
             setSelectedSquare(null);
             setIsFail(true);
             setMessage('Провалено');
@@ -1036,7 +1036,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
     switch (ex) {
       case 1: return 'Белая ладья атакует сразу две фигуры. Найди лучший ход!';
       case 2: return 'Белый слон может связать черного коня. Найди лучший ход!';
-      case 3: return 'Белый слон может связать коня с королём. Найди лучший ход!';
+      case 3: return 'Белая пешка может открыть нападение на ферзя. Найди лучший ход!';
       case 4: return 'Белая пешка может надавить на связанную фигуру. Найди лучший ход!';
       case 5: return 'Белый слон связывает ладью. Найди лучший ход!';
       case 6: return 'Белая пешка может открыть нападение на фигуру. Найди лучший ход!';
