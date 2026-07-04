@@ -24,7 +24,7 @@ function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
       return m;
     }
   }
-  return blackCaptures.length > 0 ? blackCaptures[0] : null;
+  return null;
 }
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
