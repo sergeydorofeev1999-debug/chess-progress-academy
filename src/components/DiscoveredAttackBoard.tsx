@@ -12,7 +12,7 @@ const START_FEN_1 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_2 = '5k2/3q2pp/8/8/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_3 = '2k4r/1pp2r2/p7/4P3/3B4/2N5/PP6/1K1R4 w - - 0 1';
 const START_FEN_4 = '8/2p1r1pk/3n2p1/8/4N1P1/1P4KP/8/4R3 w - - 0 1';
-const START_FEN_5 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
+const START_FEN_5 = '1k5r/p1pq2p1/1p5p/5R2/6Q1/6P1/PP3PKP/8 w - - 0 1';
 
 function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
   const blackCaptures = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
@@ -383,10 +383,68 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           return;
         }
       } else if (exercise === 5) {
-        setSelectedSquare(null);
-        setIsFail(true);
-        setMessage('Упражнение в разработке');
-        return;
+        // EXERCISE 5: Discovered attack — Rf5-f8+ check, black rook captures on f8, then Qg4xd7
+        const isCorrectFirst = from === 'f5' && to === 'f8' && move.piece === 'r';
+        const isCorrectSecond = from === 'g4' && to === 'd7' && move.piece === 'q' && move.captured === 'q';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After Rf8+, black rook on h8 captures on f8
+            const rookCaptures = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'f8');
+            if (rookCaptures.length > 0) {
+              g.move({ from: rookCaptures[0].from, to: rookCaptures[0].to });
+            } else {
+              // Fallback: any black capture on f8
+              const capturesOnF8 = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.captured && m.to === 'f8');
+              if (capturesOnF8.length > 0) {
+                g.move({ from: capturesOnF8[0].from, to: capturesOnF8[0].to });
+              } else {
+                // If no capture, just make any legal move
+                const anyBlackMove = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+                if (anyBlackMove.length > 0) {
+                  g.move({ from: anyBlackMove[0].from, to: anyBlackMove[0].to });
+                }
+              }
+            }
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Вскрытое нападение выполнено.');
+          saveStars(5, 3);
+          return;
+        }
       }
     } catch {
       // Invalid move
@@ -552,7 +610,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
             : exercise === 4
             ? 'Вскрытое нападение — сходите конём на g5 (шах!), затем заберите ладью'
             : exercise === 5
-            ? 'Упражнение 5 (в разработке)'
+            ? 'Вскрытое нападение — сходите ладьёй на f8 (шах!), затем заберите ферзя'
             : ''}
         </div>
 
@@ -692,7 +750,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           : exercise === 4
           ? 'Сходите конём на g5, чтобы открыть ладью и поставить шах. Затем заберите ладью на e7.'
           : exercise === 5
-          ? 'Упражнение в разработке'
+          ? 'Сходите ладьёй на f8, чтобы поставить шах. После того как чёрная ладья заберёт вашу, ферзь заберёт чёрного ферзя на d7.'
           : ''}</p>
         </div>
 
