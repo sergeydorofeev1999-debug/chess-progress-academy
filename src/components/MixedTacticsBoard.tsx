@@ -16,7 +16,7 @@ const START_FEN_5 = '2r3k1/5ppp/8/8/8/7P/2B1nPP1/2R4K w - - 0 1';
 const START_FEN_6 = '4k3/1q5p/p3p1p1/4bp2/1p2p3/p3p3/2Q1BPPP/6K1 w - - 0 1';
 const START_FEN_7 = 'r4k1r/pp1b1ppp/3P4/q7/1nPNQ3/4P2P/3N1PP1/4KB1R w K - 0 1';
 const START_FEN_8 = '6k1/p5pp/1pq1pp2/8/4N3/4P1P1/PP3PBP/6K1 w - - 0 1';
-const START_FEN_9 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1';
+const START_FEN_9 = '3r3r/pp3Rpk/4p1p1/6Q1/1q2N1P1/3n1P1P/8/3R2K1 w - - 0 1';
 const START_FEN_10 = '7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1';
 const START_FEN_11 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1';
 const START_FEN_12 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
@@ -645,56 +645,27 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
       } else if (exercise === 9) {
-        // EXERCISE 9: Discovered check — Ne4-f6+ uncovering Qe2 on e7, then Nxe7
-        const isCorrectFirst = from === 'e4' && to === 'f6' && move.piece === 'n';
-        const isCorrectSecond = from === 'f6' && to === 'e7' && move.piece === 'n';
-
-        if (whiteMoves === 0) {
-          if (!isCorrectFirst) {
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              const cap = getBestBlackCapture(g);
-              if (cap) g.move({ from: cap.from, to: cap.to });
-              setGame(new Chess(g.fen()));
-              setIsFail(true);
-              setMessage('Провалено');
-            }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-
-          if (g.isCheckmate()) {
-            setIsComplete(true);
-            setMessage('Мат! Отлично!');
-            saveStars(9, 3);
-            return;
-          }
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            setGame(new Chess(g.fen()));
-          }, 1000);
-
-          return;
-        }
-
-        if (whiteMoves === 1) {
-          if (!isCorrectSecond) {
-            setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
-            return;
-          }
+        // EXERCISE 9: Mate in 1 — Ne4-f6# discovered check from Qg5
+        if (from === 'e4' && to === 'f6' && move.piece === 'n') {
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setIsComplete(true);
-          setMessage('Отлично! Тактика выполнена.');
+          setMessage('Мат! Отлично!');
           saveStars(9, 3);
-          return;
+        } else {
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const cap = getBestBlackCapture(g);
+            if (cap) {
+              g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+            }
+            setIsFail(true);
+            setMessage('Провалено');
+          }, 1000);
+          setSelectedSquare(null);
         }
+        return;
       } else if (exercise === 10) {
         // EXERCISE 10: Pin — Bc3-h8 pins Qg7, then Rxh8
         const isCorrectFirst = from === 'c3' && to === 'h8' && move.piece === 'b';
@@ -971,7 +942,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 6: return 'Белый ферзь может вскрыть нападение на ферзя. Найди лучший ход!';
       case 7: return 'Белый ферзь может поставить шах и забирать фигуру. Найди лучший ход!';
       case 8: return 'Белый конь может пожертвовать себя за ферзя. Найди лучший ход!';
-      case 9: return 'Белый конь может вскрыть шах и нападение. Найди лучший ход!';
+      case 9: return 'Белый конь может поставить мат в 1 ход. Найди лучший ход!';
       case 10: return 'Белый слон связывает ферзя. Найди лучший ход!';
       case 11: return 'Белая ладья может открыть двойное нападение. Найди лучший ход!';
       case 12: return 'Белый ферзь может атаковать две фигуры. Найди лучший ход!';
@@ -989,7 +960,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 6: return 'Вскройте шах ферзём и заберите слона.';
       case 7: return 'Поставьте шах ферзём на e7, затем заберите слона на d7.';
       case 8: return 'Пожертвуйте коня на f6, затем заберите ферзя слоном.';
-      case 9: return 'Вскройте шах и нападение, затем заберите фигуру.';
+      case 9: return 'Конём вскройте шах и поставьте мат.';
       case 10: return 'Свяжите ферзя и заберите ладью.';
       case 11: return 'Вскройте двойное нападение и заберите фигуру.';
       case 12: return 'Найдите двойной удар ферзём и заберите фигуру.';
