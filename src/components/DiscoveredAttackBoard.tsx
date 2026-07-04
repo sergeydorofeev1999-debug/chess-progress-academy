@@ -223,6 +223,11 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
               setIsFail(true);
               setMessage('Провалено');
             }, 1000);
