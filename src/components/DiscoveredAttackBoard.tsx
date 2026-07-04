@@ -13,6 +13,7 @@ const START_FEN_2 = '5k2/3q2pp/8/8/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_3 = '2k4r/1pp2r2/p7/4P3/3B4/2N5/PP6/1K1R4 w - - 0 1';
 const START_FEN_4 = '8/2p1r1pk/3n2p1/8/4N1P1/1P4KP/8/4R3 w - - 0 1';
 const START_FEN_5 = '1k5r/p1pq2p1/1p5p/5R2/6Q1/6P1/PP3PKP/8 w - - 0 1';
+const START_FEN_6 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
 
 function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
   const blackCaptures = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
@@ -73,7 +74,7 @@ interface PointerStart {
 }
 
 export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -124,7 +125,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : START_FEN_5;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_6;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -133,7 +134,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -141,9 +142,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : START_FEN_5;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_6;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -445,6 +446,62 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           saveStars(5, 3);
           return;
         }
+      } else if (exercise === 6) {
+        // EXERCISE 6: Discovered attack — Re5-e3, bishop attacks rook, then Rxe3 captures bishop
+        const isCorrectFirst = from === 'e5' && to === 'e3' && move.piece === 'r';
+        const isCorrectSecond = from === 'e3' && to === 'b3' && move.piece === 'r' && move.captured === 'b';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After Re3, black rook escapes from g7 to d7 or f7
+            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r' && m.from === 'g7');
+            const preferredRookSquares = ['d7', 'f7'];
+            const preferred = rookMoves.find((m: any) => preferredRookSquares.includes(m.to));
+            if (preferred) {
+              g.move({ from: preferred.from, to: preferred.to });
+            } else if (rookMoves.length > 0) {
+              const rookMove = rookMoves[Math.floor(Math.random() * rookMoves.length)];
+              g.move({ from: rookMove.from, to: rookMove.to });
+            }
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Вскрытое нападение выполнено.');
+          saveStars(6, 3);
+          return;
+        }
       }
     } catch {
       // Invalid move
@@ -563,7 +620,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
         <div className="hidden lg:grid grid-cols-5 gap-1 rounded p-1 border border-gray-200">
-          {[1, 2, 3, 4, 5].map((num) => {
+          {[1, 2, 3, 4, 5, 6].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
@@ -611,6 +668,8 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
             ? 'Вскрытое нападение — сходите конём на g5 (шах!), затем заберите ладью'
             : exercise === 5
             ? 'Вскрытое нападение — сходите ладьёй на f8 (шах!), затем заберите ферзя'
+            : exercise === 6
+            ? 'Вскрытое нападение — сходите ладьёй на e3, затем заберите слона'
             : ''}
         </div>
 
@@ -751,12 +810,14 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           ? 'Сходите конём на g5, чтобы открыть ладью и поставить шах. Затем заберите ладью на e7.'
           : exercise === 5
           ? 'Сходите ладьёй на f8, чтобы поставить шах. После того как чёрная ладья заберёт вашу, ферзь заберёт чёрного ферзя на d7.'
+          : exercise === 6
+          ? 'Сходите ладьёй на e3, чтобы атаковать слона. После того как чёрная ладья отойдёт, заберите слона.'
           : ''}</p>
         </div>
 
         {/* Mobile exercise pills */}
         <div className="flex lg:hidden flex-wrap justify-center gap-1 w-full">
-          {[1, 2, 3, 4, 5].map((num) => {
+          {[1, 2, 3, 4, 5, 6].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
