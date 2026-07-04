@@ -221,9 +221,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            // After Ne5+, black king escapes to e7 or e8
+            // After Ne5+, black king escapes to e8
             const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
-            const preferredKingSquares = ['e7', 'e8'];
+            const preferredKingSquares = ['e8'];
             const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
             if (preferred) {
               g.move({ from: preferred.from, to: preferred.to });
@@ -235,7 +235,6 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
             setWhiteMoves(nextWhiteMoves);
           }, 1000);
 
-          setMessage('Шах! Теперь заберите ферзя.');
           return;
         }
 
