@@ -10,7 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = '8/4k3/8/2pn2b1/3p4/3P2P1/1P2K3/5R2 w - - 0 1';
 const START_FEN_2 = 'k7/8/2n5/8/1P6/8/4B3/1K6 w - - 0 1';
-const START_FEN_3 = 'r4rk1/pp3p1p/1n2q1p1/4p3/2PP4/P6P/BP2QPP1/R2R2K1 w - - 0 1';
+const START_FEN_3 = 'r4rk1/pp3p1p/1n2q1p1/4p3/2P1P3/P6P/BP2QPP1/R2R2K1 w - - 0 1';
 const START_FEN_4 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
 const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';
 const START_FEN_6 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
