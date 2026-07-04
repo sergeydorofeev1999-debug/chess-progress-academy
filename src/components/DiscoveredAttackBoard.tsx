@@ -9,7 +9,7 @@ const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
-const START_FEN_2 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
+const START_FEN_2 = '5k2/3q2pp/8/8/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_3 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_4 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_5 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
@@ -202,10 +202,57 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           return;
         }
       } else if (exercise === 2) {
-        setSelectedSquare(null);
-        setIsFail(true);
-        setMessage('Упражнение в разработке');
-        return;
+        // EXERCISE 2: Discovered attack — Nf3-e5 check, black king escapes to e7 or e8, then Nxd7
+        const isCorrectFirst = from === 'f3' && to === 'e5' && move.piece === 'n';
+        const isCorrectSecond = from === 'e5' && to === 'd7' && move.piece === 'n' && move.captured === 'q';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            // After Ne5+, black king escapes to e7 or e8
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const preferredKingSquares = ['e7', 'e8'];
+            const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
+            if (preferred) {
+              g.move({ from: preferred.from, to: preferred.to });
+            } else if (kingMoves.length > 0) {
+              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: kingMove.from, to: kingMove.to });
+            }
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          setMessage('Шах! Теперь заберите ферзя.');
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Вскрытое нападение выполнено.');
+          saveStars(2, 3);
+          return;
+        }
       } else if (exercise === 3) {
         setSelectedSquare(null);
         setIsFail(true);
@@ -380,7 +427,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           {exercise === 1
             ? 'Вскрытое нападение — сходите конём с f3 на d4 (шах!), затем заберите ферзя ладьёй'
             : exercise === 2
-            ? 'Упражнение 2 (в разработке)'
+            ? 'Вскрытое нападение — сходите конём с f3 на e5 (шах!), затем заберите ферзя'
             : exercise === 3
             ? 'Упражнение 3 (в разработке)'
             : exercise === 4
@@ -520,7 +567,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           <p>{exercise === 1
           ? 'Сходите конём на d4, чтобы открыть ладью и поставить шах. Затем заберите ферзя ладьёй.'
           : exercise === 2
-          ? 'Упражнение в разработке'
+          ? 'Сходите конём на e5, чтобы открыть ладью и поставить шах. Затем заберите ферзя конём.'
           : exercise === 3
           ? 'Упражнение в разработке'
           : exercise === 4
