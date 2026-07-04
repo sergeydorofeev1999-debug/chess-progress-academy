@@ -19,7 +19,7 @@ const START_FEN_8 = '6k1/p5pp/1pq1pp2/8/4N3/4P1P1/PP3PBP/6K1 w - - 0 1';
 const START_FEN_9 = '3r3r/pp3Rpk/4p1p1/6Q1/1q2N1P1/3n1P1P/8/3R2K1 w - - 0 1';
 const START_FEN_10 = '2kr3r/pp3ppp/4p3/2Np2q1/3P4/4P2P/PP3PP1/2R2RK1 w - - 0 1';
 const START_FEN_11 = 'rnb1k2r/ppp2ppp/3q4/b3N3/3Pp3/2P5/PP1B1PPP/R2QKB1R w KQkq - 0 1';
-const START_FEN_12 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
+const START_FEN_12 = '4r2r/ppQqk1b1/2p5/6Pp/2BP1B1P/2P5/PP3P2/2K5 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
@@ -804,54 +804,27 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
       } else if (exercise === 12) {
-        // EXERCISE 12: Fork — Qe4-e6+ attacks Qd5 and Ke8, king escapes, then Qxd5
-        const isCorrectFirst = from === 'e4' && to === 'e6' && move.piece === 'q';
-        const isCorrectSecond = from === 'e6' && to === 'd5' && move.piece === 'q';
-
-        if (whiteMoves === 0) {
-          if (!isCorrectFirst) {
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              const cap = getBestBlackCapture(g);
-              if (cap) g.move({ from: cap.from, to: cap.to });
-              setGame(new Chess(g.fen()));
-              setIsFail(true);
-              setMessage('Провалено');
-            }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
-            if (kingMoves.length > 0) {
-              const km = kingMoves[Math.floor(Math.random() * kingMoves.length)];
-              g.move({ from: km.from, to: km.to });
-              setGame(new Chess(g.fen()));
-            }
-          }, 1000);
-
-          return;
-        }
-
-        if (whiteMoves === 1) {
-          if (!isCorrectSecond) {
-            setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
-            return;
-          }
+        // EXERCISE 12: Mate in 1 — Bf4-d6#
+        if (from === 'f4' && to === 'd6' && move.piece === 'b') {
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setIsComplete(true);
-          setMessage('Отлично! Тактика выполнена.');
+          setMessage('Мат! Отлично!');
           saveStars(12, 3);
-          return;
+        } else {
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const cap = getBestBlackCapture(g);
+            if (cap) {
+              g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+            }
+            setIsFail(true);
+            setMessage('Провалено');
+          }, 1000);
+          setSelectedSquare(null);
         }
+        return;
       }
     } catch {
       // Invalid move
@@ -978,7 +951,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 9: return 'Белый конь может поставить мат в 1 ход. Найди лучший ход!';
       case 10: return 'Белый конь может вскрыть шах и нападение. Найди лучший ход!';
       case 11: return 'Белый ферзь может атаковать фигуру. Найди лучший ход!';
-      case 12: return 'Белый ферзь может атаковать две фигуры. Найди лучший ход!';
+      case 12: return 'Белый слон может поставить мат в 1 ход. Найди лучший ход!';
       default: return '';
     }
   };
@@ -996,7 +969,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 9: return 'Конём вскройте шах и поставьте мат.';
       case 10: return 'Вскройте шах конём, затем заберите ферзя.';
       case 11: return 'Вскройте двойное нападение и заберите фигуру.';
-      case 12: return 'Найдите двойной удар ферзём и заберите фигуру.';
+      case 12: return 'Поставьте мат слоном.';
       default: return '';
     }
   };
