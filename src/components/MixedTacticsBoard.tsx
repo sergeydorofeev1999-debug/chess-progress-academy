@@ -221,7 +221,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
             setGame(new Chess(g.fen()));
           }, 1000);
 
-          setMessage('Хорошо! Теперь заберите слона.');
+          setMessage('');
           return;
         }
 
@@ -277,7 +277,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
             setGame(new Chess(g.fen()));
           }, 1000);
 
-          setMessage('Хорошо! Теперь сделайте нажим пешкой b4-b5.');
+          setMessage('');
           return;
         }
 
@@ -306,7 +306,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
             setGame(new Chess(g.fen()));
           }, 1000);
 
-          setMessage('Хорошо! Теперь заберите коня слоном или пешкой.');
+          setMessage('');
           return;
         }
 
