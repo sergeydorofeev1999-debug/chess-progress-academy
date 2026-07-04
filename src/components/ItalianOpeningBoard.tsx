@@ -9,6 +9,17 @@ const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const START_FEN_2 = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2';
+const START_FEN_3 = 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_4 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_5 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_6 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/1BP1P3/2P2N2/PP3PPP/RNBQK2R b KQkq - 0 5';
+const START_FEN_7 = 'r1bqk1nr/pppp1ppp/2n5/1b2p3/1BP1P3/2P2N2/PP3PPP/RNBQK2R w KQkq - 0 6';
+const START_FEN_8 = 'r1bqk1nr/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 6 5';
+const START_FEN_9 = 'r1bqk2r/pppp1ppp/2n2n2/1b2p3/2B1P3/5N2/PPPP1PPP/RNBQ1RK1 w kq - 6 6';
+const START_FEN_10 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 6 5';
+const START_FEN_11 = 'r1bqk1nr/pppp1ppp/2n5/2bp4/2BPP3/2P2N2/PP3PPP/RNBQK2R b KQkq - 0 6';
+const START_FEN_12 = 'r2qk1nr/pppp1ppp/2n5/2bp4/2BPP3/2P2N2/PP3PPP/RNBQK2R w KQkq - 2 7';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
@@ -75,7 +86,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -129,21 +140,81 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   }, []);
 
   const reset = useCallback(() => {
-    setGame(new Chess(START_FEN_1));
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : exercise === 9 ? START_FEN_9 : exercise === 10 ? START_FEN_10 : exercise === 11 ? START_FEN_11 : START_FEN_12;
+    setGame(new Chess(fen));
     setSelectedSquare(null);
-    setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
+    if (exercise === 1) {
+      setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
+    } else if (exercise === 2) {
+      setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие.');
+    } else if (exercise === 3) {
+      setMessage('Развейте слона на c4 — он направит орудие на уязвимое поле f7.');
+    } else if (exercise === 4) {
+      setMessage('Играйте c3 — Гиуоко Пиано (тихая итальянская партия).');
+    } else if (exercise === 5) {
+      setMessage('Играйте d3 — спокойное развитие без пешечного шторма.');
+    } else if (exercise === 6) {
+      setMessage('Играйте d4 — развитие центра в гамбите Эванса.');
+    } else if (exercise === 7) {
+      setMessage('Чёрные играют Nf6 (защита двух коней). Ответьте d3.');
+    } else if (exercise === 8) {
+      setMessage('Чёрные играют Be7 (венгерская защита). Разбейте центр d4.');
+    } else if (exercise === 9) {
+      setMessage('Король в безопасности? Рокируйтесь!');
+    } else if (exercise === 10) {
+      setMessage('Развейте коня на c3 — защита пешки e4.');
+    } else if (exercise === 11) {
+      setMessage('Возьмите на d4 открытым полем пешки.');
+    } else {
+      setMessage('Развейте коня на c3 — классическое развитие.');
+    }
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
-  }, []);
+  }, [exercise]);
 
-  const saveStars = useCallback((ex: 1, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
       return next;
     });
   }, [storageKey]);
+
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
+    setExercise(num);
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
+    setGame(new Chess(fen));
+    setSelectedSquare(null);
+    if (num === 1) {
+      setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
+    } else if (num === 2) {
+      setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие.');
+    } else if (num === 3) {
+      setMessage('Развейте слона на c4 — он направит орудие на уязвимое поле f7.');
+    } else if (num === 4) {
+      setMessage('Играйте c3 — Гиуоко Пиано (тихая итальянская партия).');
+    } else if (num === 5) {
+      setMessage('Играйте d3 — спокойное развитие без пешечного шторма.');
+    } else if (num === 6) {
+      setMessage('Играйте d4 — развитие центра в гамбите Эванса.');
+    } else if (num === 7) {
+      setMessage('Чёрные играют Nf6 (защита двух коней). Ответьте d3.');
+    } else if (num === 8) {
+      setMessage('Чёрные играют Be7 (венгерская защита). Разбейте центр d4.');
+    } else if (num === 9) {
+      setMessage('Король в безопасности? Рокируйтесь!');
+    } else if (num === 10) {
+      setMessage('Развейте коня на c3 — защита пешки e4.');
+    } else if (num === 11) {
+      setMessage('Возьмите на d4 открытым полем пешки.');
+    } else {
+      setMessage('Развейте коня на c3 — классическое развитие.');
+    }
+    setIsFail(false);
+    setIsComplete(false);
+    setWhiteMoves(0);
+  }, []);
 
   const processWhiteMove = useCallback((from: string, to: string) => {
     if (!game) return;
@@ -157,13 +228,11 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
       const nextWhiteMoves = whiteMoves + 1;
 
       if (exercise === 1) {
-        // EXERCISE 1: Italian Game — e4, Nf3, Bc4
-        const isCorrectE4 = from === 'e2' && to === 'e4' && move.piece === 'p';
-        const isCorrectNf3 = from === 'g1' && to === 'f3' && move.piece === 'n';
-        const isCorrectBc4 = from === 'f1' && to === 'c4' && move.piece === 'b';
+        // EXERCISE 1: e2-e4, computer e7-e5
+        const isCorrectFirst = from === 'e2' && to === 'e4' && move.piece === 'p';
 
         if (whiteMoves === 0) {
-          if (!isCorrectE4) {
+          if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
               const cap = getBestBlackCapture(g);
@@ -183,18 +252,29 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            g.move({ from: 'e7' as any, to: 'e5' as any });
+            g.move({ from: 'e7', to: 'e5' });
             setGame(new Chess(g.fen()));
             setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие.');
           }, 1000);
           return;
         }
+      } else if (exercise === 2) {
+        // EXERCISE 2: Ng1-f3 after e4 e5
+        const isCorrectFirst = from === 'g1' && to === 'f3' && move.piece === 'n';
 
-        if (whiteMoves === 1) {
-          if (!isCorrectNf3) {
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
             setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
             return;
           }
           setGame(new Chess(g.fen()));
@@ -203,18 +283,29 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            g.move({ from: 'b8' as any, to: 'c6' as any });
+            g.move({ from: 'b8', to: 'c6' });
             setGame(new Chess(g.fen()));
             setMessage('Развейте слона на c4 — он направит орудие на уязвимое поле f7.');
           }, 1000);
           return;
         }
+      } else if (exercise === 3) {
+        // EXERCISE 3: Bf1-c4 after e4 e5 Nf3 Nc6
+        const isCorrectFirst = from === 'f1' && to === 'c4' && move.piece === 'b';
 
-        if (whiteMoves === 2) {
-          if (!isCorrectBc4) {
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
             setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
             return;
           }
           setGame(new Chess(g.fen()));
@@ -223,17 +314,314 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            g.move({ from: 'f8' as any, to: 'c5' as any });
+            g.move({ from: 'f8', to: 'c5' });
             setGame(new Chess(g.fen()));
             setIsComplete(true);
             setMessage('Отлично! Вы развели слона на c4 — классическая итальянская партия.');
-            saveStars(1, 3);
+            saveStars(3, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 4) {
+        // EXERCISE 4: c2-c3 (Giuoco Piano) after e4 e5 Nf3 Nc6 Bc4 Bc5
+        const isCorrectFirst = from === 'c2' && to === 'c3' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd7', to: 'd6' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы сыграли c3 — Гиуоко Пиано.');
+            saveStars(4, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 5) {
+        // EXERCISE 5: d2-d3 (quieter line) after e4 e5 Nf3 Nc6 Bc4 Bc5
+        const isCorrectFirst = from === 'd2' && to === 'd3' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd7', to: 'd6' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы сыграли d3 — спокойное развитие.');
+            saveStars(5, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 6) {
+        // EXERCISE 6: d2-d4 (Evans Gambit after b4 Bxb4 c3 Ba5)
+        const isCorrectFirst = from === 'd2' && to === 'd4' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'b7', to: 'b5' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы сыграли d4 — развитие центра в гамбите Эванса.');
+            saveStars(6, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 7) {
+        // EXERCISE 7: d2-d3 against Two Knights after Nf6
+        const isCorrectFirst = from === 'd2' && to === 'd3' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd7', to: 'd5' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы сыграли d3 против защиты двух коней.');
+            saveStars(7, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 8) {
+        // EXERCISE 8: d2-d4 against Hungarian after Be7
+        const isCorrectFirst = from === 'd2' && to === 'd4' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd7', to: 'd6' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы разбили центр d4 против венгерской защиты.');
+            saveStars(8, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 9) {
+        // EXERCISE 9: 0-0 kingside castling after e4 e5 Nf3 Nc6 Bc4 Bc5
+        const isCorrectFirst = move.piece === 'k' && (to === 'g1' || to === 'h1');
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd7', to: 'd6' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы рокировались — безопасность короля прежде всего.');
+            saveStars(9, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 10) {
+        // EXERCISE 10: Nb1-c3 after e4 e5 Nf3 Nc6 Bc4 Bc5
+        const isCorrectFirst = from === 'b1' && to === 'c3' && move.piece === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'g8', to: 'f6' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы развели коня на c3 — защита центра.');
+            saveStars(10, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 11) {
+        // EXERCISE 11: c3xd4 after d4 exd4
+        const isCorrectFirst = from === 'c3' && to === 'd4' && move.piece === 'p' && move.captured === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'd8', to: 'e7' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы взяли на d4 — открытый центр.');
+            saveStars(11, 3);
+          }, 1000);
+          return;
+        }
+      } else if (exercise === 12) {
+        // EXERCISE 12: Nb1-c3 after c3 d6 d4 exd4 cxd4
+        const isCorrectFirst = from === 'b1' && to === 'c3' && move.piece === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'c8', to: 'g4' });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы развели коня на c3 — классическое развитие.');
+            saveStars(12, 3);
           }, 1000);
           return;
         }
       }
     } catch {
-      // ignore invalid move
+      // Invalid move
     }
   }, [game, whiteMoves, exercise, saveStars]);
 
@@ -267,137 +655,138 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     if (!start || start.pointerId !== e.pointerId) return;
     const dx = e.clientX - start.x;
     const dy = e.clientY - start.y;
-    if (!start.moved && Math.sqrt(dx*dx + dy*dy) > 6) {
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
       start.moved = true;
-      const piece = game?.get(start.square as any);
-      if (piece) {
-        setDragPiece({ square: start.square, type: piece.type, color: piece.color });
-      }
     }
     if (start.moved) {
       setDragPos({ x: e.clientX, y: e.clientY });
     }
-  }, [game]);
+  }, []);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+  const handlePointerUp = useCallback((e: React.PointerEvent, sq: string) => {
     const start = pointerStartRef.current;
     if (!start || start.pointerId !== e.pointerId) return;
     pointerStartRef.current = null;
     setDragPiece(null);
-    if (!start.moved) return;
 
-    const boardEl = document.getElementById('italian-chess-board');
+    if (!start.moved) {
+      handleSquareClick(sq);
+      return;
+    }
+
+    const boardEl = document.getElementById('chess-board');
     if (!boardEl) return;
     const rect = boardEl.getBoundingClientRect();
-    const size = rect.width / 8;
-    const col = Math.floor((e.clientX - rect.left) / size);
-    const row = Math.floor((e.clientY - rect.top) / size);
-    if (col < 0 || col > 7 || row < 0 || row > 7) return;
-    const to = FILES[col] + DISPLAY_RANKS[row];
-    if (to !== start.square) {
-      processWhiteMove(start.square, to);
+    const fileIdx = Math.floor((e.clientX - rect.left) / sqSize);
+    const rankIdx = Math.floor((e.clientY - rect.top) / sqSize);
+    if (fileIdx < 0 || fileIdx > 7 || rankIdx < 0 || rankIdx > 7) return;
+    const targetSquare = FILES[fileIdx] + DISPLAY_RANKS[rankIdx];
+    if (targetSquare !== start.square) {
+      processWhiteMove(start.square, targetSquare);
     }
-  }, [processWhiteMove]);
+  }, [sqSize, processWhiteMove, handleSquareClick]);
 
-  const board = game ? game.board() : null;
+  const isLight = (r: number, f: number) => (r + f) % 2 === 0;
+
+  if (!game) return <div className="text-center py-8 text-gray-500">Загрузка...</div>;
+
+  const totalScore = Object.values(exerciseStars).reduce((s, v) => s + v, 0);
+  const maxScore = 12 * 3;
+  const progressPct = Math.round((totalScore / maxScore) * 100);
+  const hasCompletedAll = totalScore >= maxScore;
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 items-start justify-center">
-      {/* Board area */}
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex items-center justify-between w-full max-w-[600px]">
-          <div className="flex items-center gap-2 text-sm text-slate-300">
-            <span>Упражнение</span>
-            <span className="font-semibold text-white">1/1</span>
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+      {/* LEFT: Board */}
+      <div className="flex-1">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="text-sm font-semibold text-gray-700">
+              Упражнение {exercise}/12
+            </div>
+            <div className="flex items-center gap-1 ml-2">
+              <StarPng filled={(exerciseStars[exercise] || 0) >= 1} />
+              <StarPng filled={(exerciseStars[exercise] || 0) >= 2} />
+              <StarPng filled={(exerciseStars[exercise] || 0) >= 3} />
+            </div>
           </div>
-          <button
-            onClick={reset}
-            className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors px-2 py-1 rounded-md hover:bg-slate-800"
-          >
-            <RotateCcw size={14} />
-            Сначала
-          </button>
+          <div className="text-xs text-gray-500">
+            {totalScore}/{maxScore} звёзд
+          </div>
         </div>
 
-        {/* message banner */}
+        {/* Banner / Message */}
         {message && (
-          <div className={`w-full max-w-[600px] px-4 py-3 rounded-lg text-sm font-medium text-center transition-all ${
-            isComplete ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-700/50' :
-            isFail ? 'bg-red-900/60 text-red-300 border border-red-700/50' :
-            'bg-amber-900/60 text-amber-300 border border-amber-700/50'
+          <div className={`mb-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+            isComplete
+              ? 'bg-green-50 text-green-700 border border-green-200'
+              : isFail
+                ? 'bg-red-50 text-red-700 border border-red-200'
+                : 'bg-amber-50 text-amber-800 border border-amber-200'
           }`}>
             {message}
-            {isFail && (
-              <button
-                onClick={reset}
-                className="ml-3 text-xs underline hover:no-underline"
-              >
-                ЕЩЁ РАЗ
-              </button>
-            )}
           </div>
         )}
 
-        <div
-          id="italian-chess-board"
-          className="relative select-none"
-          style={{ width: sqSize * 8, height: sqSize * 8 }}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-        >
-          {/* squares */}
-          {RANKS.map((rank, rIdx) =>
-            FILES.map((file, fIdx) => {
-              const sq = file + DISPLAY_RANKS[rIdx];
-              const isLight = (fIdx + rIdx) % 2 === 0;
-              const isSelected = selectedSquare === sq;
-              return (
-                <div
-                  key={sq}
-                  className="absolute flex items-center justify-center"
-                  style={{
-                    left: fIdx * sqSize,
-                    top: rIdx * sqSize,
-                    width: sqSize,
-                    height: sqSize,
-                    backgroundColor: isSelected ? '#4ade80' : isLight ? '#f0d9b5' : '#b58863',
-                    cursor: 'pointer',
-                  }}
-                  onClick={() => handleSquareClick(sq)}
-                  onPointerDown={(e) => handlePointerDown(e, sq)}
-                >
-                  {(() => {
-                    const p = board && board[7 - rIdx]?.[fIdx];
-                    if (!p) return null;
-                    return (
-                      <div className="w-full h-full p-0.5">
-                        <PieceImg type={p.type} color={p.color} />
-                      </div>
-                    );
-                  })()}
-                  {/* rank/file labels */}
-                  {fIdx === 0 && (
-                    <span className="absolute top-0.5 left-0.5 text-[10px] font-bold opacity-60"
-                      style={{ color: isLight ? '#b58863' : '#f0d9b5' }}>
-                      {DISPLAY_RANKS[rIdx]}
-                    </span>
-                  )}
-                  {rIdx === 7 && (
-                    <span className="absolute bottom-0.5 right-0.5 text-[10px] font-bold opacity-60"
-                      style={{ color: isLight ? '#b58863' : '#f0d9b5' }}>
-                      {file}
-                    </span>
-                  )}
-                </div>
-              );
-            })
-          )}
+        {/* Fail banner with retry */}
+        {isFail && (
+          <div className="mb-3">
+            <button
+              onClick={reset}
+              className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+            >
+              <RotateCcw size={16} />
+              ЕЩЁ РАЗ
+            </button>
+          </div>
+        )}
 
-          {/* dragged piece */}
+        {/* Chess board */}
+        <div
+          id="chess-board"
+          className="relative mx-auto select-none"
+          style={{ width: sqSize * 8, height: sqSize * 8, touchAction: 'none' }}
+          onDragStart={(e) => e.preventDefault()}
+        >
+          {/* Squares */}
+          {RANKS.map((rankLabel, rIdx) => (
+            <div key={rankLabel} className="flex">
+              {FILES.map((fileLabel, fIdx) => {
+                const sq = fileLabel + DISPLAY_RANKS[rIdx];
+                const piece = (() => {
+                  const p = game.get(sq as any);
+                  if (!p) return null;
+                  return { type: p.type, color: p.color };
+                })();
+                const isSelected = selectedSquare === sq;
+                const isLastMove = false;
+                return (
+                  <div
+                    key={sq}
+                    className={`relative flex items-center justify-center ${isLight(rIdx, fIdx) ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}`}
+                    style={{ width: sqSize, height: sqSize }}
+                    onPointerDown={(e) => handlePointerDown(e, sq)}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={(e) => handlePointerUp(e, sq)}
+                  >
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-yellow-300/40 pointer-events-none" />
+                    )}
+                    {piece && (
+                      <div className="w-full h-full p-[2px]">
+                        <PieceImg type={piece.type} color={piece.color} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* Drag piece overlay */}
           {dragPiece && (
             <div
-              className="absolute pointer-events-none z-50"
+              className="pointer-events-none fixed z-50"
               style={{
                 left: dragPos.x - sqSize / 2,
                 top: dragPos.y - sqSize / 2,
@@ -410,53 +799,110 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           )}
         </div>
 
-        {/* stars */}
-        <div className="flex items-center gap-3">
-          {[1, 2, 3].map(s => (
-            <StarPng key={s} filled={(exerciseStars[exercise] || 0) >= s} size={20} />
-          ))}
+        {/* Controls */}
+        <div className="mt-4 flex items-center justify-between">
+          <button
+            onClick={reset}
+            className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors flex items-center gap-1"
+          >
+            <RotateCcw size={12} />
+            Сначала
+          </button>
+
+          <div className="flex gap-2">
+            {exercise > 1 && (
+              <button
+                onClick={() => switchExercise((exercise - 1) as any)}
+                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              >
+                ← Предыдущее
+              </button>
+            )}
+            {exercise < 12 && (
+              <button
+                onClick={() => switchExercise((exercise + 1) as any)}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              >
+                Следующее →
+              </button>
+            )}
+            {exercise === 12 && isComplete && (
+              <button
+                onClick={onComplete}
+                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors flex items-center gap-1"
+              >
+                <Trophy size={12} />
+                Завершить
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Side nav */}
-      <div className="hidden lg:flex flex-col gap-2 w-48">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white mb-1">
-          <Trophy size={16} className="text-amber-400" />
-          Упражнения
-        </div>
-        {([1] as const).map((num) => (
-          <button
-            key={num}
-            onClick={() => {
-              setExercise(num);
-              setGame(new Chess(START_FEN_1));
-              setSelectedSquare(null);
-              setMessage('');
-              setIsFail(false);
-              setIsComplete(false);
-              setWhiteMoves(0);
-            }}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-              exercise === num
-                ? 'bg-slate-700 text-white'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-          >
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              (exerciseStars[num] || 0) >= 3 ? 'bg-amber-500/20 text-amber-400' :
-              (exerciseStars[num] || 0) >= 1 ? 'bg-slate-600 text-slate-300' :
-              'bg-slate-800 text-slate-500'
-            }`}>
-              {num}
-            </span>
-            <span className="flex-1 text-left">Итальянская партия</span>
-            <div className="flex gap-0.5">
-              {[1, 2, 3].map(s => (
-                <StarPng key={s} filled={(exerciseStars[num] || 0) >= s} size={12} />
-              ))}
+      {/* RIGHT: Exercise selector */}
+      <div className="lg:w-64 flex-shrink-0">
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Упражнения</div>
+          <div className="space-y-1">
+            {[1,2,3,4,5,6,7,8,9,10,11,12].map((num) => (
+              <button
+                key={num}
+                onClick={() => switchExercise(num as any)}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
+                  exercise === num
+                    ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200'
+                    : 'text-gray-700 hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
+                    exercise === num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {num}
+                  </span>
+                  <span className="text-xs">
+                    {num === 1 ? 'Итальянская партия — e4' :
+                     num === 2 ? 'Развитие коня — Nf3' :
+                     num === 3 ? 'Слон на c4' :
+                     num === 4 ? 'Гиуоко Пиано — c3' :
+                     num === 5 ? 'Спокойная игра — d3' :
+                     num === 6 ? 'Гамбит Эванса' :
+                     num === 7 ? 'Защита двух коней' :
+                     num === 8 ? 'Венгерская защита' :
+                     num === 9 ? 'Рокировка' :
+                     num === 10 ? 'Конь на c3' :
+                     num === 11 ? 'Взятие на d4' :
+                     'Развитие фигур'}
+                  </span>
+                </span>
+                <div className="flex items-center gap-0.5">
+                  <StarPng filled={(exerciseStars[num] || 0) >= 1} size={12} />
+                  <StarPng filled={(exerciseStars[num] || 0) >= 2} size={12} />
+                  <StarPng filled={(exerciseStars[num] || 0) >= 3} size={12} />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Progress */}
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-gray-500">Прогресс</span>
+              <span className="font-semibold text-gray-700">{progressPct}%</span>
             </div>
-          </button>
-        ))}
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            {hasCompletedAll && (
+              <div className="mt-2 text-xs text-green-600 font-medium text-center">
+                🎉 Все упражнения пройдены!
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
