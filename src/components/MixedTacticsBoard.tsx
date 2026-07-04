@@ -13,7 +13,7 @@ const START_FEN_2 = 'k7/8/2n5/8/1P6/8/4B3/1K6 w - - 0 1';
 const START_FEN_3 = 'r4rk1/pp3p1p/1n2q1p1/4p3/2P1P3/P6P/BP2QPP1/R2R2K1 w - - 0 1';
 const START_FEN_4 = '3R1bk1/5ppp/1N6/pp2P3/8/1P2r2P/P5PK/8 w - - 0 1';
 const START_FEN_5 = '2r3k1/5ppp/8/8/8/7P/2B1nPP1/2R4K w - - 0 1';
-const START_FEN_6 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
+const START_FEN_6 = '4k3/1q5p/p3p1p1/4bp2/1p2p3/p3p3/2Q1BPPP/6K1 w - - 0 1';
 const START_FEN_7 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1';
 const START_FEN_8 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1';
 const START_FEN_9 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1';
@@ -483,17 +483,19 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
       } else if (exercise === 6) {
-        // EXERCISE 6: Discovered attack — d4-d5 uncovers Bb5 on Nc6, then dxc6
-        const isCorrectFirst = from === 'd4' && to === 'd5' && move.piece === 'p';
-        const isCorrectSecond = from === 'd5' && to === 'c6' && move.piece === 'p' && move.captured === 'n';
+        // EXERCISE 6: Queen check — Qc2-c5+ discovers Be2 on Qb7, king escapes, then Qxe5
+        const isCorrectFirst = from === 'c2' && to === 'c5' && move.piece === 'q';
+        const isCorrectSecond = from === 'c5' && to === 'e5' && move.piece === 'q' && move.captured === 'b';
 
         if (whiteMoves === 0) {
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
               const cap = getBestBlackCapture(g);
-              if (cap) g.move({ from: cap.from, to: cap.to });
-              setGame(new Chess(g.fen()));
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
               setIsFail(true);
               setMessage('Провалено');
             }, 1000);
@@ -502,16 +504,20 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           }
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
-            if (blackMoves.length > 0) {
-              const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
-              g.move({ from: randomMove.from, to: randomMove.to });
-              setGame(new Chess(g.fen()));
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const preferred = ['f7', 'e8'];
+            const escape = kingMoves.find((m: any) => preferred.includes(m.to));
+            if (escape) {
+              g.move({ from: escape.from, to: escape.to });
+            } else if (kingMoves.length > 0) {
+              const km = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: km.from, to: km.to });
             }
-            setWhiteMoves(nextWhiteMoves);
+            setGame(new Chess(g.fen()));
           }, 1000);
 
           setMessage('');
@@ -1003,7 +1009,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 3: return 'Белая пешка может открыть нападение на ферзя. Найди лучший ход!';
       case 4: return 'Белый конь может вскрыть нападение на фигуру. Найди лучший ход!';
       case 5: return 'Белый слон может пожертвовать себя на h7. Найди лучший ход!';
-      case 6: return 'Белая пешка может открыть нападение на фигуру. Найди лучший ход!';
+      case 6: return 'Белый ферзь может вскрыть нападение на ферзя. Найди лучший ход!';
       case 7: return 'Белый ферзь может открыть нападение ладьи. Найди лучший ход!';
       case 8: return 'Белый конь может атаковать две фигуры. Найди лучший ход!';
       case 9: return 'Белый конь может вскрыть шах и нападение. Найди лучший ход!';
@@ -1021,7 +1027,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 3: return 'Вскройте нападение пешкой и заберите фигуру.';
       case 4: return 'Вскройте нападение конём и заберите фигуру.';
       case 5: return 'Пожертвуйте слона на h7, затем заберите ладью.';
-      case 6: return 'Вскройте нападение пешкой и заберите фигуру.';
+      case 6: return 'Вскройте шах ферзём и заберите слона.';
       case 7: return 'Вскройте нападение ладьи и заберите фигуру.';
       case 8: return 'Найдите двойной удар конём и заберите фигуру.';
       case 9: return 'Вскройте шах и нападение, затем заберите фигуру.';
