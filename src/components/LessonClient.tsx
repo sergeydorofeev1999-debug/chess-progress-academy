@@ -20,7 +20,6 @@ import RookMateBoard from './RookMateBoard';
 import ForkBoard from './ForkBoard'; // v4: star progress tracking
 import PinBoard from './PinBoard';
 import DiscoveredAttackBoard from './DiscoveredAttackBoard';
-import MixedTacticsBoard from './MixedTacticsBoard';
 import SquareRuleBoard from './SquareRuleBoard';
 
 interface Lesson {
@@ -1526,13 +1525,6 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_discovered_attack' ? (
           <div className="mb-8">
             <DiscoveredAttackBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_mixed_tactics' ? (
-          <div className="mb-8">
-            <MixedTacticsBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
