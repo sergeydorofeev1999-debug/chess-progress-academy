@@ -266,7 +266,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsComplete(true);
-            setMessage('Отлично! Итальянская партия завершена. Белые сделали рокировку!');
+            setMessage('Отлично! Итальянская партия завершена. Белые захватили центр пешкой, вывели коней и слонов и сделали рокировку!');
             saveStars(1, 3);
             return;
           } else {
