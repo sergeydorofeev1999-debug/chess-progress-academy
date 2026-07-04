@@ -216,6 +216,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     setWhiteMoves(0);
   }, []);
 
+
+
   const processWhiteMove = useCallback((from: string, to: string) => {
     if (!game) return;
     const g = game;
@@ -625,173 +627,263 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     }
   }, [game, whiteMoves, exercise, saveStars]);
 
-  const handleSquareClick = useCallback((sq: string) => {
+const handleSquareClick = useCallback((square: string) => {
     if (!game || isCompleteRef.current || isFailRef.current) return;
 
-    const piece = game.get(sq as any);
+    const piece = game.get(square as any);
     if (selectedSquare) {
-      if (selectedSquare === sq) {
+      if (selectedSquare === square) {
         setSelectedSquare(null);
         return;
       }
-      processWhiteMove(selectedSquare, sq);
+      processWhiteMove(selectedSquare, square);
       return;
     }
     if (piece && piece.color === 'w') {
-      setSelectedSquare(sq);
+      setSelectedSquare(square);
     }
   }, [game, selectedSquare, processWhiteMove]);
 
-  const handlePointerDown = useCallback((e: React.PointerEvent, sq: string) => {
-    if (!game || isCompleteRef.current || isFailRef.current) return;
-    const piece = game.get(sq as any);
+const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
+    if (isCompleteRef.current || isFailRef.current) return;
+    if (!game) return;
+    const g = game;
+    if (g.turn() !== 'w') return;
+    const piece = g.get(square as any);
     if (!piece || piece.color !== 'w') return;
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    pointerStartRef.current = { x: e.clientX, y: e.clientY, square: sq, moved: false, pointerId: e.pointerId };
+    if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
   }, [game]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    const start = pointerStartRef.current;
-    if (!start || start.pointerId !== e.pointerId) return;
-    const dx = e.clientX - start.x;
-    const dy = e.clientY - start.y;
-    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-      start.moved = true;
-    }
-    if (start.moved) {
-      setDragPos({ x: e.clientX, y: e.clientY });
-    }
-  }, []);
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+        start.moved = true;
+        const piece = game?.get(start.square as any);
+        if (piece) {
+          setDragPiece({ square: start.square, type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' });
+          setSelectedSquare(null);
+        }
+      }
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
 
-  const handlePointerUp = useCallback((e: React.PointerEvent, sq: string) => {
-    const start = pointerStartRef.current;
-    if (!start || start.pointerId !== e.pointerId) return;
-    pointerStartRef.current = null;
-    setDragPiece(null);
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      if (!start.moved) {
+        // click handled by onClick
+      } else {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el?.closest('[data-square]') as HTMLElement | null;
+        const targetSquare = cell?.dataset.square || null;
+        if (targetSquare && targetSquare !== start.square) {
+          processWhiteMove(start.square, targetSquare);
+        }
+        setDragPiece(null);
+      }
+      pointerStartRef.current = null;
+    };
 
-    if (!start.moved) {
-      handleSquareClick(sq);
-      return;
-    }
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        pointerStartRef.current = null;
+      }
+    };
 
-    const boardEl = document.getElementById('chess-board');
-    if (!boardEl) return;
-    const rect = boardEl.getBoundingClientRect();
-    const fileIdx = Math.floor((e.clientX - rect.left) / sqSize);
-    const rankIdx = Math.floor((e.clientY - rect.top) / sqSize);
-    if (fileIdx < 0 || fileIdx > 7 || rankIdx < 0 || rankIdx > 7) return;
-    const targetSquare = FILES[fileIdx] + DISPLAY_RANKS[rankIdx];
-    if (targetSquare !== start.square) {
-      processWhiteMove(start.square, targetSquare);
-    }
-  }, [sqSize, processWhiteMove, handleSquareClick]);
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
+    };
+  }, [game, processWhiteMove]);
 
-  const isLight = (r: number, f: number) => (r + f) % 2 === 0;
+  const getPieceAt = (sq: string) => {
+    if (!game) return null;
+    const p = game.get(sq as any);
+    if (!p) return null;
+    return { type: p.type.toUpperCase(), color: p.color as 'w' | 'b' };
+  };
 
-  if (!game) return <div className="text-center py-8 text-gray-500">Загрузка...</div>;
+  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
 
-  const totalScore = Object.values(exerciseStars).reduce((s, v) => s + v, 0);
-  const maxScore = 12 * 3;
-  const progressPct = Math.round((totalScore / maxScore) * 100);
-  const hasCompletedAll = totalScore >= maxScore;
+  const validMoves = selectedSquare && game
+    ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
+    : dragPiece && game
+      ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
+      : [];
+
+  const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-      {/* LEFT: Board */}
-      <div className="flex-1">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="text-sm font-semibold text-gray-700">
-              Упражнение {exercise}/12
-            </div>
-            <div className="flex items-center gap-1 ml-2">
-              <StarPng filled={(exerciseStars[exercise] || 0) >= 1} />
-              <StarPng filled={(exerciseStars[exercise] || 0) >= 2} />
-              <StarPng filled={(exerciseStars[exercise] || 0) >= 3} />
-            </div>
-          </div>
-          <div className="text-xs text-gray-500">
-            {totalScore}/{maxScore} звёзд
-          </div>
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
+      {/* LEFT COLUMN */}
+      <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
+        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
+            const earnedStars = exerciseStars[num] || 0;
+            const isCurrent = num === exercise;
+            const isDone = earnedStars > 0;
+            return (
+              <button
+                key={num}
+                onClick={() => switchExercise(num as 1)}
+                className={`flex items-center justify-center px-1 py-1 rounded transition ${
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
+              >
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map(s => (
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                  ))}
+                </div>
+                <span className="ml-1 text-xs font-medium">{num}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Banner / Message */}
-        {message && (
-          <div className={`mb-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
-            isComplete
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : isFail
-                ? 'bg-red-50 text-red-700 border border-red-200'
-                : 'bg-amber-50 text-amber-800 border border-amber-200'
+        <button
+          onClick={reset}
+          className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
+        >
+          <RotateCcw size={14} /> Заново
+        </button>
+      </div>
+
+      {/* CENTER COLUMN */}
+      <div className="flex-1 flex flex-col items-center gap-3">
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+          {message && !isFail && !isComplete ? message : ''}
+        </div>
+
+        <div className="text-center font-bold text-slate-700 text-lg">
+          {turnText}
+        </div>
+
+        {/* Fail banner */}
+        {isFail && (
+          <div className="w-full max-w-sm">
+            <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
+              <p className="text-white font-bold text-lg">{message || 'Провалено'}</p>
+              <button
+                onClick={reset}
+                className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
+              >
+                ЕЩЁ РАЗ
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Success message */}
+        {message && !isFail && (
+          <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
+            message.includes('Отлично') ? 'bg-green-500' : 'bg-yellow-500'
           }`}>
+            {message.includes('Отлично') && <Trophy className="w-5 h-5 inline-block mr-2" />}
             {message}
           </div>
         )}
 
-        {/* Fail banner with retry */}
-        {isFail && (
-          <div className="mb-3">
-            <button
-              onClick={reset}
-              className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
-            >
-              <RotateCcw size={16} />
-              ЕЩЁ РАЗ
-            </button>
-          </div>
-        )}
+        {/* Board */}
+        <div className="flex justify-center w-full relative">
+          <div
+            className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
+            style={{
+              gridTemplateColumns: `repeat(8, ${sqSize}px)`,
+              gridTemplateRows: `repeat(8, ${sqSize}px)`,
+              touchAction: 'none',
+            }}
+          >
+            {DISPLAY_RANKS.map((rank, ri) => (
+              FILES.map((file, fi) => {
+                const sq = `${file}${rank}`;
+                const pieceObj = getPieceAt(sq);
+                const light = isLight(fi, ri);
+                const sel = selectedSquare === sq;
+                const isValidMove = validMoves.includes(sq);
+                const isDragSource = dragPiece?.square === sq;
 
-        {/* Chess board */}
-        <div
-          id="chess-board"
-          className="relative mx-auto select-none"
-          style={{ width: sqSize * 8, height: sqSize * 8, touchAction: 'none' }}
-          onDragStart={(e) => e.preventDefault()}
-        >
-          {/* Squares */}
-          {RANKS.map((rankLabel, rIdx) => (
-            <div key={rankLabel} className="flex">
-              {FILES.map((fileLabel, fIdx) => {
-                const sq = fileLabel + DISPLAY_RANKS[rIdx];
-                const piece = (() => {
-                  const p = game.get(sq as any);
-                  if (!p) return null;
-                  return { type: p.type, color: p.color };
-                })();
-                const isSelected = selectedSquare === sq;
-                const isLastMove = false;
                 return (
                   <div
                     key={sq}
-                    className={`relative flex items-center justify-center ${isLight(rIdx, fIdx) ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}`}
-                    style={{ width: sqSize, height: sqSize }}
+                    data-square={sq}
+                    className="flex items-center justify-center relative select-none"
+                    style={{
+                      width: sqSize,
+                      height: sqSize,
+                      cursor: pieceObj && pieceObj.color === 'w' && !isFail && !isComplete ? 'grab' : 'default',
+                      touchAction: 'none',
+                      backgroundColor: light ? '#f0d9b5' : '#b58863',
+                      opacity: isDragSource ? 0.3 : 1,
+                    }}
+                    onClick={() => handleSquareClick(sq)}
                     onPointerDown={(e) => handlePointerDown(e, sq)}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={(e) => handlePointerUp(e, sq)}
+                    onDragStart={(e) => e.preventDefault()}
                   >
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-yellow-300/40 pointer-events-none" />
+                    {sel && (
+                      <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
-                    {piece && (
-                      <div className="w-full h-full p-[2px]">
-                        <PieceImg type={piece.type} color={piece.color} />
+                    {fi === 0 && (
+                      <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {rank}
+                      </span>
+                    )}
+                    {ri === 7 && (
+                      <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {file}
+                      </span>
+                    )}
+                    {isValidMove && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                        <div
+                          style={{
+                            width: Math.round(sqSize * 0.3),
+                            height: Math.round(sqSize * 0.3),
+                            backgroundColor: pieceObj ? '#c41e3a' : '#5d9040',
+                            borderRadius: pieceObj ? '4px' : '50%',
+                            opacity: 0.85,
+                          }}
+                        />
+                      </div>
+                    )}
+                    {pieceObj && !isDragSource && (
+                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                        <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
                     )}
                   </div>
                 );
-              })}
-            </div>
-          ))}
+              })
+            ))}
+          </div>
 
-          {/* Drag piece overlay */}
+          {/* Dragged piece overlay */}
           {dragPiece && (
             <div
-              className="pointer-events-none fixed z-50"
+              className="fixed pointer-events-none z-50"
               style={{
-                left: dragPos.x - sqSize / 2,
-                top: dragPos.y - sqSize / 2,
-                width: sqSize,
-                height: sqSize,
+                left: dragPos.x - sqSize * 0.425,
+                top: dragPos.y - sqSize * 0.425,
+                width: Math.round(sqSize * 0.85),
+                height: Math.round(sqSize * 0.85),
               }}
             >
               <PieceImg type={dragPiece.type} color={dragPiece.color} />
@@ -799,111 +891,104 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           )}
         </div>
 
-        {/* Controls */}
-        <div className="mt-4 flex items-center justify-between">
-          <button
-            onClick={reset}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors flex items-center gap-1"
-          >
-            <RotateCcw size={12} />
-            Сначала
-          </button>
+        <button
+          onClick={reset}
+          className="flex lg:hidden items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+        >
+          <RotateCcw size={14} /> Заново
+        </button>
 
-          <div className="flex gap-2">
-            {exercise > 1 && (
-              <button
-                onClick={() => switchExercise((exercise - 1) as any)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-              >
-                ← Предыдущее
-              </button>
-            )}
+        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
+          <p className="font-medium mb-1">Цель:</p>
+          <p>{exercise === 1 ? 'Сыграйте e4 — захватите центр.' :
+          exercise === 2 ? 'Развейте коня на f3 — защитите e4.' :
+          exercise === 3 ? 'Развейте слона на c4 — нападение на f7.' :
+          exercise === 4 ? 'Сыграйте c3 — Гиуоко Пиано.' :
+          exercise === 5 ? 'Сыграйте d3 — спокойное развитие.' :
+          exercise === 6 ? 'Сыграйте d4 — развитие центра.' :
+          exercise === 7 ? 'Сыграйте d3 против защиты двух коней.' :
+          exercise === 8 ? 'Сыграйте d4 против венгерской защиты.' :
+          exercise === 9 ? 'Рокируйтесь короткой рокировкой.' :
+          exercise === 10 ? 'Развейте коня на c3.' :
+          exercise === 11 ? 'Возьмите на d4.' :
+          exercise === 12 ? 'Развейте коня на c3.' : ''}</p>
+        </div>
+
+        {/* Mobile exercise pills — 2 rows of 6 */}
+        <div className="flex lg:hidden flex-col items-center gap-1 w-full">
+          <div className="flex gap-1 justify-center w-full">
+            {[1, 2, 3, 4, 5, 6].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 justify-center w-full">
+            {[7, 8, 9, 10, 11, 12].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Completion banner */}
+        {isComplete && (
+          <div className="flex flex-col items-center gap-3 mt-2">
+            <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
+              <Trophy className="w-6 h-6" />
+              <span>Упражнение {exercise} пройдено!</span>
+            </div>
             {exercise < 12 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as any)}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
+                className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
-                Следующее →
+                Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 12 && isComplete && (
+            {exercise === 12 && (exerciseStars[12] || 0) >= 3 && (
               <button
                 onClick={onComplete}
-                className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors flex items-center gap-1"
+                className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
               >
-                <Trophy size={12} />
-                Завершить
+                Урок завершён ✓
               </button>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Exercise selector */}
-      <div className="lg:w-64 flex-shrink-0">
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Упражнения</div>
-          <div className="space-y-1">
-            {[1,2,3,4,5,6,7,8,9,10,11,12].map((num) => (
-              <button
-                key={num}
-                onClick={() => switchExercise(num as any)}
-                className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center justify-between transition-colors ${
-                  exercise === num
-                    ? 'bg-blue-50 text-blue-700 font-medium border border-blue-200'
-                    : 'text-gray-700 hover:bg-gray-50 border border-transparent'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                    exercise === num ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'
-                  }`}>
-                    {num}
-                  </span>
-                  <span className="text-xs">
-                    {num === 1 ? 'Итальянская партия — e4' :
-                     num === 2 ? 'Развитие коня — Nf3' :
-                     num === 3 ? 'Слон на c4' :
-                     num === 4 ? 'Гиуоко Пиано — c3' :
-                     num === 5 ? 'Спокойная игра — d3' :
-                     num === 6 ? 'Гамбит Эванса' :
-                     num === 7 ? 'Защита двух коней' :
-                     num === 8 ? 'Венгерская защита' :
-                     num === 9 ? 'Рокировка' :
-                     num === 10 ? 'Конь на c3' :
-                     num === 11 ? 'Взятие на d4' :
-                     'Развитие фигур'}
-                  </span>
-                </span>
-                <div className="flex items-center gap-0.5">
-                  <StarPng filled={(exerciseStars[num] || 0) >= 1} size={12} />
-                  <StarPng filled={(exerciseStars[num] || 0) >= 2} size={12} />
-                  <StarPng filled={(exerciseStars[num] || 0) >= 3} size={12} />
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Progress */}
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-gray-500">Прогресс</span>
-              <span className="font-semibold text-gray-700">{progressPct}%</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-            {hasCompletedAll && (
-              <div className="mt-2 text-xs text-green-600 font-medium text-center">
-                🎉 Все упражнения пройдены!
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
+

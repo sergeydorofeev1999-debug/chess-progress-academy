@@ -22,6 +22,8 @@ const START_FEN_11 = 'rnb1k2r/ppp2ppp/3q4/b3N3/3Pp3/2P5/PP1B1PPP/R2QKB1R w KQkq 
 const START_FEN_12 = '4r2r/ppQqk1b1/2p5/6Pp/2BP1B1P/2P5/PP3P2/2K5 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
+
+
   return (
     <img
       src="/images/learn/star.png"
@@ -805,7 +807,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
     }
   }, [game, whiteMoves, exercise, saveStars]);
 
-  const handleSquareClick = useCallback((square: string) => {
+const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
     if (!game) return;
     const g = game;
@@ -912,7 +914,8 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
 
   const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
 
-  const getExerciseHint = (ex: number) => {
+
+const getExerciseHint = (ex: number) => {
     switch (ex) {
       case 1: return 'Белая ладья атакует сразу две фигуры. Найди лучший ход!';
       case 2: return 'Белый слон может связать черного коня. Найди лучший ход!';
@@ -930,7 +933,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
     }
   };
 
-  const getExerciseGoal = (ex: number) => {
+const getExerciseGoal = (ex: number) => {
     switch (ex) {
       case 1: return 'Найдите двойной удар ладьёй и заберите фигуру.';
       case 2: return 'Свяжите коня слоном, сделайте нажим пешкой и заберите коня.';
@@ -947,7 +950,6 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       default: return '';
     }
   };
-
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
@@ -1201,3 +1203,4 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
     </div>
   );
 }
+
