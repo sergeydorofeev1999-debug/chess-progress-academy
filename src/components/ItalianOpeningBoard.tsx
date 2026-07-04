@@ -107,7 +107,10 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   }, [storageKey]);
 
   useEffect(() => {
-    if (!game) setGame(new Chess(START_FEN_1));
+    if (!game) {
+      setGame(new Chess(START_FEN_1));
+      setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -128,7 +131,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const reset = useCallback(() => {
     setGame(new Chess(START_FEN_1));
     setSelectedSquare(null);
-    setMessage('');
+    setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
@@ -182,9 +185,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             if (!mountedRef.current) return;
             g.move({ from: 'e7' as any, to: 'e5' as any });
             setGame(new Chess(g.fen()));
+            setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие.');
           }, 1000);
-
-          setMessage('В дебюте главное — захватить центр. Белые начинают с e4.');
           return;
         }
 
@@ -203,9 +205,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             if (!mountedRef.current) return;
             g.move({ from: 'b8' as any, to: 'c6' as any });
             setGame(new Chess(g.fen()));
+            setMessage('Развейте слона на c4 — он направит орудие на уязвимое поле f7.');
           }, 1000);
-
-          setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие.');
           return;
         }
 
@@ -218,9 +219,16 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
-          setIsComplete(true);
-          setMessage('Отлично! Вы развели слона на c4 — классическая итальянская партия.');
-          saveStars(1, 3);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'f8' as any, to: 'c5' as any });
+            setGame(new Chess(g.fen()));
+            setIsComplete(true);
+            setMessage('Отлично! Вы развели слона на c4 — классическая итальянская партия.');
+            saveStars(1, 3);
+          }, 1000);
           return;
         }
       }
