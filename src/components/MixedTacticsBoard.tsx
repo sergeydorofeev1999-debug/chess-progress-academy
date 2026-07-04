@@ -18,7 +18,7 @@ const START_FEN_7 = 'r4k1r/pp1b1ppp/3P4/q7/1nPNQ3/4P2P/3N1PP1/4KB1R w K - 0 1';
 const START_FEN_8 = '6k1/p5pp/1pq1pp2/8/4N3/4P1P1/PP3PBP/6K1 w - - 0 1';
 const START_FEN_9 = '3r3r/pp3Rpk/4p1p1/6Q1/1q2N1P1/3n1P1P/8/3R2K1 w - - 0 1';
 const START_FEN_10 = '2kr3r/pp3ppp/4p3/2Np2q1/3P4/4P2P/PP3PP1/2R2RK1 w - - 0 1';
-const START_FEN_11 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1';
+const START_FEN_11 = 'rnb1k2r/ppp2ppp/3q4/b3N3/3Pp3/2P5/PP1B1PPP/R2QKB1R w KQkq - 0 1';
 const START_FEN_12 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
@@ -749,17 +749,19 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
       } else if (exercise === 11) {
-        // EXERCISE 11: Discovered attack — Re5-e3 uncovers Bb3 on Rg7, rook escapes, then Rxb3
-        const isCorrectFirst = from === 'e5' && to === 'e3' && move.piece === 'r';
-        const isCorrectSecond = from === 'e3' && to === 'b3' && move.piece === 'r';
+        // EXERCISE 11: Queen move — Qd1-a4, king escapes to f8, then Qxa5
+        const isCorrectFirst = from === 'd1' && to === 'a4' && move.piece === 'q';
+        const isCorrectSecond = from === 'a4' && to === 'a5' && move.piece === 'q';
 
         if (whiteMoves === 0) {
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
               const cap = getBestBlackCapture(g);
-              if (cap) g.move({ from: cap.from, to: cap.to });
-              setGame(new Chess(g.fen()));
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
               setIsFail(true);
               setMessage('Провалено');
             }, 1000);
@@ -772,18 +774,18 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r');
-            const preferred = ['d7', 'f7'];
-            const escape = rookMoves.find((m: any) => preferred.includes(m.to));
-            if (escape) {
-              g.move({ from: escape.from, to: escape.to });
-            } else if (rookMoves.length > 0) {
-              const rm = rookMoves[Math.floor(Math.random() * rookMoves.length)];
-              g.move({ from: rm.from, to: rm.to });
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const kingToF8 = kingMoves.find((m: any) => m.to === 'f8');
+            if (kingToF8) {
+              g.move({ from: kingToF8.from, to: kingToF8.to });
+            } else if (kingMoves.length > 0) {
+              const km = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: km.from, to: km.to });
             }
             setGame(new Chess(g.fen()));
           }, 1000);
 
+          setMessage('');
           return;
         }
 
@@ -975,7 +977,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       case 8: return 'Белый конь может пожертвовать себя за ферзя. Найди лучший ход!';
       case 9: return 'Белый конь может поставить мат в 1 ход. Найди лучший ход!';
       case 10: return 'Белый конь может вскрыть шах и нападение. Найди лучший ход!';
-      case 11: return 'Белая ладья может открыть двойное нападение. Найди лучший ход!';
+      case 11: return 'Белый ферзь может атаковать фигуру. Найди лучший ход!';
       case 12: return 'Белый ферзь может атаковать две фигуры. Найди лучший ход!';
       default: return '';
     }
