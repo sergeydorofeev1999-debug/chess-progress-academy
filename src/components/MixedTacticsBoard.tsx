@@ -8,19 +8,18 @@ const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
-// 12 mixed tactics — lesson 31
 const START_FEN_1 = '8/4k3/8/2pn2b1/3p4/3P2P1/1P2K3/5R2 w - - 0 1';
-const START_FEN_2 = '4k3/4q3/8/8/8/8/4R3/4K3 w - - 0 1';   // pin
-const START_FEN_3 = '4k3/3n4/8/8/4B3/8/8/4K3 w - - 0 1';   // pin
-const START_FEN_4 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1'; // pin
-const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';   // pin
-const START_FEN_6 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1'; // pin
-const START_FEN_7 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1'; // pin
-const START_FEN_8 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1'; // pin
-const START_FEN_9 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1'; // pin
-const START_FEN_10 = '7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1'; // pin
-const START_FEN_11 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1'; // pin
-const START_FEN_12 = '4k3/6pp/5p2/4n3/8/7P/5PP1/4R1K1 w - - 0 1'; // pin
+const START_FEN_2 = '4k3/4q3/8/8/8/8/4R3/4K3 w - - 0 1';
+const START_FEN_3 = '4k3/3n4/8/8/4B3/8/8/4K3 w - - 0 1';
+const START_FEN_4 = '6k1/6pp/1p2rp2/p1p5/5P2/1P4b1/P5P1/2Q3K1 w - - 0 1';
+const START_FEN_5 = '8/B5kp/8/4r2p/8/5P2/6K1/8 w - - 0 1';
+const START_FEN_6 = 'r1bqkb1r/1pp2ppp/2np1n2/pB2p3/3PP3/2N2N2/PPP2PPP/R1BQK2R w KQkq - 0 1';
+const START_FEN_7 = '7r/1k6/1p3p2/pPpr2p1/Q7/6Pp/P1P2P1P/6K1 w - - 0 1';
+const START_FEN_8 = 'rnb1kbnr/pp2pppp/2qp4/2p5/4P3/2N2N1P/PPPP1PP1/R1BQKB1R w KQkq - 0 1';
+const START_FEN_9 = 'r2qkb1r/pppbpp1p/2n2np1/8/4N3/8/PPPPQPPP/R1B1KBNR w KQkq - 0 1';
+const START_FEN_10 = '7k/6qp/8/8/8/2B5/r5PP/5RK1 w - - 0 1';
+const START_FEN_11 = 'kr3r2/1p4R1/n5R1/8/1PP5/P4B2/1K6/8 w - - 0 1';
+const START_FEN_12 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
@@ -185,7 +184,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       const nextWhiteMoves = whiteMoves + 1;
 
       if (exercise === 1) {
-        // EXERCISE 1: Fork — Rf1-f5 attacks knight d5 and bishop g5
+        // EXERCISE 1: Fork — Rf1-f5 attacks Nd5 and Bg5, king defends, Rxg5
         const isCorrectFirst = from === 'f1' && to === 'f5' && move.piece === 'r';
         const isCorrectSecond = from === 'f5' && to === 'g5' && move.piece === 'r';
 
@@ -210,7 +209,6 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            // King moves to d6 or e6 to defend the knight
             const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
             const preferred = kingMoves.filter((m: any) => m.to === 'd6' || m.to === 'e6');
             if (preferred.length > 0) {
@@ -241,14 +239,657 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           saveStars(1, 3);
           return;
         }
-      } else {
-        // EXERCISES 2-12: placeholder — just accept any move for now
-        setGame(new Chess(g.fen()));
-        setSelectedSquare(null);
-        setIsComplete(true);
-        setMessage('Отлично! Упражнение выполнено.');
-        saveStars(exercise as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, 3);
-        return;
+      } else if (exercise === 2) {
+        // EXERCISE 2: Pin — Re2-e8 pins Qe7, then Rxe7
+        const isCorrectFirst = from === 'e2' && to === 'e8' && move.piece === 'r';
+        const isCorrectSecond = from === 'e8' && to === 'e7' && move.piece === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const blackKingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+              if (blackKingMoves.length > 0) {
+                const kingMove = blackKingMoves[Math.floor(Math.random() * blackKingMoves.length)];
+                g.move({ from: kingMove.from, to: kingMove.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            if (kingMoves.length > 0) {
+              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: kingMove.from, to: kingMove.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 1000);
+
+          setMessage('');
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            const cap = getBestBlackCapture(g);
+            if (cap) g.move({ from: cap.from, to: cap.to });
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(2, 3);
+          return;
+        }
+      } else if (exercise === 3) {
+        // EXERCISE 3: Pin — Bf1-c7 pins Nd7, then Bxd7
+        const isCorrectFirst = from === 'f1' && to === 'c7' && move.piece === 'b';
+        const isCorrectSecond = from === 'c7' && to === 'd7' && move.piece === 'b';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            const cap = getBestBlackCapture(g);
+            if (cap) {
+              setTimeout(() => {
+                if (!mountedRef.current) return;
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+                setIsFail(true);
+                setMessage('Провалено');
+              }, 1000);
+              setSelectedSquare(null);
+              return;
+            }
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const queenCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'q' && m.to === 'c7');
+            if (queenCap) {
+              g.move({ from: queenCap.from, to: queenCap.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          const isPawnCapture = move.piece === 'p' && to === 'c7';
+          if (!isPawnCapture) {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(3, 3);
+          return;
+        }
+      } else if (exercise === 4) {
+        // EXERCISE 4: Pin + push — f4 pushes pinned rook, then fxe6
+        const isCorrectFirst = from === 'f2' && to === 'f4' && move.piece === 'p';
+        const isCorrectSecond = from === 'f4' && to === 'e6' && move.piece === 'p';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+              const pawnCaptures = blackMoves.filter((m: any) => m.piece === 'p' && m.captured);
+              if (pawnCaptures.length > 0) {
+                const cap = pawnCaptures[0];
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              } else if (blackMoves.length > 0) {
+                const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+                g.move({ from: randomMove.from, to: randomMove.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && !(m.from === 'f6' && m.to === 'f5') && !(m.from === 'g7' && m.to === 'g5'));
+            if (blackMoves.length > 0) {
+              const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+              g.move({ from: randomMove.from, to: randomMove.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(4, 3);
+          return;
+        }
+      } else if (exercise === 5) {
+        // EXERCISE 5: Pin — Ba7-d4 pins Re5, king defends, then f4 push and capture
+        const isCorrectFirst = from === 'a7' && to === 'd4' && move.piece === 'b';
+        const isCorrectSecond = from === 'f3' && to === 'f4' && move.piece === 'p';
+        const isCorrectThird = from === 'd4' && to === 'e5' && move.piece === 'b';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const kingToF6 = kingMoves.find((m: any) => m.to === 'f6');
+            if (kingToF6) {
+              g.move({ from: kingToF6.from, to: kingToF6.to });
+            } else if (kingMoves.length > 0) {
+              const randomKingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: randomKingMove.from, to: randomKingMove.to });
+            }
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          setMessage('');
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+            if (blackMoves.length > 0) {
+              const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+              g.move({ from: randomMove.from, to: randomMove.to });
+              setGame(new Chess(g.fen()));
+            }
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          setMessage('');
+          return;
+        }
+
+        if (whiteMoves === 2) {
+          const isCorrectThirdBishop = from === 'd4' && to === 'e5' && move.piece === 'b';
+          const isCorrectThirdPawn = from === 'f4' && to === 'e5' && move.piece === 'p';
+          if (!isCorrectThirdBishop && !isCorrectThirdPawn) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(5, 3);
+          return;
+        }
+      } else if (exercise === 6) {
+        // EXERCISE 6: Discovered attack — d4-d5 uncovers Bb5 on Nc6, then dxc6
+        const isCorrectFirst = from === 'd4' && to === 'd5' && move.piece === 'p';
+        const isCorrectSecond = from === 'd5' && to === 'c6' && move.piece === 'p' && move.captured === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+            if (blackMoves.length > 0) {
+              const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
+              g.move({ from: randomMove.from, to: randomMove.to });
+              setGame(new Chess(g.fen()));
+            }
+            setWhiteMoves(nextWhiteMoves);
+          }, 1000);
+
+          setMessage('');
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(6, 3);
+          return;
+        }
+      } else if (exercise === 7) {
+        // EXERCISE 7: Discovered attack — Qa4-e4 uncovers Ra1 on Rd5, rook defends, c4 push, then c4xd5
+        const isCorrectFirst = from === 'a4' && to === 'e4' && move.piece === 'q';
+        const isCorrectSecond = from === 'c2' && to === 'c4' && move.piece === 'p';
+        const isCorrectThird = from === 'c4' && to === 'd5' && move.piece === 'p' && move.captured === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r');
+            const rookToD8 = rookMoves.find((m: any) => m.to === 'd8');
+            if (rookToD8) {
+              g.move({ from: rookToD8.from, to: rookToD8.to });
+            } else if (rookMoves.length > 0) {
+              const rookMove = rookMoves[Math.floor(Math.random() * rookMoves.length)];
+              g.move({ from: rookMove.from, to: rookMove.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (from === 'e4' && to === 'd5' && move.piece === 'q') {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const rookCap = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'r' && m.to === 'd5');
+              if (rookCap) {
+                g.move({ from: rookCap.from, to: rookCap.to });
+                setGame(new Chess(g.fen()));
+              }
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            const preferredKingSquares = ['a7', 'b8', 'c8', 'c7'];
+            const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
+            if (preferred) {
+              g.move({ from: preferred.from, to: preferred.to });
+            } else if (kingMoves.length > 0) {
+              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: kingMove.from, to: kingMove.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 2) {
+          if (!isCorrectThird) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(7, 3);
+          return;
+        }
+      } else if (exercise === 8) {
+        // EXERCISE 8: Fork — Nf3-d4 attacks Qc6 and Ke8, queen defends, then Nxe8 or Nxc6
+        const isCorrectFirst = from === 'f3' && to === 'd4' && move.piece === 'n';
+        const isCorrectSecond = (from === 'd4' && to === 'e6' && move.piece === 'n') || (from === 'd4' && to === 'c6' && move.piece === 'n');
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const queenMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'q');
+            const queenToD5 = queenMoves.find((m: any) => m.to === 'd5');
+            if (queenToD5) {
+              g.move({ from: queenToD5.from, to: queenToD5.to });
+            } else if (queenMoves.length > 0) {
+              const qm = queenMoves[Math.floor(Math.random() * queenMoves.length)];
+              g.move({ from: qm.from, to: qm.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(8, 3);
+          return;
+        }
+      } else if (exercise === 9) {
+        // EXERCISE 9: Discovered check — Ne4-f6+ uncovering Qe2 on e7, then Nxe7
+        const isCorrectFirst = from === 'e4' && to === 'f6' && move.piece === 'n';
+        const isCorrectSecond = from === 'f6' && to === 'e7' && move.piece === 'n';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          if (g.isCheckmate()) {
+            setIsComplete(true);
+            setMessage('Мат! Отлично!');
+            saveStars(9, 3);
+            return;
+          }
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(9, 3);
+          return;
+        }
+      } else if (exercise === 10) {
+        // EXERCISE 10: Pin — Bc3-h8 pins Qg7, then Rxh8
+        const isCorrectFirst = from === 'c3' && to === 'h8' && move.piece === 'b';
+        const isCorrectSecond = from === 'f1' && to === 'h8' && move.piece === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          if (g.isCheckmate()) {
+            setIsComplete(true);
+            setMessage('Мат! Отлично!');
+            saveStars(10, 3);
+            return;
+          }
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(10, 3);
+          return;
+        }
+      } else if (exercise === 11) {
+        // EXERCISE 11: Discovered attack — Re5-e3 uncovers Bb3 on Rg7, rook escapes, then Rxb3
+        const isCorrectFirst = from === 'e5' && to === 'e3' && move.piece === 'r';
+        const isCorrectSecond = from === 'e3' && to === 'b3' && move.piece === 'r';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r');
+            const preferred = ['d7', 'f7'];
+            const escape = rookMoves.find((m: any) => preferred.includes(m.to));
+            if (escape) {
+              g.move({ from: escape.from, to: escape.to });
+            } else if (rookMoves.length > 0) {
+              const rm = rookMoves[Math.floor(Math.random() * rookMoves.length)];
+              g.move({ from: rm.from, to: rm.to });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(11, 3);
+          return;
+        }
+      } else if (exercise === 12) {
+        // EXERCISE 12: Fork — Qe4-e6+ attacks Qd5 and Ke8, king escapes, then Qxd5
+        const isCorrectFirst = from === 'e4' && to === 'e6' && move.piece === 'q';
+        const isCorrectSecond = from === 'e6' && to === 'd5' && move.piece === 'q';
+
+        if (whiteMoves === 0) {
+          if (!isCorrectFirst) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setIsFail(true);
+              setMessage('Провалено');
+            }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+            if (kingMoves.length > 0) {
+              const km = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+              g.move({ from: km.from, to: km.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 1000);
+
+          return;
+        }
+
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
+            setSelectedSquare(null);
+            setIsFail(true);
+            setMessage('Провалено');
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setIsComplete(true);
+          setMessage('Отлично! Тактика выполнена.');
+          saveStars(12, 3);
+          return;
+        }
       }
     } catch {
       // Invalid move
@@ -280,71 +921,151 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
   }, [game, selectedSquare, processWhiteMove]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent, square: string) => {
-    if (!game || game.turn() !== 'w') return;
-    const piece = game.get(square as any);
+    if (isCompleteRef.current || isFailRef.current) return;
+    if (!game) return;
+    const g = game;
+    if (g.turn() !== 'w') return;
+    const piece = g.get(square as any);
     if (!piece || piece.color !== 'w') return;
-    const target = e.currentTarget as HTMLElement;
-    target.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
     pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
-    setDragPiece({ square, type: piece.type, color: piece.color });
-    setDragPos({ x: e.clientX, y: e.clientY });
   }, [game]);
 
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!pointerStartRef.current) return;
-    const dx = Math.abs(e.clientX - pointerStartRef.current.x);
-    const dy = Math.abs(e.clientY - pointerStartRef.current.y);
-    if (dx > 5 || dy > 5) {
-      pointerStartRef.current.moved = true;
-    }
-    setDragPos({ x: e.clientX, y: e.clientY });
-  }, []);
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+        start.moved = true;
+        const piece = game?.get(start.square as any);
+        if (piece) {
+          setDragPiece({ square: start.square, type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' });
+          setSelectedSquare(null);
+        }
+      }
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!pointerStartRef.current) return;
-    const start = pointerStartRef.current;
-    pointerStartRef.current = null;
-    setDragPiece(null);
-    if (isCompleteRef.current || isFailRef.current) return;
-    if (!start.moved) {
-      handleSquareClick(start.square);
-      return;
-    }
-    const boardEl = document.getElementById('chess-board-mixed');
-    if (!boardEl) return;
-    const rect = boardEl.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const fi = Math.floor(x / sqSize);
-    const ri = Math.floor(y / sqSize);
-    if (fi >= 0 && fi < 8 && ri >= 0 && ri < 8) {
-      const to = `${FILES[fi]}${DISPLAY_RANKS[ri]}`;
-      processWhiteMove(start.square, to);
-    }
-  }, [sqSize, handleSquareClick, processWhiteMove]);
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      if (!start.moved) {
+        // click handled by onClick
+      } else {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el?.closest('[data-square]') as HTMLElement | null;
+        const targetSquare = cell?.dataset.square || null;
+        if (targetSquare && targetSquare !== start.square) {
+          processWhiteMove(start.square, targetSquare);
+        }
+        setDragPiece(null);
+      }
+      pointerStartRef.current = null;
+    };
 
-  if (!game) return null;
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        pointerStartRef.current = null;
+      }
+    };
 
-  const turnText = game.turn() === 'w' ? 'Ход белых' : 'Ход чёрных';
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
+    };
+  }, [game, processWhiteMove]);
+
+  const getPieceAt = (sq: string) => {
+    if (!game) return null;
+    const p = game.get(sq as any);
+    if (!p) return null;
+    return { type: p.type.toUpperCase(), color: p.color as 'w' | 'b' };
+  };
+
+  const isLight = (f: number, r: number) => (f + r) % 2 === 0;
+
+  const validMoves = selectedSquare && game
+    ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
+    : dragPiece && game
+      ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
+      : [];
+
+  const turnText = game ? (game.turn() === 'w' ? 'Ваш ход (белые)' : 'Ход чёрных...') : '';
+
+  const getExerciseHint = (ex: number) => {
+    switch (ex) {
+      case 1: return 'Белая ладья атакует сразу две фигуры. Найди лучший ход!';
+      case 2: return 'Белая ладья может связать ферзя с королём. Найди лучший ход!';
+      case 3: return 'Белый слон может связать коня с королём. Найди лучший ход!';
+      case 4: return 'Белая пешка может надавить на связанную фигуру. Найди лучший ход!';
+      case 5: return 'Белый слон связывает ладью. Найди лучший ход!';
+      case 6: return 'Белая пешка может открыть нападение на фигуру. Найди лучший ход!';
+      case 7: return 'Белый ферзь может открыть нападение ладьи. Найди лучший ход!';
+      case 8: return 'Белый конь может атаковать две фигуры. Найди лучший ход!';
+      case 9: return 'Белый конь может вскрыть шах и нападение. Найди лучший ход!';
+      case 10: return 'Белый слон связывает ферзя. Найди лучший ход!';
+      case 11: return 'Белая ладья может открыть двойное нападение. Найди лучший ход!';
+      case 12: return 'Белый ферзь может атаковать две фигуры. Найди лучший ход!';
+      default: return '';
+    }
+  };
+
+  const getExerciseGoal = (ex: number) => {
+    switch (ex) {
+      case 1: return 'Найдите двойной удар ладьёй и заберите фигуру.';
+      case 2: return 'Свяжите ферзя с королём и заберите ферзя.';
+      case 3: return 'Свяжите коня с королём и заберите коня.';
+      case 4: return 'Нажмите пешкой на связанную фигуру и заберите её.';
+      case 5: return 'Свяжите ладью и заберите её.';
+      case 6: return 'Вскройте нападение пешкой и заберите фигуру.';
+      case 7: return 'Вскройте нападение ладьи и заберите фигуру.';
+      case 8: return 'Найдите двойной удар конём и заберите фигуру.';
+      case 9: return 'Вскройте шах и нападение, затем заберите фигуру.';
+      case 10: return 'Свяжите ферзя и заберите ладью.';
+      case 11: return 'Вскройте двойное нападение и заберите фигуру.';
+      case 12: return 'Найдите двойной удар ферзём и заберите фигуру.';
+      default: return '';
+    }
+  };
 
   return (
-    <div className="w-full flex flex-col lg:flex-row gap-4 items-start">
+    <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:grid grid-cols-4 gap-1 rounded p-1 border border-gray-200">
-          {[1,2,3,4,5,6,7,8,9,10,11,12].map((num) => {
+        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
+            const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1|2|3|4|5|6|7|8|9|10|11|12)}
+                onClick={() => switchExercise(num as 1)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : earnedStars > 0 ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                }`}
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
               >
-                <span className="text-[11px] font-semibold">{num}</span>
-                {earnedStars > 0 && <StarPng filled size={10} />}
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map(s => (
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                  ))}
+                </div>
+                <span className="ml-1 text-xs font-medium">{num}</span>
               </button>
             );
           })}
@@ -352,119 +1073,221 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
 
         <button
           onClick={reset}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 transition"
+          className="hidden lg:flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
         >
-          <RotateCcw size={16} /> Начать заново
+          <RotateCcw size={14} /> Заново
         </button>
-
-        {isComplete && (
-          <button
-            onClick={() => {
-              if (exercise < 12) {
-                switchExercise((exercise + 1) as 1|2|3|4|5|6|7|8|9|10|11|12);
-              } else {
-                onComplete();
-              }
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-emerald-500 text-white py-2 rounded text-sm font-medium hover:bg-emerald-600 transition"
-          >
-            <Trophy size={16} /> {exercise < 12 ? 'Следующее упражнение' : 'Урок завершён!'}
-          </button>
-        )}
       </div>
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          Упражнение {exercise} / 12. Найди лучший ход!
+          {getExerciseHint(exercise)}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
         </div>
 
+        {/* Fail banner */}
         {isFail && (
-          <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded text-sm font-medium">
-            Провалено
+          <div className="w-full max-w-sm">
+            <div className="bg-[#c62828] rounded-lg p-4 flex flex-col items-center gap-2 shadow-lg">
+              <p className="text-white font-bold text-lg">{message || 'Провалено'}</p>
+              <button
+                onClick={reset}
+                className="bg-white text-[#c62828] font-bold text-base px-6 py-2 rounded shadow hover:bg-gray-100 transition"
+              >
+                ЕЩЁ РАЗ
+              </button>
+            </div>
           </div>
         )}
 
-        {isComplete && (
-          <div className="bg-emerald-100 border border-emerald-300 text-emerald-700 px-4 py-2 rounded text-sm font-medium">
-            Отлично! Тактика выполнена.
+        {/* Success message */}
+        {message && !isFail && (
+          <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
+            message.includes('Отлично') ? 'bg-green-500' : 'bg-yellow-500'
+          }`}>
+            {message.includes('Отлично') && <Trophy className="w-5 h-5 inline-block mr-2" />}
+            {message}
           </div>
         )}
 
         {/* Board */}
-        <div
-          id="chess-board-mixed"
-          className="relative select-none cursor-pointer"
-          style={{ width: sqSize * 8, height: sqSize * 8 }}
-          onPointerMove={handlePointerMove}
-        >
-          {Array.from({ length: 8 }).map((_, ri) =>
-            Array.from({ length: 8 }).map((_, fi) => {
-              const sq = `${FILES[fi]}${DISPLAY_RANKS[ri]}`;
-              const isDark = (fi + ri) % 2 === 1;
-              const isSelected = selectedSquare === sq;
-              const piece = game.get(sq as any);
+        <div className="flex justify-center w-full relative">
+          <div
+            className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
+            style={{
+              gridTemplateColumns: `repeat(8, ${sqSize}px)`,
+              gridTemplateRows: `repeat(8, ${sqSize}px)`,
+              touchAction: 'none',
+            }}
+          >
+            {DISPLAY_RANKS.map((rank, ri) => (
+              FILES.map((file, fi) => {
+                const sq = `${file}${rank}`;
+                const pieceObj = getPieceAt(sq);
+                const light = isLight(fi, ri);
+                const sel = selectedSquare === sq;
+                const isValidMove = validMoves.includes(sq);
+                const isDragSource = dragPiece?.square === sq;
 
-              return (
-                <div
-                  key={sq}
-                  className={`absolute ${isDark ? 'bg-[#b58863]' : 'bg-[#f0d9b5]'}`}
-                  style={{
-                    left: fi * sqSize,
-                    top: ri * sqSize,
-                    width: sqSize,
-                    height: sqSize,
-                    backgroundColor: isSelected ? 'rgba(120,180,240,0.5)' : undefined,
-                  }}
-                  onPointerDown={(e) => handlePointerDown(e, sq)}
-                  onPointerUp={handlePointerUp}
-                >
-                  {piece && <PieceImg type={piece.type} color={piece.color} />}
-                </div>
-              );
-            })
-          )}
+                return (
+                  <div
+                    key={sq}
+                    data-square={sq}
+                    className="flex items-center justify-center relative select-none"
+                    style={{
+                      width: sqSize,
+                      height: sqSize,
+                      cursor: pieceObj && pieceObj.color === 'w' && !isFail && !isComplete ? 'grab' : 'default',
+                      touchAction: 'none',
+                      backgroundColor: light ? '#f0d9b5' : '#b58863',
+                      opacity: isDragSource ? 0.3 : 1,
+                    }}
+                    onClick={() => handleSquareClick(sq)}
+                    onPointerDown={(e) => handlePointerDown(e, sq)}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
+                    {sel && (
+                      <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                    )}
+                    {fi === 0 && (
+                      <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {rank}
+                      </span>
+                    )}
+                    {ri === 7 && (
+                      <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                        {file}
+                      </span>
+                    )}
+                    {isValidMove && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                        <div
+                          style={{
+                            width: Math.round(sqSize * 0.3),
+                            height: Math.round(sqSize * 0.3),
+                            backgroundColor: pieceObj ? '#c41e3a' : '#5d9040',
+                            borderRadius: pieceObj ? '4px' : '50%',
+                            opacity: 0.85,
+                          }}
+                        />
+                      </div>
+                    )}
+                    {pieceObj && !isDragSource && (
+                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                        <PieceImg type={pieceObj.type} color={pieceObj.color} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ))}
+          </div>
 
+          {/* Dragged piece overlay */}
           {dragPiece && (
             <div
               className="fixed pointer-events-none z-50"
-              style={{ left: dragPos.x - sqSize / 2, top: dragPos.y - sqSize / 2, width: sqSize, height: sqSize }}
+              style={{
+                left: dragPos.x - sqSize * 0.425,
+                top: dragPos.y - sqSize * 0.425,
+                width: Math.round(sqSize * 0.85),
+                height: Math.round(sqSize * 0.85),
+              }}
             >
               <PieceImg type={dragPiece.type} color={dragPiece.color} />
             </div>
           )}
         </div>
 
-        {/* Stars */}
-        <div className="flex gap-1 mt-1">
-          {[1, 2, 3].map((s) => (
-            <StarPng key={s} filled={isComplete && s <= 3} size={20} />
-          ))}
+        <button
+          onClick={reset}
+          className="flex lg:hidden items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition"
+        >
+          <RotateCcw size={14} /> Заново
+        </button>
+
+        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
+          <p className="font-medium mb-1">Цель:</p>
+          <p>{getExerciseGoal(exercise)}</p>
         </div>
 
-        {/* Mobile exercise pills */}
-        <div className="flex lg:hidden flex-wrap justify-center gap-1 w-full">
-          {[1,2,3,4,5,6,7,8,9,10,11,12].map((num) => {
-            const earnedStars = exerciseStars[num] || 0;
-            const isCurrent = num === exercise;
-            return (
-              <button
-                key={num}
-                onClick={() => switchExercise(num as 1|2|3|4|5|6|7|8|9|10|11|12)}
-                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : earnedStars > 0 ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                }`}
-              >
-                <span className="font-semibold">{num}</span>
-                {earnedStars > 0 && <StarPng filled size={10} />}
-              </button>
-            );
-          })}
+        {/* Mobile exercise pills — 2 rows of 6 */}
+        <div className="flex lg:hidden flex-col items-center gap-1 w-full">
+          <div className="flex gap-1 justify-center w-full">
+            {[1, 2, 3, 4, 5, 6].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 justify-center w-full">
+            {[7, 8, 9, 10, 11, 12].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* Completion banner */}
+        {isComplete && (
+          <div className="flex flex-col items-center gap-3 mt-2">
+            <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
+              <Trophy className="w-6 h-6" />
+              <span>Упражнение {exercise} пройдено!</span>
+            </div>
+            {exercise < 12 && (
+              <button
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
+                className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
+              >
+                Перейти к Упражнению {exercise + 1} →
+              </button>
+            )}
+            {exercise === 12 && (exerciseStars[12] || 0) >= 3 && (
+              <button
+                onClick={onComplete}
+                className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
+              >
+                Урок завершён ✓
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
