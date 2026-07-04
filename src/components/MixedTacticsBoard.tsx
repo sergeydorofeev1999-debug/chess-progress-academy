@@ -667,10 +667,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
         }
         return;
       } else if (exercise === 10) {
-        // EXERCISE 10: Discovered check — Nc5-e6/e4 clears c1-c8+, king escapes, then Nxg5
+        // EXERCISE 10: Nxe6 or Ne4 clears c-file check, king escapes, then Nxg5
         const isCorrectFirst = (from === 'c5' && to === 'e6' && move.piece === 'n') || (from === 'c5' && to === 'e4' && move.piece === 'n');
-        const isCorrectSecond = from === 'c1' && to === 'c8' && move.piece === 'r';
-        const isCorrectThird = (from === 'e6' && to === 'g5' && move.piece === 'n') || (from === 'e4' && to === 'g5' && move.piece === 'n');
+        const isCorrectSecond = (from === 'e6' && to === 'g5' && move.piece === 'n') || (from === 'e4' && to === 'g5' && move.piece === 'n');
 
         if (whiteMoves === 0) {
           if (!isCorrectFirst) {
@@ -685,31 +684,6 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
               setMessage('Провалено');
             }, 1000);
             setSelectedSquare(null);
-            return;
-          }
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            const blackMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b');
-            if (blackMoves.length > 0) {
-              const randomMove = blackMoves[Math.floor(Math.random() * blackMoves.length)];
-              g.move({ from: randomMove.from, to: randomMove.to });
-              setGame(new Chess(g.fen()));
-            }
-          }, 1000);
-
-          setMessage('');
-          return;
-        }
-
-        if (whiteMoves === 1) {
-          if (!isCorrectSecond) {
-            setSelectedSquare(null);
-            setIsFail(true);
-            setMessage('Провалено');
             return;
           }
           setGame(new Chess(g.fen()));
@@ -734,8 +708,8 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           return;
         }
 
-        if (whiteMoves === 2) {
-          if (!isCorrectThird) {
+        if (whiteMoves === 1) {
+          if (!isCorrectSecond) {
             setSelectedSquare(null);
             setIsFail(true);
             setMessage('Провалено');
