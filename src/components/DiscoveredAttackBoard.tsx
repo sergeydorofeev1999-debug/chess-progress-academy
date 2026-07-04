@@ -16,19 +16,15 @@ const START_FEN_5 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 
 function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
   const blackCaptures = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
-  const safeCaptures = blackCaptures.filter((m: any) => {
+  for (const m of blackCaptures) {
     const testGame = new Chess(game.fen());
     testGame.move({ from: m.from, to: m.to });
     const whiteRecaptures = testGame.moves({ verbose: true }).filter(wm => wm.color === 'w' && wm.to === m.to);
-    return whiteRecaptures.length === 0;
-  });
-  if (safeCaptures.length > 0) {
-    return safeCaptures[Math.floor(Math.random() * safeCaptures.length)];
+    if (whiteRecaptures.length === 0) {
+      return m;
+    }
   }
-  if (blackCaptures.length > 0) {
-    return blackCaptures[Math.floor(Math.random() * blackCaptures.length)];
-  }
-  return null;
+  return blackCaptures.length > 0 ? blackCaptures[0] : null;
 }
 
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
