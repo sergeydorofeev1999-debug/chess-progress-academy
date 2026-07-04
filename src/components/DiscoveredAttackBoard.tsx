@@ -14,6 +14,23 @@ const START_FEN_3 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_4 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 const START_FEN_5 = '5q2/6pp/8/1k6/8/5N2/6PP/5RK1 w - - 0 1';
 
+function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
+  const blackCaptures = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
+  const safeCaptures = blackCaptures.filter((m: any) => {
+    const testGame = new Chess(game.fen());
+    testGame.move({ from: m.from, to: m.to });
+    const whiteRecaptures = testGame.moves({ verbose: true }).filter(wm => wm.color === 'w' && wm.to === m.to);
+    return whiteRecaptures.length === 0;
+  });
+  if (safeCaptures.length > 0) {
+    return safeCaptures[Math.floor(Math.random() * safeCaptures.length)];
+  }
+  if (blackCaptures.length > 0) {
+    return blackCaptures[Math.floor(Math.random() * blackCaptures.length)];
+  }
+  return null;
+}
+
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
     <img
@@ -159,6 +176,11 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
               setIsFail(true);
               setMessage('Провалено');
             }, 1000);
@@ -202,7 +224,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           return;
         }
       } else if (exercise === 2) {
-        // EXERCISE 2: Discovered attack — Nf3-e5 check, black king escapes to e7 or e8, then Nxd7
+        // EXERCISE 2: Discovered attack — Nf3-e5 check, black king escapes to e8, then Nxd7
         const isCorrectFirst = from === 'f3' && to === 'e5' && move.piece === 'n';
         const isCorrectSecond = from === 'e5' && to === 'd7' && move.piece === 'n' && move.captured === 'q';
 
@@ -210,6 +232,11 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           if (!isCorrectFirst) {
             setTimeout(() => {
               if (!mountedRef.current) return;
+              const cap = getBestBlackCapture(g);
+              if (cap) {
+                g.move({ from: cap.from, to: cap.to });
+                setGame(new Chess(g.fen()));
+              }
               setIsFail(true);
               setMessage('Провалено');
             }, 1000);
