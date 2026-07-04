@@ -16,14 +16,20 @@ const START_FEN_5 = '1k5r/p1pq2p1/1p5p/5R2/6Q1/6P1/PP3PKP/8 w - - 0 1';
 const START_FEN_6 = '8/1kp3rp/1p4p1/4R3/1P6/1b5P/1B3PP1/6K1 w - - 0 1';
 
 function getBestBlackCapture(game: Chess): { from: string; to: string } | null {
+  const pieceValues: Record<string, number> = { q: 9, r: 5, b: 3, n: 3, p: 1 };
   const blackCaptures = game.moves({ verbose: true }).filter(m => m.color === 'b' && m.captured);
+  const safeCaptures: typeof blackCaptures = [];
   for (const m of blackCaptures) {
     const testGame = new Chess(game.fen());
     testGame.move({ from: m.from, to: m.to });
     const whiteRecaptures = testGame.moves({ verbose: true }).filter(wm => wm.color === 'w' && wm.to === m.to);
     if (whiteRecaptures.length === 0) {
-      return m;
+      safeCaptures.push(m);
     }
+  }
+  if (safeCaptures.length > 0) {
+    safeCaptures.sort((a, b) => (pieceValues[b.captured || 'p'] || 0) - (pieceValues[a.captured || 'p'] || 0));
+    return safeCaptures[0];
   }
   return null;
 }
@@ -298,7 +304,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
             if (!mountedRef.current) return;
             // After e6, black rook on f7 escapes
             const rookMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'r' && m.from === 'f7');
-            const preferredRookSquares = ['f8', 'h7'];
+            const preferredRookSquares = ['h7'];
             const preferred = rookMoves.find((m: any) => preferredRookSquares.includes(m.to));
             if (preferred) {
               g.move({ from: preferred.from, to: preferred.to });
@@ -328,12 +334,13 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           return;
         }
       } else if (exercise === 4) {
-        // EXERCISE 4: Discovered attack — Ne4-g5+ check, king escapes to h6, then Rxe7
-        const isCorrectFirst = from === 'e4' && to === 'g5' && move.piece === 'n';
+        // EXERCISE 4: Discovered attack — Ne4-g5+ OR Ne4-f6, then Rxe7
+        const isNg5 = from === 'e4' && to === 'g5' && move.piece === 'n';
+        const isNf6 = from === 'e4' && to === 'f6' && move.piece === 'n';
         const isCorrectSecond = from === 'e1' && to === 'e7' && move.piece === 'r' && move.captured === 'r';
 
         if (whiteMoves === 0) {
-          if (!isCorrectFirst) {
+          if (!isNg5 && !isNf6) {
             setTimeout(() => {
               if (!mountedRef.current) return;
               const cap = getBestBlackCapture(g);
@@ -350,21 +357,34 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
 
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            // After Ng5+, black king escapes to h6
-            const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
-            const preferredKingSquares = ['h6'];
-            const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
-            if (preferred) {
-              g.move({ from: preferred.from, to: preferred.to });
-            } else if (kingMoves.length > 0) {
-              const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
-              g.move({ from: kingMove.from, to: kingMove.to });
-            }
-            setGame(new Chess(g.fen()));
-            setWhiteMoves(nextWhiteMoves);
-          }, 1000);
+          if (isNg5) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              // After Ng5+, black king escapes to h6
+              const kingMoves = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'k');
+              const preferredKingSquares = ['h6'];
+              const preferred = kingMoves.find((m: any) => preferredKingSquares.includes(m.to));
+              if (preferred) {
+                g.move({ from: preferred.from, to: preferred.to });
+              } else if (kingMoves.length > 0) {
+                const kingMove = kingMoves[Math.floor(Math.random() * kingMoves.length)];
+                g.move({ from: kingMove.from, to: kingMove.to });
+              }
+              setGame(new Chess(g.fen()));
+              setWhiteMoves(nextWhiteMoves);
+            }, 1000);
+          } else if (isNf6) {
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              // After Nf6, black pawn g7 captures on f6
+              const pawnCaptures = g.moves({ verbose: true }).filter((m: any) => m.color === 'b' && m.piece === 'p' && m.to === 'f6');
+              if (pawnCaptures.length > 0) {
+                g.move({ from: pawnCaptures[0].from, to: pawnCaptures[0].to });
+              }
+              setGame(new Chess(g.fen()));
+              setWhiteMoves(nextWhiteMoves);
+            }, 1000);
+          }
 
           return;
         }
@@ -665,7 +685,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
             : exercise === 3
             ? 'Вскрытое нападение — сходите пешкой на e6, затем заберите ладью слоном'
             : exercise === 4
-            ? 'Вскрытое нападение — сходите конём на g5 (шах!), затем заберите ладью'
+            ? 'Вскрытое нападение — сходите конём на g5 (шах!) или на f6, затем заберите ладью'
             : exercise === 5
             ? 'Вскрытое нападение — сходите ладьёй на f8 (шах!), затем заберите ферзя'
             : exercise === 6
@@ -807,7 +827,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           : exercise === 3
           ? 'Сходите пешкой на e6, чтобы открыть слона. Затем заберите ладью на h8 слоном.'
           : exercise === 4
-          ? 'Сходите конём на g5, чтобы открыть ладью и поставить шах. Затем заберите ладью на e7.'
+          ? 'Сходите конём на g5 (шах!) или на f6, чтобы открыть ладью. Затем заберите ладью на e7.'
           : exercise === 5
           ? 'Сходите ладьёй на f8, чтобы поставить шах. После того как чёрная ладья заберёт вашу, ферзь заберёт чёрного ферзя на d7.'
           : exercise === 6
