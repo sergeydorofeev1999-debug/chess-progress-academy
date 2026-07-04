@@ -9,7 +9,14 @@ const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 // 12 mixed tactics: 4 forks, 4 pins, 4 discovered attacks
-const POSITIONS = [
+interface Position {
+  fen: string;
+  first: { from: string; to: string; piece: string };
+  second: { from: string; to: string; piece: string } | null;
+  hint: string;
+}
+
+const POSITIONS: Position[] = [
   { fen: '8/8/3k4/4q3/8/8/3N4/4K3 w - - 0 1', first: { from:'d2', to:'c4', piece:'n' }, second: null, hint: 'Конь с d2 на c4 — шах и атака на ферзя' },
   { fen: '8/3k4/5r2/8/8/5N2/8/4K3 w - - 0 1', first: { from:'f3', to:'d4', piece:'n' }, second: null, hint: 'Конь с f3 на d4 — шах и атака на ладью' },
   { fen: '8/8/3k4/5q2/8/4P3/8/4K3 w - - 0 1', first: { from:'e3', to:'e4', piece:'p' }, second: null, hint: 'Пешка с e3 на e4 — шах и атака на ферзя' },
@@ -177,7 +184,7 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
       const nextWhiteMoves = whiteMoves + 1;
 
       const isCorrectFirst = from === pos.first.from && to === pos.first.to && move.piece === pos.first.piece;
-      const isCorrectSecond = pos.second && from === pos.second.from && to === pos.second.to && move.piece === pos.second.piece;
+      const isCorrectSecond = pos.second !== null && from === pos.second.from && to === pos.second.to && move.piece === pos.second.piece;
 
       if (whiteMoves === 0) {
         if (!isCorrectFirst) {
