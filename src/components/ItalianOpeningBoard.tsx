@@ -317,8 +317,14 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           if (from === 'f1' && to === 'c4' && move.piece === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
-            setIsComplete(true);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f8', to: 'c5' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
             setMessage('Отлично! Слон вышел ближе к центру.');
+            setIsComplete(true);
             saveStars(2, 3);
             return;
           } else {
