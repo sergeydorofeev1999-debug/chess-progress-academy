@@ -745,9 +745,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setSelectedSquare(null);
             return;
           }
-          const prevCount = whiteMoves - 2;
+          const expectedCount = whiteMoves - 2;
           const actualCount = countFreeMovesDone(g);
-          if (actualCount !== prevCount + 1) {
+          if (actualCount !== expectedCount) {
             setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
             setSelectedSquare(null);
             return;
