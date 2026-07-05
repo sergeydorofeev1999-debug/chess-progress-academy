@@ -921,7 +921,7 @@ const handleSquareClick = useCallback((square: string) => {
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1)}
+                onClick={() => switchExercise(num as any)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -1124,7 +1124,7 @@ const handleSquareClick = useCallback((square: string) => {
               return (
                 <button
                   key={num}
-                  onClick={() => switchExercise(num as 1)}
+                  onClick={() => switchExercise(num as any)}
                   className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } cursor-pointer`}
@@ -1146,7 +1146,7 @@ const handleSquareClick = useCallback((square: string) => {
               return (
                 <button
                   key={num}
-                  onClick={() => switchExercise(num as 1)}
+                  onClick={() => switchExercise(num as any)}
                   className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } cursor-pointer`}
