@@ -276,34 +276,26 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 2) {
-        // Exercise 2: Italian Opening free-play — fixed first 3 moves, then 4 developing moves in any order
-        // Required white moves after 3...Bc5: d3, Bd2/Be3/Bg5, Nc3, O-O (any order)
-        // Black responses: Nf6 after white move 4, O-O after white move 5, d6 after white move 6
+        // Exercise 2: Italian Opening free-play — 4 moves in any order: d3, Bg5, Nc3, O-O
+        // Black responses: Nf6 after white move 4, O-O after move 5, d6 after move 6
         function isPieceOnSquare(pos: Chess, sq: string, piece: string, color: 'w'|'b'): boolean {
           const p = pos.get(sq as any);
-          return p && p.type === piece && p.color === color;
+          if (!p) return false;
+          return p.type === piece && p.color === color;
         }
         function countCompletedMoves(pos: Chess): number {
           let count = 0;
-          // d3: white pawn on d3
-          if (isPieceOnSquare(pos, 'd3', 'p', 'w')) count++;
-          // bishop developed from c1: no white bishop on c1
-          if (!isPieceOnSquare(pos, 'c1', 'b', 'w')) count++;
-          // Nc3: no white knight on b1
-          if (!isPieceOnSquare(pos, 'b1', 'n', 'w')) count++;
-          // O-O: king not on e1
-          if (!isPieceOnSquare(pos, 'e1', 'k', 'w')) count++;
+          if (isPieceOnSquare(pos, 'd3', 'p', 'w')) count++;          // d3
+          if (isPieceOnSquare(pos, 'g5', 'b', 'w')) count++;          // Bg5
+          if (isPieceOnSquare(pos, 'c3', 'n', 'w')) count++;          // Nc3
+          if (!isPieceOnSquare(pos, 'e1', 'k', 'w')) count++;        // O-O
           return count;
         }
         function isAllowedMove(from: string, to: string, piece: string): boolean {
-          // d3
-          if (from === 'd2' && to === 'd3' && piece === 'p') return true;
-          // Nc3
-          if (from === 'b1' && to === 'c3' && piece === 'n') return true;
-          // Bd2, Be3, Bg5
-          if (from === 'c1' && piece === 'b' && (to === 'd2' || to === 'e3' || to === 'g5')) return true;
-          // O-O (short or long)
-          if (piece === 'k' && (to === 'g1' || to === 'c1' || to === 'h1')) return true;
+          if (from === 'd2' && to === 'd3' && piece === 'p') return true;   // d3
+          if (from === 'c1' && to === 'g5' && piece === 'b') return true; // Bg5
+          if (from === 'b1' && to === 'c3' && piece === 'n') return true; // Nc3
+          if (piece === 'k' && (to === 'g1' || to === 'c1' || to === 'h1')) return true; // O-O
           return false;
         }
 
@@ -361,16 +353,14 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Free play moves 3-6: must play d3, Bd2/Be3/Bg5, Nc3, O-O in any order
+        // Free play moves 3-6: must play d3, Bg5, Nc3, O-O in any order
         if (whiteMoves >= 3 && whiteMoves <= 6) {
-          // Validate that the move is one of the 4 required moves
           if (!isAllowedMove(from, to, move.piece)) {
             setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
             setSelectedSquare(null);
             return;
           }
-          // Validate that this move progresses the completion count correctly
-          const expectedCount = whiteMoves - 2; // After move 3 count=1, move 4 count=2, etc.
+          const expectedCount = whiteMoves - 2;
           const actualCount = countCompletedMoves(g);
           if (actualCount !== expectedCount) {
             setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
@@ -380,7 +370,6 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setWhiteMoves(nextWhiteMoves);
-          // Black responses: Nf6 after move 3, O-O after move 4, d6 after move 5
           setTimeout(() => {
             if (!mountedRef.current) return;
             if (whiteMoves === 3) {
@@ -404,7 +393,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
           return;
         }
-            } else if (exercise === 3) {
+      } else if (exercise === 3) {
         if (whiteMoves === 0) {
           if (from === 'd2' && to === 'd3' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
