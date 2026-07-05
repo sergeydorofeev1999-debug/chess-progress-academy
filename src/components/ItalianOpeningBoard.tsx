@@ -696,10 +696,15 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
         function handleFailWithBlackCapture() {
           const cap = findSafeBlackCapture(g);
           if (cap) {
-            g.move({ from: cap.from, to: cap.to });
-            setGame(new Chess(g.fen()));
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: cap.from, to: cap.to });
+              setGame(new Chess(g.fen()));
+              setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            }, 1000);
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
           }
-          setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
           setSelectedSquare(null);
         }
 
