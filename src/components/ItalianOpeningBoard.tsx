@@ -21,6 +21,48 @@ const START_FEN_10 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w K
 const START_FEN_11 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_12 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 
+// Find a black capture that leaves the black piece safe (no white recapture)
+function findSafeBlackCapture(currentGame: Chess): { from: string; to: string } | null {
+  const blackMoves = currentGame.moves({ verbose: true });
+  const captures = blackMoves.filter((m: any) => m.captured);
+  for (const capture of captures) {
+    const testGame = new Chess(currentGame.fen());
+    testGame.move({ from: capture.from, to: capture.to });
+    const whiteMoves = testGame.moves({ verbose: true });
+    const whiteRecaptures = whiteMoves.filter((m: any) => m.captured && m.to === capture.to);
+    if (whiteRecaptures.length === 0) {
+      return { from: capture.from, to: capture.to };
+    }
+  }
+  return null;
+}
+
+function handleFailWithBlackCapture(
+  g: Chess,
+  setGameFn: (g: Chess) => void,
+  setIsFailFn: (v: boolean) => void,
+  setMessageFn: (msg: string) => void,
+  setSelectedSquareFn: (sq: string | null) => void,
+  mountedRef: React.RefObject<boolean>
+) {
+  const cap = findSafeBlackCapture(g);
+  if (cap) {
+    setTimeout(() => {
+      if (!mountedRef.current) return;
+      g.move({ from: cap.from, to: cap.to });
+      setGameFn(new Chess(g.fen()));
+      setTimeout(() => {
+        if (mountedRef.current) { setIsFailFn(true); setMessageFn('Провалено'); }
+      }, 1000);
+    }, 1000);
+  } else {
+    setTimeout(() => {
+      if (mountedRef.current) { setIsFailFn(true); setMessageFn('Провалено'); }
+    }, 1000);
+  }
+  setSelectedSquareFn(null);
+}
+
 function StarPng({ filled, size = 14 }: { filled: boolean; size?: number }) {
   return (
     <img
@@ -171,8 +213,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -188,8 +229,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -205,8 +245,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -222,8 +261,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -239,8 +277,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -256,8 +293,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -270,8 +306,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             saveStars(1, 3);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -312,8 +347,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setMessage('Отлично! Пешка захватила центр.');
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -330,8 +364,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setMessage('Отлично! Конь вышел ближе к центру и напал на пешку e5.');
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -348,23 +381,20 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setMessage('Отлично! Слон вышел ближе к центру.');
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
         // Free play moves 3-6: must play d3, Bg5, Nc3, O-O in any order
         if (whiteMoves >= 3 && whiteMoves <= 6) {
           if (!isAllowedMove(from, to, move.piece)) {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
           const expectedCount = whiteMoves - 2;
           const actualCount = countCompletedMoves(g);
           if (actualCount !== expectedCount) {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
           setGame(new Chess(g.fen()));
@@ -408,8 +438,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -426,8 +455,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -444,8 +472,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -462,8 +489,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -480,8 +506,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -498,8 +523,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -516,8 +540,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -534,8 +557,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -552,8 +574,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -570,8 +591,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -588,8 +608,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -606,8 +625,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -624,8 +642,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -642,8 +659,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -656,8 +672,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             saveStars(3, 3);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -678,36 +693,6 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           if (isPieceOnSquareEx4(pos, 'g5', 'b', 'w')) count++;
           return count;
         }
-        // Find a black capture that leaves the black piece safe (no white recapture)
-        function findSafeBlackCapture(currentGame: Chess): { from: string; to: string } | null {
-          const blackMoves = currentGame.moves({ verbose: true });
-          const captures = blackMoves.filter((m: any) => m.captured);
-          for (const capture of captures) {
-            const testGame = new Chess(currentGame.fen());
-            testGame.move({ from: capture.from, to: capture.to });
-            const whiteMoves = testGame.moves({ verbose: true });
-            const whiteRecaptures = whiteMoves.filter((m: any) => m.captured && m.to === capture.to);
-            if (whiteRecaptures.length === 0) {
-              return { from: capture.from, to: capture.to };
-            }
-          }
-          return null;
-        }
-        function handleFailWithBlackCapture() {
-          const cap = findSafeBlackCapture(g);
-          if (cap) {
-            setTimeout(() => {
-              if (!mountedRef.current) return;
-              g.move({ from: cap.from, to: cap.to });
-              setGame(new Chess(g.fen()));
-              setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            }, 1000);
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-          }
-          setSelectedSquare(null);
-        }
-
         if (whiteMoves === 0) {
           if (from === 'e2' && to === 'e4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -721,7 +706,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -738,7 +723,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -755,7 +740,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -767,13 +752,13 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             (from === 'c1' && to === 'g5' && move.piece === 'b')
           );
           if (!isAllowed) {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
           const expectedCount = whiteMoves - 2;
           const actualCount = countFreeMovesDone(g);
           if (actualCount !== expectedCount) {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
           setGame(new Chess(g.fen()));
@@ -811,7 +796,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -829,7 +814,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -847,7 +832,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -865,8 +850,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -884,8 +868,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -903,8 +886,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -922,8 +904,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -941,8 +922,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
@@ -956,7 +936,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             saveStars(4, 3);
             return;
           } else {
-            handleFailWithBlackCapture();
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
         }
