@@ -11,7 +11,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_4 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_5 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_6 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_7 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
@@ -662,12 +662,276 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 4) {
+        // Exercise 4: Dyrakol — student plays ALL white moves with feedback AFTER each move
+        // Moves 1-3: strict order (e4, Nf3, Bc4)
+        // Moves 4-6: free order (d3, Nc3, Bg5)
+        // Moves 7-15: strict order
+        function isPieceOnSquareEx4(pos: Chess, sq: string, piece: string, color: 'w'|'b'): boolean {
+          const p = pos.get(sq as any);
+          if (!p) return false;
+          return p.type === piece && p.color === color;
+        }
+        function countFreeMovesDone(pos: Chess): number {
+          let count = 0;
+          if (isPieceOnSquareEx4(pos, 'd3', 'p', 'w')) count++;
+          if (isPieceOnSquareEx4(pos, 'c3', 'n', 'w')) count++;
+          if (isPieceOnSquareEx4(pos, 'g5', 'b', 'w')) count++;
+          return count;
+        }
+
         if (whiteMoves === 0) {
-          if (move.piece === 'k' && (to === 'g1' || to === 'h1')) {
+          if (from === 'e2' && to === 'e4' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e7', to: 'e5' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Пешка захватила центр.');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        if (whiteMoves === 1) {
+          if (from === 'g1' && to === 'f3' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b8', to: 'c6' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Конь вышел ближе к центру и напал на пешку e5.');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        if (whiteMoves === 2) {
+          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f8', to: 'c5' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Слон вышел ближе к центру.');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Free play moves 3-5 (whiteMoves 3,4,5): d3, Nc3, Bg5 in any order
+        if (whiteMoves >= 3 && whiteMoves <= 5) {
+          const isAllowed = (
+            (from === 'd2' && to === 'd3' && move.piece === 'p') ||
+            (from === 'b1' && to === 'c3' && move.piece === 'n') ||
+            (from === 'c1' && to === 'g5' && move.piece === 'b')
+          );
+          if (!isAllowed) {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          const prevCount = whiteMoves - 2;
+          const actualCount = countFreeMovesDone(g);
+          if (actualCount !== prevCount + 1) {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            if (whiteMoves === 3) {
+              g.move({ from: 'g8', to: 'f6' });
+            } else if (whiteMoves === 4) {
+              g.move({ from: 'd7', to: 'd6' });
+            } else if (whiteMoves === 5) {
+              g.move({ from: 'e8', to: 'g8' });
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+          if (whiteMoves === 5) {
+            setMessage('Отлично! Чёрные рокировались — дырокол начинается! Конь d5!');
+          } else {
+            setMessage('Отлично! Продолжайте развивать фигуры.');
+          }
+          return;
+        }
+        // Move 6: Nd5
+        if (whiteMoves === 6) {
+          if (from === 'c3' && to === 'd5' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'c8', to: 'g4' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Конь идёт на d5 — атака! Nxf6!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 7: Nxf6
+        if (whiteMoves === 7) {
+          if (from === 'd5' && to === 'f6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g7', to: 'f6' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Разменяли коня на f6, открыли пешку. Слон h6!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 8: Bh6
+        if (whiteMoves === 8) {
+          if (from === 'g5' && to === 'h6' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f8', to: 'e8' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Слон h6 атакует ладью, готовим дырокол. h3!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 9: h3
+        if (whiteMoves === 9) {
+          if (from === 'h2' && to === 'h3' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g4', to: 'f3' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! h3 гоним слона g4. gxf3!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 10: gxf3
+        if (whiteMoves === 10) {
+          if (from === 'g2' && to === 'f3' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'c6', to: 'd4' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Пешка g берёт слона, открывая линию f. Ладья g1!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 11: Rg1
+        if (whiteMoves === 11) {
+          if (from === 'h1' && to === 'g1' && move.piece === 'r') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g8', to: 'h8' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Ладья защищает пешку f3. Bg7+!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 12: Bg7+
+        if (whiteMoves === 12) {
+          if (from === 'h6' && to === 'g7' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'h8', to: 'g8' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Шах слоном g7! Bxf6+!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 13: Bxf6+
+        if (whiteMoves === 13) {
+          if (from === 'g7' && to === 'f6' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g8', to: 'f8' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Шах слоном f6, король уходит на f8. Bxd8!');
+            }, 1000);
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        // Move 14: Bxd8
+        if (whiteMoves === 14) {
+          if (from === 'f6' && to === 'd8' && move.piece === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsComplete(true);
-            setMessage('Отлично! Вы рокировались — король в безопасности.');
+            setMessage('Отлично! Дырокол выполнен! Разрушили рокировку и забрали ферзя!');
             saveStars(4, 3);
             return;
           } else {
@@ -961,7 +1225,7 @@ const handleSquareClick = useCallback((square: string) => {
            exercise === 1 && whiteMoves === 6 ? 'Сделайте рокировку — уберите короля в безопасность.' :
            exercise === 2 ? 'Сыграйте итальянскую партию: e4, затем Nf3, затем Bc4.' :
            exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
-           exercise === 4 ? 'Сделайте короткую рокировку — безопасность короля прежде всего.' :
+           exercise === 4 ? 'Самостоятельный дырокол — повторите все ходы!' :
            exercise === 5 ? 'Сыграйте Nb1-c3 — защитите пешку e4.' :
            exercise === 6 ? 'Сыграйте h2-h3 — не дайте слону выйти на g4.' :
            exercise === 7 ? 'Сыграйте a2-a4 — не дайте коню съесть слона на c4.' :
@@ -1102,7 +1366,7 @@ const handleSquareClick = useCallback((square: string) => {
           <p>{exercise === 1 ? 'Пройдите всю итальянскую партию: e4, Nf3, Bc4, d3, Bg5, Nc3, 0-0' :
           exercise === 2 ? 'Сыграйте e4, Nf3, Bc4 — развейте фигуры в центр.' :
           exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
-          exercise === 4 ? 'Рокировка — король в безопасности.' :
+          exercise === 4 ? 'Повторите дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
           exercise === 5 ? 'Развитие коня на c3.' :
           exercise === 6 ? 'Профилактика h3.' :
           exercise === 7 ? 'Профилактика a4.' :
