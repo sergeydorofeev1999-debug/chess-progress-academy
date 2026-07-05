@@ -10,7 +10,7 @@ const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_3 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_4 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_5 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_6 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
@@ -1101,7 +1101,7 @@ const handleSquareClick = useCallback((square: string) => {
           <p className="font-medium mb-1">Цель:</p>
           <p>{exercise === 1 ? 'Пройдите всю итальянскую партию: e4, Nf3, Bc4, d3, Bg5, Nc3, 0-0' :
           exercise === 2 ? 'Сыграйте e4, Nf3, Bc4 — развейте фигуры в центр.' :
-          exercise === 3 ? 'Тихая итальянская — сыграйте d3.' :
+          exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
           exercise === 4 ? 'Рокировка — король в безопасности.' :
           exercise === 5 ? 'Развитие коня на c3.' :
           exercise === 6 ? 'Профилактика h3.' :
