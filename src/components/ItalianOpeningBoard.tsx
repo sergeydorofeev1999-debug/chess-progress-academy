@@ -12,7 +12,7 @@ const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_5 = 'r1bq1rk1/pppp1pp1/2n2n1p/2b1p3/2B1P3/2NP1N1P/PPP2PP1/R1BQK2R w KQ - 1 7';
+const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_6 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_7 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_8 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
@@ -941,9 +941,10 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 5) {
-        // Exercise 5: Pawn Storm (Пешечный штурм) — student plays ALL white moves
-        // Free play moves 0-1: d3 and Nc3 in any order (whiteMoves 0, 1)
-        // Strict moves from whiteMoves 2 onwards
+        // Exercise 5: Pawn Storm (Пешечный штурм) — full sequence from starting position
+        // Moves 0-2: strict order (e4, Nf3, Bc4) with hints BEFORE each move
+        // Moves 3-4: free order (d3, Nc3) in any order
+        // Moves 5+: strict order (h3, g4, g5, Bxg5, Qd2, O-O-O, Bxf6, Qh6, Rdg1, Rxg1, Rxg4, hxg4)
         function isPieceOnSquareEx5(pos: Chess, sq: string, piece: string, color: 'w'|'b'): boolean {
           const p = pos.get(sq as any);
           if (!p) return false;
@@ -955,8 +956,62 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           if (isPieceOnSquareEx5(pos, 'c3', 'n', 'w')) count++;
           return count;
         }
-        // Free play: moves 0-1 (d3 and Nc3 in any order)
-        if (whiteMoves >= 0 && whiteMoves <= 1) {
+        // Move 0: e4
+        if (whiteMoves === 0) {
+          if (from === 'e2' && to === 'e4' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e7', to: 'e5' });
+              setGame(new Chess(g.fen()));
+              setMessage('Конь выходит на f3 — защищает пешку e4 и готовит развитие. Сделайте Nf3!');
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Move 1: Nf3
+        if (whiteMoves === 1) {
+          if (from === 'g1' && to === 'f3' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b8', to: 'c6' });
+              setGame(new Chess(g.fen()));
+              setMessage('Отлично! Вы развели слона на c4 — классическая итальянская партия. Сделайте Bc4!');
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Move 2: Bc4
+        if (whiteMoves === 2) {
+          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f8', to: 'c5' });
+              setGame(new Chess(g.fen()));
+              setMessage('d3 — тихая итальянская, готовим позицию. Сделайте d3!');
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Free play: moves 3-4 (d3 and Nc3 in any order)
+        if (whiteMoves >= 3 && whiteMoves <= 4) {
           const isAllowed = (
             (from === 'd2' && to === 'd3' && move.piece === 'p') ||
             (from === 'b1' && to === 'c3' && move.piece === 'n')
@@ -965,7 +1020,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
             return;
           }
-          const expectedCount = whiteMoves + 1;
+          const expectedCount = whiteMoves - 2;
           const actualCount = countFreeMovesEx5(g);
           if (actualCount !== expectedCount) {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -976,28 +1031,18 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           setWhiteMoves(nextWhiteMoves);
           setTimeout(() => {
             if (!mountedRef.current) return;
-            if (whiteMoves === 0) {
-              if (from === 'd2') {
-                g.move({ from: 'h7', to: 'h6' });
-                setMessage('Конь выходит на c3 — защита пешки e4. Сделайте Nc3!');
-              } else {
-                g.move({ from: 'h7', to: 'h6' });
-                setMessage('d3 — тихая итальянская, готовим позицию. Сделайте d3!');
-              }
+            if (whiteMoves === 3) {
+              g.move({ from: 'h7', to: 'h6' });
             } else {
-              if (from === 'd2') {
-                g.move({ from: 'g8', to: 'f6' });
-              } else {
-                g.move({ from: 'g8', to: 'f6' });
-              }
-              setMessage('h3 — не даём слону чёрных выйти на g4. Сделайте h3!');
+              g.move({ from: 'g8', to: 'f6' });
             }
             setGame(new Chess(g.fen()));
+            setMessage('h3 — не даём слону чёрных выйти на g4. Сделайте h3!');
           }, 1000);
           return;
         }
-        // Move 2: h3
-        if (whiteMoves === 2) {
+        // Move 5: h3
+        if (whiteMoves === 5) {
           if (from === 'h2' && to === 'h3' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1014,8 +1059,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 3: g4
-        if (whiteMoves === 3) {
+        // Move 6: g4
+        if (whiteMoves === 6) {
           if (from === 'g2' && to === 'g4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1032,8 +1077,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 4: g5
-        if (whiteMoves === 4) {
+        // Move 7: g5
+        if (whiteMoves === 7) {
           if (from === 'g4' && to === 'g5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1050,8 +1095,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 5: Bxg5 (from c1 to g5)
-        if (whiteMoves === 5) {
+        // Move 8: Bxg5 (from c1 to g5)
+        if (whiteMoves === 8) {
           if (from === 'c1' && to === 'g5' && move.piece === 'b' && move.captured === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1068,8 +1113,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 6: Qd2
-        if (whiteMoves === 6) {
+        // Move 9: Qd2
+        if (whiteMoves === 9) {
           if (from === 'd1' && to === 'd2' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1086,8 +1131,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 7: O-O-O
-        if (whiteMoves === 7) {
+        // Move 10: O-O-O
+        if (whiteMoves === 10) {
           if (move.piece === 'k' && (to === 'c1' || to === 'b1')) {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1104,8 +1149,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 8: Bxf6
-        if (whiteMoves === 8) {
+        // Move 11: Bxf6
+        if (whiteMoves === 11) {
           if (from === 'g5' && to === 'f6' && move.piece === 'b' && move.captured === 'n') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1122,8 +1167,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 9: Qh6
-        if (whiteMoves === 9) {
+        // Move 12: Qh6
+        if (whiteMoves === 12) {
           if (from === 'd2' && to === 'h6' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1140,8 +1185,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 10: Rdg1
-        if (whiteMoves === 10) {
+        // Move 13: Rdg1
+        if (whiteMoves === 13) {
           if (from === 'd1' && to === 'g1' && move.piece === 'r') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1158,8 +1203,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 11: Rxg1 (from h1)
-        if (whiteMoves === 11) {
+        // Move 14: Rxg1 (from h1)
+        if (whiteMoves === 14) {
           if (from === 'h1' && to === 'g1' && move.piece === 'r' && move.captured === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1176,8 +1221,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 12: Rxg4
-        if (whiteMoves === 12) {
+        // Move 15: Rxg4
+        if (whiteMoves === 15) {
           if (from === 'g1' && to === 'g4' && move.piece === 'r' && move.captured === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1194,8 +1239,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Move 13: hxg4
-        if (whiteMoves === 13) {
+        // Move 16: hxg4
+        if (whiteMoves === 16) {
           if (from === 'h3' && to === 'g4' && move.piece === 'p' && move.captured === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1709,4 +1754,3 @@ const handleSquareClick = useCallback((square: string) => {
   );
 }
 
-// deploy trigger
