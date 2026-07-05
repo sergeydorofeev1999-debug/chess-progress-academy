@@ -276,7 +276,45 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 2) {
-        // Exercise 2: student plays Italian Opening from start — e4, Nf3, Bc4 with feedback after each move
+        // Exercise 2: Italian Opening free-play — fixed first 3 moves, then free developing moves
+        // Allowed white moves after 3...Bc5: d3, Nc3, O-O, Bg5, Re1, h3, a4, Qe2, Qf3, Bb3, Ba4, Be2, Bd3
+        const ALLOWED_MOVE_4 = [
+          'd2d3', 'd3', 'b1c3', 'Nc3', 'O-O', 'e1g1', 'e1c1',
+          'Bc1g5', 'Bc1f4', 'Bc1e3', 'Bc1d2',
+          'Rf1e1', 'Rf1d1', 'Rf1f2',
+          'h2h3', 'h3', 'a2a4', 'a4', 'a2a3', 'a3',
+          'Qd1e2', 'Qe2', 'Qd1f3', 'Qf3',
+          'Bc4b3', 'Bb3', 'Bc4a2', 'Ba2', 'Bc4d3', 'Bd3', 'Bc4e2', 'Be2',
+          'g2g3', 'g3',
+        ];
+        const ALLOWED_MOVE_5 = ALLOWED_MOVE_4;
+
+        // Helper: pick black developing response after white's free move
+        function pickBlackMove(pos: Chess, whiteFrom: string, whiteTo: string): { from: string; to: string } | null {
+          const mv = pos.moves({ verbose: true }).filter((m: any) => m.color === 'b');
+          // Prefer castling if available
+          const castle = mv.find((m: any) => m.piece === 'k' && (m.to === 'g8' || m.to === 'c8'));
+          if (castle) return { from: castle.from, to: castle.to };
+          // Prefer Nf6
+          const nf6 = mv.find((m: any) => m.piece === 'n' && m.to === 'f6');
+          if (nf6) return { from: nf6.from, to: nf6.to };
+          // Prefer d6
+          const d6 = mv.find((m: any) => m.piece === 'p' && m.to === 'd6');
+          if (d6) return { from: d6.from, to: d6.to };
+          // Prefer Be7 / Bb6 / Ba7
+          const be7 = mv.find((m: any) => m.piece === 'b' && (m.to === 'e7' || m.to === 'b6' || m.to === 'a7'));
+          if (be7) return { from: be7.from, to: be7.to };
+          // Prefer a6 / h6
+          const a6h6 = mv.find((m: any) => m.piece === 'p' && (m.to === 'a6' || m.to === 'h6'));
+          if (a6h6) return { from: a6h6.from, to: a6h6.to };
+          // Fallback: any black move
+          if (mv.length > 0) {
+            const m = mv[Math.floor(Math.random() * mv.length)];
+            return { from: m.from, to: m.to };
+          }
+          return null;
+        }
+
         if (whiteMoves === 0) {
           if (from === 'e2' && to === 'e4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -324,14 +362,41 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
               setGame(new Chess(g.fen()));
             }, 1000);
             setMessage('Отлично! Слон вышел ближе к центру.');
-            setIsComplete(true);
-            saveStars(2, 3);
             return;
           } else {
             setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
             setSelectedSquare(null);
             return;
           }
+        }
+        // Free play: whiteMoves 3 and 4
+        const moveKey = from + to;
+        const isAllowed = ALLOWED_MOVE_4.some((k: string) => moveKey.includes(k) || (move.piece === 'k' && (to === 'g1' || to === 'c1' || to === 'h1')));
+        if (whiteMoves === 3 || whiteMoves === 4) {
+          if (!isAllowed && !(move.piece === 'k' && (to === 'g1' || to === 'h1'))) {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const blackMove = pickBlackMove(g, from, to);
+            if (blackMove) {
+              g.move({ from: blackMove.from, to: blackMove.to });
+              setGame(new Chess(g.fen()));
+            }
+          }, 1000);
+          if (whiteMoves === 3) {
+            setMessage('Отлично! Продолжайте развивать фигуры.');
+          } else {
+            setIsComplete(true);
+            setMessage('Отлично! Вы развили фигуры и подготовили короля к рокировке.');
+            saveStars(2, 3);
+          }
+          return;
         }
       } else if (exercise === 3) {
         if (whiteMoves === 0) {
