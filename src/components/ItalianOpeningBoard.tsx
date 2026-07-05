@@ -678,6 +678,30 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           if (isPieceOnSquareEx4(pos, 'g5', 'b', 'w')) count++;
           return count;
         }
+        // Find a black capture that leaves the black piece safe (no white recapture)
+        function findSafeBlackCapture(currentGame: Chess): { from: string; to: string } | null {
+          const blackMoves = currentGame.moves({ verbose: true });
+          const captures = blackMoves.filter((m: any) => m.captured);
+          for (const capture of captures) {
+            const testGame = new Chess(currentGame.fen());
+            testGame.move({ from: capture.from, to: capture.to });
+            const whiteMoves = testGame.moves({ verbose: true });
+            const whiteRecaptures = whiteMoves.filter((m: any) => m.captured && m.to === capture.to);
+            if (whiteRecaptures.length === 0) {
+              return { from: capture.from, to: capture.to };
+            }
+          }
+          return null;
+        }
+        function handleFailWithBlackCapture() {
+          const cap = findSafeBlackCapture(g);
+          if (cap) {
+            g.move({ from: cap.from, to: cap.to });
+            setGame(new Chess(g.fen()));
+          }
+          setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+          setSelectedSquare(null);
+        }
 
         if (whiteMoves === 0) {
           if (from === 'e2' && to === 'e4' && move.piece === 'p') {
@@ -692,8 +716,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -710,8 +733,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -728,8 +750,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -741,15 +762,13 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             (from === 'c1' && to === 'g5' && move.piece === 'b')
           );
           if (!isAllowed) {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
           const expectedCount = whiteMoves - 2;
           const actualCount = countFreeMovesDone(g);
           if (actualCount !== expectedCount) {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
           setGame(new Chess(g.fen()));
@@ -787,8 +806,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -806,8 +824,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -825,8 +842,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             }, 1000);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
@@ -935,8 +951,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             saveStars(4, 3);
             return;
           } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
+            handleFailWithBlackCapture();
             return;
           }
         }
