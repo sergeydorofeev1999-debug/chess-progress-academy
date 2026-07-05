@@ -9,7 +9,7 @@ const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 
 const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_2 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
+const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_3 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_4 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 const START_FEN_5 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
@@ -276,12 +276,49 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 2) {
+        // Exercise 2: student plays Italian Opening from start — e4, Nf3, Bc4 with feedback after each move
         if (whiteMoves === 0) {
-          if (from === 'c2' && to === 'c3' && move.piece === 'p') {
+          if (from === 'e2' && to === 'e4' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e7', to: 'e5' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            setMessage('Отлично! Пешка захватила центр.');
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        if (whiteMoves === 1) {
+          if (from === 'g1' && to === 'f3' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b8', to: 'c6' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            setMessage('Отлично! Конь вышел ближе к центру и напал на пешку e5.');
+            return;
+          } else {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+        }
+        if (whiteMoves === 2) {
+          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsComplete(true);
-            setMessage('Отлично! Вы сыграли c3 — Гиуоко Пиано.');
+            setMessage('Отлично! Слон вышел ближе к центру.');
             saveStars(2, 3);
             return;
           } else {
@@ -603,7 +640,7 @@ const handleSquareClick = useCallback((square: string) => {
            exercise === 1 && whiteMoves === 4 ? 'Сыграйте Bc1-g5 — свяжите коня f6.' :
            exercise === 1 && whiteMoves === 5 ? 'Сыграйте Nb1-c3 — развейте второго коня.' :
            exercise === 1 && whiteMoves === 6 ? 'Сделайте рокировку — уберите короля в безопасность.' :
-           exercise === 2 ? 'Сыграйте c2-c3 — подготовьте центральный прорыв d4.' :
+           exercise === 2 ? 'Сыграйте итальянскую партию: e4, затем Nf3, затем Bc4.' :
            exercise === 3 ? 'Сыграйте d2-d3 — тихая итальянская партия.' :
            exercise === 4 ? 'Сделайте короткую рокировку — безопасность короля прежде всего.' :
            exercise === 5 ? 'Сыграйте Nb1-c3 — защитите пешку e4.' :
@@ -744,7 +781,7 @@ const handleSquareClick = useCallback((square: string) => {
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
           <p>{exercise === 1 ? 'Пройдите всю итальянскую партию: e4, Nf3, Bc4, d3, Bg5, Nc3, 0-0' :
-          exercise === 2 ? 'Гиуоко Пиано — сыграйте c3.' :
+          exercise === 2 ? 'Сыграйте e4, Nf3, Bc4 — развейте фигуры в центр.' :
           exercise === 3 ? 'Тихая итальянская — сыграйте d3.' :
           exercise === 4 ? 'Рокировка — король в безопасности.' :
           exercise === 5 ? 'Развитие коня на c3.' :
