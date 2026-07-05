@@ -250,23 +250,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         }
       }
       if (blackMoves === 3) {
-        if (from === 'g8' && to === 'f6' && move.piece === 'n') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'c1', to: 'g5' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 4) {
-        if (move.piece === 'k' && (to === 'g8' || to === 'h8')) {
+        if (from === 'd7' && to === 'd6' && move.piece === 'p') {
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
@@ -281,8 +265,8 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           return;
         }
       }
-      if (blackMoves === 5) {
-        if (from === 'd7' && to === 'd6' && move.piece === 'p') {
+      if (blackMoves === 4) {
+        if (from === 'g8' && to === 'f6' && move.piece === 'n') {
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
@@ -290,8 +274,54 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             if (!mountedRef.current) return;
             g.move({ from: 'e1', to: 'g1' });
             setGame(new Chess(g.fen()));
+          }, 1000);
+          return;
+        } else {
+          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+          return;
+        }
+      }
+      if (blackMoves === 5) {
+        if (from === 'c8' && to === 'g4' && move.piece === 'b') {
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setBlackMoves(nextBlackMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'c1', to: 'g5' });
+            setGame(new Chess(g.fen()));
+          }, 1000);
+          return;
+        } else {
+          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+          return;
+        }
+      }
+      if (blackMoves === 6) {
+        if (from === 'd8' && to === 'e7' && move.piece === 'q') {
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setBlackMoves(nextBlackMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'f1', to: 'e1' });
+            setGame(new Chess(g.fen()));
+          }, 1000);
+          return;
+        } else {
+          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+          return;
+        }
+      }
+      if (blackMoves === 7) {
+        if (move.piece === 'k' && (to === 'c8' || to === 'a8')) {
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setBlackMoves(nextBlackMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
             setIsComplete(true);
-            setMessage('Отлично! Итальянская партия завершена. Чёрные захватили центр пешкой, вывели коней и слонов, сделали рокировку и защитили позицию!');
+            setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
             saveStars(1, 3);
           }, 1000);
           return;
@@ -416,10 +446,12 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const hintText = blackMoves === 0 ? 'Сыграйте e7-e5 — захватите центр пешкой.' :
                    blackMoves === 1 ? 'Конь выходит на c6 — ближе к центру. Сделайте Nc6!' :
                    blackMoves === 2 ? 'Сыграйте Bf8-c5 — направьте слона на поле f2.' :
-                   blackMoves === 3 ? 'Сыграйте Kg8-f6 — развейте коня.' :
-                   blackMoves === 4 ? 'Сделайте рокировку — уберите короля в безопасность.' :
-                   blackMoves === 5 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
-                   'Смотрите, как белые завершают развитие.';
+                   blackMoves === 3 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
+                   blackMoves === 4 ? 'Сыграйте Kg8-f6 — развейте коня.' :
+                   blackMoves === 5 ? 'Сыграйте Bc8-g4 — нападайте на коня f3.' :
+                   blackMoves === 6 ? 'Сыграйте Фd8-e7 — укрепите центр.' :
+                   blackMoves === 7 ? 'Сделайте длинную рокировку (O-O-O) — уберите короля в безопасность!' :
+                   'Смотрите, как завершается партия.';
 
   const earnedStars = exerciseStars[1] || 0;
 
