@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { RotateCcw, Trophy } from 'lucide-react';
 
-const FILES = ['a','b','c','d','e','f','g','h'];
+const FILES = ['h','g','f','e','d','c','b','a'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['1','2','3','4','5','6','7','8'];
 
@@ -98,6 +98,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
+  const [exercise, setExercise] = useState<1>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -105,7 +106,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const [isComplete, setIsComplete] = useState(false);
   const [blackMoves, setBlackMoves] = useState(0);
   const [sqSize, setSqSize] = useState(52);
-  const [stars, setStars] = useState(0);
+  const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
 
   const isCompleteRef = useRef(false);
   const isFailRef = useRef(false);
@@ -125,10 +126,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.stars) setStars(parsed.stars);
-      }
+      if (raw) setExerciseStars(JSON.parse(raw));
     } catch {}
   }, [storageKey]);
 
@@ -184,9 +182,12 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     }, 1000);
   }, []);
 
-  const saveStars = useCallback((s: number) => {
-    setStars(s);
-    try { localStorage.setItem(storageKey, JSON.stringify({ stars: s })); } catch {}
+  const saveStars = useCallback((ex: number, stars: number) => {
+    setExerciseStars(prev => {
+      const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
+      try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
   }, [storageKey]);
 
   const processBlackMove = useCallback((from: string, to: string) => {
@@ -291,7 +292,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setGame(new Chess(g.fen()));
             setIsComplete(true);
             setMessage('Отлично! Итальянская партия завершена. Чёрные захватили центр пешкой, вывели коней и слонов, сделали рокировку и защитили позицию!');
-            saveStars(3);
+            saveStars(1, 3);
           }, 1000);
           return;
         } else {
@@ -420,17 +421,36 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
                    blackMoves === 5 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
                    'Смотрите, как белые завершают развитие.';
 
+  const earnedStars = exerciseStars[1] || 0;
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="flex items-center gap-2 rounded p-2 border border-gray-200">
-          <div className="flex gap-0.5">
-            {[1, 2, 3].map(s => (
-              <StarPng key={s} filled={stars > 0 && s <= stars} size={14} />
-            ))}
-          </div>
-          <span className="text-xs font-medium text-gray-600">Упражнение 1</span>
+        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
+          {[1].map((num) => {
+            const isCurrent = num === exercise;
+            const isDone = earnedStars > 0;
+            return (
+              <button
+                key={num}
+                className={`flex items-center justify-center px-1 py-1 rounded transition ${
+                  isCurrent
+                    ? 'bg-blue-500 text-white'
+                    : isDone
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-gray-200 text-gray-500'
+                } cursor-pointer hover:brightness-110`}
+              >
+                <div className="flex gap-0.5">
+                  {[1, 2, 3].map(s => (
+                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                  ))}
+                </div>
+                <span className="ml-1 text-xs font-medium">{num}</span>
+              </button>
+            );
+          })}
         </div>
 
         <button
@@ -515,11 +535,13 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
-                    {fi === 0 && (
-                      <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                    {/* Rank numbers on the right side (a-file) */}
+                    {fi === 7 && (
+                      <span className={`absolute top-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {rank}
                       </span>
                     )}
+                    {/* File letters on the bottom (rank 8) */}
                     {ri === 7 && (
                       <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {file}
@@ -577,12 +599,36 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           <p>Пройдите итальянскую партию за чёрных: e5, Nc6, Bc5, Nf6, O-O, d6 в ответ на ходы белых.</p>
         </div>
 
+        {/* Mobile exercise pills */}
+        <div className="flex lg:hidden flex-col items-center gap-1 w-full">
+          <div className="flex gap-1 justify-center w-full">
+            {[1].map((num) => {
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Completion banner */}
         {isComplete && (
           <div className="flex flex-col items-center gap-3 mt-2">
             <div className="flex items-center gap-2 text-green-600 font-bold text-lg">
               <Trophy className="w-6 h-6" />
-              <span>Упражнение пройдено!</span>
+              <span>Упражнение {exercise} пройдено!</span>
             </div>
             <button
               onClick={onComplete}
