@@ -276,28 +276,30 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
       } else if (exercise === 2) {
-        // Exercise 2: Italian Opening free-play — fixed first 3 moves, then free developing moves
-        // Allowed white moves after 3...Bc5: d3, Nc3, O-O, Bg5, Re1, h3, a4, Qe2, Qf3, Bb3, Ba4, Be2, Bd3
-        const ALLOWED_MOVE_4 = [
-          'd2d3', 'd3', 'b1c3', 'Nc3', 'O-O', 'e1g1', 'e1c1',
-          'Bc1g5', 'Bc1f4', 'Bc1e3', 'Bc1d2',
-          'Rf1e1', 'Rf1d1', 'Rf1f2',
-          'h2h3', 'h3', 'a2a4', 'a4', 'a2a3', 'a3',
-          'Qd1e2', 'Qe2', 'Qd1f3', 'Qf3',
-          'Bc4b3', 'Bb3', 'Bc4a2', 'Ba2', 'Bc4d3', 'Bd3', 'Bc4e2', 'Be2',
-          'g2g3', 'g3',
-        ];
-        const ALLOWED_MOVE_5 = ALLOWED_MOVE_4;
-
-        // Helper: pick black developing response after white's free move
-        function pickBlackMove(pos: Chess, whiteFrom: string, whiteTo: string): { from: string; to: string } | null {
+        // Exercise 2: Italian Opening free-play — develop all pieces + castle
+        function isPieceOnSquare(pos: Chess, sq: string, piece: string, color: 'w'|'b'): boolean {
+          const p = pos.get(sq as any);
+          return p && p.type === piece && p.color === color;
+        }
+        function checkAllDeveloped(pos: Chess): boolean {
+          // Knights not on b1, g1 (must have moved)
+          if (isPieceOnSquare(pos, 'b1', 'n', 'w')) return false;
+          if (isPieceOnSquare(pos, 'g1', 'n', 'w')) return false;
+          // Bishops not on c1, f1 (must have moved)
+          if (isPieceOnSquare(pos, 'c1', 'b', 'w')) return false;
+          if (isPieceOnSquare(pos, 'f1', 'b', 'w')) return false;
+          // King not on e1 (must have castled)
+          if (isPieceOnSquare(pos, 'e1', 'k', 'w')) return false;
+          return true;
+        }
+        function pickBlackMove(pos: Chess): { from: string; to: string } | null {
           const mv = pos.moves({ verbose: true }).filter((m: any) => m.color === 'b');
-          // Prefer castling if available
-          const castle = mv.find((m: any) => m.piece === 'k' && (m.to === 'g8' || m.to === 'c8'));
-          if (castle) return { from: castle.from, to: castle.to };
           // Prefer Nf6
           const nf6 = mv.find((m: any) => m.piece === 'n' && m.to === 'f6');
           if (nf6) return { from: nf6.from, to: nf6.to };
+          // Prefer castling
+          const castle = mv.find((m: any) => m.piece === 'k' && (m.to === 'g8' || m.to === 'c8'));
+          if (castle) return { from: castle.from, to: castle.to };
           // Prefer d6
           const d6 = mv.find((m: any) => m.piece === 'p' && m.to === 'd6');
           if (d6) return { from: d6.from, to: d6.to };
@@ -369,11 +371,12 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        // Free play: whiteMoves 3 and 4
-        const moveKey = from + to;
-        const isAllowed = ALLOWED_MOVE_4.some((k: string) => moveKey.includes(k) || (move.piece === 'k' && (to === 'g1' || to === 'c1' || to === 'h1')));
-        if (whiteMoves === 3 || whiteMoves === 4) {
-          if (!isAllowed && !(move.piece === 'k' && (to === 'g1' || to === 'h1'))) {
+        // Move 3 (4th white move): d3, Nc3, or O-O
+        if (whiteMoves === 3) {
+          const allowed3 = ['d2d3', 'd3', 'b1c3', 'Nc3', 'O-O', 'e1g1', 'e1c1'];
+          const moveKey = from + to;
+          const isAllowed = allowed3.some((k: string) => moveKey.includes(k)) || (move.piece === 'k' && (to === 'g1' || to === 'h1'));
+          if (!isAllowed) {
             setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
             setSelectedSquare(null);
             return;
@@ -383,18 +386,60 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           setWhiteMoves(nextWhiteMoves);
           setTimeout(() => {
             if (!mountedRef.current) return;
-            const blackMove = pickBlackMove(g, from, to);
-            if (blackMove) {
-              g.move({ from: blackMove.from, to: blackMove.to });
-              setGame(new Chess(g.fen()));
-            }
+            const nf6 = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'n' && m.to === 'f6');
+            if (nf6) g.move({ from: nf6.from, to: nf6.to });
+            else { const bm = pickBlackMove(g); if (bm) g.move({ from: bm.from, to: bm.to }); }
+            setGame(new Chess(g.fen()));
           }, 1000);
-          if (whiteMoves === 3) {
-            setMessage('Отлично! Продолжайте развивать фигуры.');
-          } else {
+          setMessage('Отлично! Продолжайте развивать фигуры.');
+          return;
+        }
+        // Move 4 (5th white move): depends on previous move
+        if (whiteMoves === 4) {
+          let allowed4: string[] = [];
+          if (isPieceOnSquare(g, 'd3', 'p', 'w')) {
+            allowed4 = ['Bc1d2', 'Bd2', 'Bc1e3', 'Be3', 'Bc1g5', 'Bg5', 'b1c3', 'Nc3', 'O-O', 'e1g1', 'e1c1'];
+          } else if (isPieceOnSquare(g, 'c3', 'n', 'w')) {
+            allowed4 = ['d2d3', 'd3', 'O-O', 'e1g1', 'e1c1', 'Bc1g5', 'Bg5', 'Bc1e3', 'Be3', 'Bc1d2', 'Bd2', 'Rf1e1', 'Re1'];
+          } else if (isPieceOnSquare(g, 'g1', 'k', 'w')) {
+            allowed4 = ['d2d3', 'd3', 'b1c3', 'Nc3', 'Bc1g5', 'Bg5', 'Bc1e3', 'Be3', 'Bc1d2', 'Bd2', 'Rf1e1', 'Re1'];
+          }
+          const moveKey = from + to;
+          const isAllowed = allowed4.some((k: string) => moveKey.includes(k)) || (move.piece === 'k' && (to === 'g1' || to === 'h1'));
+          if (!isAllowed) {
+            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
+            setSelectedSquare(null);
+            return;
+          }
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const castle = g.moves({ verbose: true }).find((m: any) => m.color === 'b' && m.piece === 'k' && (m.to === 'g8' || m.to === 'c8'));
+            if (castle) g.move({ from: castle.from, to: castle.to });
+            else { const bm = pickBlackMove(g); if (bm) g.move({ from: bm.from, to: bm.to }); }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+          setMessage('Отлично! Продолжайте развивать фигуры.');
+          return;
+        }
+        // Moves 5+: free play until all pieces developed
+        if (whiteMoves >= 5) {
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            const bm = pickBlackMove(g);
+            if (bm) { g.move({ from: bm.from, to: bm.to }); setGame(new Chess(g.fen())); }
+          }, 1000);
+          if (checkAllDeveloped(g)) {
             setIsComplete(true);
-            setMessage('Отлично! Вы развили фигуры и подготовили короля к рокировке.');
+            setMessage('Отлично! Все фигуры развиты и король в безопасности.');
             saveStars(2, 3);
+          } else {
+            setMessage('Отлично! Продолжайте развивать фигуры.');
           }
           return;
         }
