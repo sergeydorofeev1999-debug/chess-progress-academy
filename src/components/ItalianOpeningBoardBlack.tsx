@@ -113,8 +113,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const isFailRef = useRef(false);
   const mountedRef = useRef(true);
   const autoStartedRef = useRef(false);
-  const processingMoveRef = useRef(false);
-  const lastMoveTimeRef = useRef(0);
 
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -200,23 +198,15 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   }, [storageKey]);
 
   const processBlackMove = useCallback((from: string, to: string) => {
-    if (processingMoveRef.current) { console.log('[GUARD] processingMoveRef blocked'); return; }
-    processingMoveRef.current = true;
+    if (!game) return;
+    const g = game;
+    if (g.turn() !== 'b') return;
+    const fromPiece = g.get(from as any);
+    if (!fromPiece || fromPiece.color !== 'b') return;
 
     try {
-      if (!game) return;
-      const g = game;
-      console.log('[processBlackMove] from=' + from + ' to=' + to + ' blackMoves=' + blackMoves + ' turn=' + g.turn());
-      if (g.turn() !== 'b') { console.log('[GUARD] not black turn'); return; }
-      const fromPiece = g.get(from as any);
-      console.log('[processBlackMove] fromPiece at ' + from + ':', fromPiece);
-      if (!fromPiece || fromPiece.color !== 'b') { console.log('[GUARD] no black piece at from'); return; }
-
       const move = g.move({ from, to });
-      console.log('[processBlackMove] g.move result:', move);
-      if (!move) { console.log('[GUARD] invalid move'); return; }
-
-      lastMoveTimeRef.current = Date.now();
+      if (!move) return;
 
       const nextBlackMoves = blackMoves + 1;
 
@@ -707,8 +697,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       }
     } catch {
       // Invalid move
-    } finally {
-      processingMoveRef.current = false;
     }
   }, [game, blackMoves, saveStars, exercise]);
 
@@ -716,8 +704,12 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     if (isCompleteRef.current || isFailRef.current) return;
     if (!game) return;
 
-    // Ignore duplicate click within 1000ms of a processed move (prevents drag+click double-fire)
-    if (Date.now() - lastMoveTimeRef.current < 1000) { console.log('[GUARD] click too soon after move'); return; }
+    // Ignore click that immediately follows a drag gesture
+    const start = pointerStartRef.current;
+    if (start && start.moved) {
+      pointerStartRef.current = null;
+      return;
+    }
 
     const g = game;
     if (g.turn() !== 'b') return;
