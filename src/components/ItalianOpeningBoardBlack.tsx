@@ -568,7 +568,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
+        <div className="hidden lg:grid grid-cols-2 gap-1 rounded p-1 border border-gray-200">
           {[1, 2].map((num) => {
             const stars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
@@ -762,7 +762,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
                       <StarPng key={s} filled={stars > 0 && s <= stars} size={12} />
                     ))}
                   </div>
-                  <span className="ml-0.5 font-medium">{num}</span>
                 </button>
               );
             })}
