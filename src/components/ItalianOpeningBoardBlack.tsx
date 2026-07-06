@@ -98,7 +98,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1>(1);
+  const [exercise, setExercise] = useState<1 | 2>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -107,6 +107,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const [blackMoves, setBlackMoves] = useState(0);
   const [sqSize, setSqSize] = useState(52);
   const [exerciseStars, setExerciseStars] = useState<Record<number, number>>({});
+  const [postMoveHint, setPostMoveHint] = useState('');
 
   const isCompleteRef = useRef(false);
   const isFailRef = useRef(false);
@@ -172,6 +173,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     setIsFail(false);
     setIsComplete(false);
     setBlackMoves(0);
+    setPostMoveHint('');
     autoStartedRef.current = false;
     // Auto-play white e4 again
     setTimeout(() => {
@@ -181,6 +183,11 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       autoStartedRef.current = true;
     }, 1000);
   }, []);
+
+  const switchExercise = useCallback((num: 1 | 2) => {
+    setExercise(num);
+    reset();
+  }, [reset]);
 
   const saveStars = useCallback((ex: number, stars: number) => {
     setExerciseStars(prev => {
@@ -201,120 +208,240 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
 
       const nextBlackMoves = blackMoves + 1;
 
-      if (blackMoves === 0) {
-        if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+      if (exercise === 1) {
+        // Exercise 1: Italian Opening for Black — hints BEFORE moves
+        if (blackMoves === 0) {
+          if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g1', to: 'f3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 1) {
+          if (from === 'b8' && to === 'c6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f1', to: 'c4' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 2) {
+          if (from === 'f8' && to === 'c5' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd2', to: 'd3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 3) {
+          if (from === 'd7' && to === 'd6' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b1', to: 'c3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 4) {
+          if (from === 'g8' && to === 'f6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e1', to: 'g1' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 5) {
+          if (from === 'c8' && to === 'g4' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'c1', to: 'g5' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 6) {
+          if (move.piece === 'k' && (to === 'g8' || to === 'h8')) {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setIsComplete(true);
+            setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
+            saveStars(1, 3);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+      } else if (exercise === 2) {
+        // Exercise 2: Repeat Italian Opening for Black — hints AFTER moves, free order for moves 3-5 (d6, Nf6, Bg4)
+        function isPieceOnSquare(pos: Chess, sq: string, piece: string, color: 'w'|'b'): boolean {
+          const p = pos.get(sq as any);
+          if (!p) return false;
+          return p.type === piece && p.color === color;
+        }
+        function countFreeMoves(pos: Chess): number {
+          let count = 0;
+          if (isPieceOnSquare(pos, 'd6', 'p', 'b')) count++;   // d6
+          if (isPieceOnSquare(pos, 'f6', 'n', 'b')) count++;   // Nf6
+          if (isPieceOnSquare(pos, 'g4', 'b', 'b')) count++;  // Bg4
+          return count;
+        }
+        // Move 0: e5
+        if (blackMoves === 0) {
+          if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setPostMoveHint('Отлично, пешка захватила центр');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g1', to: 'f3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Move 1: Nc6
+        if (blackMoves === 1) {
+          if (from === 'b8' && to === 'c6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setPostMoveHint('Отлично, конь вышел ближе к центру и защитил пешку e5');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f1', to: 'c4' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Move 2: Bc5
+        if (blackMoves === 2) {
+          if (from === 'f8' && to === 'c5' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setPostMoveHint('Отлично, слон вышел ближе к центру');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd2', to: 'd3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        // Free play: moves 3-5 (d6, Nf6, Bg4 in any order)
+        if (blackMoves >= 3 && blackMoves <= 5) {
+          const isAllowed = (
+            (from === 'd7' && to === 'd6' && move.piece === 'p') ||
+            (from === 'g8' && to === 'f6' && move.piece === 'n') ||
+            (from === 'c8' && to === 'g4' && move.piece === 'b')
+          );
+          if (!isAllowed) {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+          const expectedCount = blackMoves - 2;
+          const actualCount = countFreeMoves(g);
+          if (actualCount !== expectedCount) {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
+          setPostMoveHint('Отлично! Правильное развитие фигур в центре.');
           setTimeout(() => {
             if (!mountedRef.current) return;
-            g.move({ from: 'g1', to: 'f3' });
+            if (blackMoves === 3) {
+              g.move({ from: 'b1', to: 'c3' });
+            } else if (blackMoves === 4) {
+              g.move({ from: 'e1', to: 'g1' });
+            } else {
+              g.move({ from: 'c1', to: 'g5' });
+            }
             setGame(new Chess(g.fen()));
           }, 1000);
           return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
         }
-      }
-      if (blackMoves === 1) {
-        if (from === 'b8' && to === 'c6' && move.piece === 'n') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'f1', to: 'c4' });
+        // Move 6: O-O
+        if (blackMoves === 6) {
+          if (move.piece === 'k' && (to === 'g8' || to === 'h8')) {
             setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 2) {
-        if (from === 'f8' && to === 'c5' && move.piece === 'b') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'd2', to: 'd3' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 3) {
-        if (from === 'd7' && to === 'd6' && move.piece === 'p') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'b1', to: 'c3' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 4) {
-        if (from === 'g8' && to === 'f6' && move.piece === 'n') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'e1', to: 'g1' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 5) {
-        if (from === 'c8' && to === 'g4' && move.piece === 'b') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'c1', to: 'g5' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 6) {
-        if (move.piece === 'k' && (to === 'g8' || to === 'h8')) {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setIsComplete(true);
-          setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
-          saveStars(1, 3);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setIsComplete(true);
+            setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
+            saveStars(2, 3);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
         }
       }
     } catch {
       // Invalid move
     }
-  }, [game, blackMoves, saveStars]);
+  }, [game, blackMoves, saveStars, exercise]);
 
   const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
@@ -424,28 +551,32 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
 
   const turnText = game ? (game.turn() === 'b' ? 'Ваш ход (чёрные)' : 'Белые ходят...') : '';
 
-  const hintText = blackMoves === 0 ? 'Сыграйте e7-e5 — захватите центр пешкой.' :
-                   blackMoves === 1 ? 'Конь выходит на c6 — ближе к центру. Сделайте Nc6!' :
-                   blackMoves === 2 ? 'Сыграйте Bf8-c5 — направьте слона на поле f2.' :
-                   blackMoves === 3 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
-                   blackMoves === 4 ? 'Сыграйте Kg8-f6 — развейте коня.' :
-                   blackMoves === 5 ? 'Сыграйте Bc8-g4 — нападайте на коня f3.' :
-                   blackMoves === 6 ? 'Сделайте короткую рокировку (O-O) — уберите короля в безопасность!' :
-                   'Смотрите, как завершается партия.';
+  const hintText = exercise === 1
+    ? (blackMoves === 0 ? 'Сыграйте e7-e5 — захватите центр пешкой.' :
+       blackMoves === 1 ? 'Конь выходит на c6 — ближе к центру. Сделайте Nc6!' :
+       blackMoves === 2 ? 'Сыграйте Bf8-c5 — направьте слона на поле f2.' :
+       blackMoves === 3 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
+       blackMoves === 4 ? 'Сыграйте Kg8-f6 — развейте коня.' :
+       blackMoves === 5 ? 'Сыграйте Bc8-g4 — нападайте на коня f3.' :
+       blackMoves === 6 ? 'Сделайте короткую рокировку (O-O) — уберите короля в безопасность!' :
+       'Смотрите, как завершается партия.')
+    : '';
 
-  const earnedStars = exerciseStars[1] || 0;
+  const earnedStars = exerciseStars[exercise] || 0;
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
         <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
-          {[1].map((num) => {
+          {[1, 2].map((num) => {
+            const stars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
-            const isDone = earnedStars > 0;
+            const isDone = stars > 0;
             return (
               <button
                 key={num}
+                onClick={() => switchExercise(num as 1 | 2)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -456,7 +587,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
               >
                 <div className="flex gap-0.5">
                   {[1, 2, 3].map(s => (
-                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={14} />
+                    <StarPng key={s} filled={stars > 0 && s <= stars} size={14} />
                   ))}
                 </div>
                 <span className="ml-1 text-xs font-medium">{num}</span>
@@ -476,7 +607,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
-          {hintText}
+          {exercise === 1 ? hintText : postMoveHint || 'Повторите партию за чёрных!'}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
@@ -642,6 +773,22 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
+            {exercise === 1 && (
+              <button
+                onClick={() => switchExercise(2)}
+                className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
+              >
+                Перейти к Упражнению 2 →
+              </button>
+            )}
+            {exercise === 2 && (exerciseStars[2] || 0) >= 3 && (
+              <button
+                onClick={onComplete}
+                className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
+              >
+                Урок завершён ✓
+              </button>
+            )}
             <button
               onClick={onComplete}
               className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
