@@ -14,12 +14,6 @@ const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_6 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_7 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
-const START_FEN_8 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
-const START_FEN_9 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
-const START_FEN_10 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
-const START_FEN_11 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
-const START_FEN_12 = 'r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4';
 
 // Find a black capture that leaves the black piece safe (no white recapture)
 function findSafeBlackCapture(currentGame: Chess): { from: string; to: string } | null {
@@ -109,7 +103,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -160,7 +154,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : exercise === 8 ? START_FEN_8 : exercise === 9 ? START_FEN_9 : exercise === 10 ? START_FEN_10 : exercise === 11 ? START_FEN_11 : START_FEN_12;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_6;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -169,7 +163,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     setWhiteMoves(0);
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -177,9 +171,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_6;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -1566,96 +1560,6 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-      } else if (exercise === 7) {
-        if (whiteMoves === 0) {
-          if (from === 'a2' && to === 'a4' && move.piece === 'p') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! Пешка a4 не даёт коню чёрных съесть слона на c4.');
-            saveStars(7, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
-      } else if (exercise === 8) {
-        if (whiteMoves === 0) {
-          if (from === 'd2' && to === 'd4' && move.piece === 'p') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! d4 — развитие центра в гамбите Эванса.');
-            saveStars(8, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
-      } else if (exercise === 9) {
-        if (whiteMoves === 0) {
-          if (from === 'f1' && to === 'e1' && move.piece === 'r') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! Ладья на e1 защищает пешку e4.');
-            saveStars(9, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
-      } else if (exercise === 10) {
-        if (whiteMoves === 0) {
-          if (from === 'a2' && to === 'a3' && move.piece === 'p') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! Пешка a3 — профилактический ход.');
-            saveStars(10, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
-      } else if (exercise === 11) {
-        if (whiteMoves === 0) {
-          if (from === 'd1' && to === 'e2' && move.piece === 'q') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! Ферзь на e2 — классическая позиция в итальянской партии.');
-            saveStars(11, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
-      } else if (exercise === 12) {
-        if (whiteMoves === 0) {
-          if (from === 'c4' && to === 'f7' && move.piece === 'b' && move.captured === 'p') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setIsComplete(true);
-            setMessage('Отлично! Жертва слона на f7 — форк на короля и ладью!');
-            saveStars(12, 3);
-            return;
-          } else {
-            setTimeout(() => { if (mountedRef.current) { setIsFail(true); setMessage('Провалено'); } }, 1000);
-            setSelectedSquare(null);
-            return;
-          }
-        }
       }
     } catch {
       // Invalid move
@@ -1774,7 +1678,7 @@ const handleSquareClick = useCallback((square: string) => {
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
         <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => {
+          {[1, 2, 3, 4, 5, 6].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
@@ -1823,13 +1727,7 @@ const handleSquareClick = useCallback((square: string) => {
            exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
            exercise === 4 ? 'Самостоятельный дырокол — повторите все ходы!' :
            exercise === 5 ? 'Пешечный штурм — захватите центр, развейтесь и атакуйте короля!' :
-           exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' :
-           exercise === 7 ? 'Сыграйте a2-a4 — не дайте коню съесть слона на c4.' :
-           exercise === 8 ? 'Сыграйте d2-d4 — разбейте центр!' :
-           exercise === 9 ? 'Сыграйте ладью на e1 — защитите пешку e4.' :
-           exercise === 10 ? 'Сыграйте a2-a3 — профилактика.' :
-           exercise === 11 ? 'Сыграйте ферзём на e2 — классическая манёвренная позиция.' :
-           exercise === 12 ? 'Сыграйте слоном на f7 — жертва за форк!' : ''}
+           exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' : ''}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
@@ -1964,13 +1862,7 @@ const handleSquareClick = useCallback((square: string) => {
           exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
           exercise === 4 ? 'Повторите дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
           exercise === 5 ? 'Пешечный штурм на королевском фланге — классическая атака в итальянской партии.' :
-          exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' :
-          exercise === 7 ? 'Профилактика a4.' :
-          exercise === 8 ? 'Гамбит Эванса — d4.' :
-          exercise === 9 ? 'Ладья на e1.' :
-          exercise === 10 ? 'Профилактика a3.' :
-          exercise === 11 ? 'Ферзь на e2.' :
-          exercise === 12 ? 'Жертва слона на f7.' : ''}
+          exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' : ''}
           </p>
         </div>
 
@@ -1978,28 +1870,6 @@ const handleSquareClick = useCallback((square: string) => {
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
           <div className="flex gap-1 justify-center w-full">
             {[1, 2, 3, 4, 5, 6].map((num) => {
-              const earnedStars = exerciseStars[num] || 0;
-              const isCurrent = num === exercise;
-              const isDone = earnedStars > 0;
-              return (
-                <button
-                  key={num}
-                  onClick={() => switchExercise(num as any)}
-                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                  } cursor-pointer`}
-                >
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3].map(s => (
-                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
-                    ))}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex gap-1 justify-center w-full">
-            {[7, 8, 9, 10, 11, 12].map((num) => {
               const earnedStars = exerciseStars[num] || 0;
               const isCurrent = num === exercise;
               const isDone = earnedStars > 0;
@@ -2029,15 +1899,15 @@ const handleSquareClick = useCallback((square: string) => {
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise < 12 && (
+            {exercise < 6 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
                 Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 12 && (exerciseStars[12] || 0) >= 3 && (
+            {exercise === 6 && (exerciseStars[6] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
