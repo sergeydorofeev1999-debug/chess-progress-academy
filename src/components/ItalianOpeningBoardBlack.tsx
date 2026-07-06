@@ -151,13 +151,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     }
   }, [game, blackMoves]);
 
-  // Reset selection when it's white's turn (prevents stale selectedSquare between moves)
-  useEffect(() => {
-    if (game && game.turn() === 'w') {
-      setSelectedSquare(null);
-    }
-  }, [game]);
-
   useEffect(() => {
     const update = () => {
       const isMobile = window.innerWidth < 1024;
@@ -208,6 +201,9 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     if (!game) return;
     const g = game;
     if (g.turn() !== 'b') return;
+    // Guard: ensure a black piece exists on the source square
+    const fromPiece = g.get(from as any);
+    if (!fromPiece || fromPiece.color !== 'b') return;
 
     try {
       const move = g.move({ from, to });
@@ -715,6 +711,11 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
 
     if (selectedSquare) {
       if (selectedSquare === square) {
+        setSelectedSquare(null);
+        return;
+      }
+      const fromPiece = game.get(selectedSquare as any);
+      if (!fromPiece || fromPiece.color !== 'b') {
         setSelectedSquare(null);
         return;
       }
