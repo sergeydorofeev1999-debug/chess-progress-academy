@@ -745,21 +745,24 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         {/* Mobile exercise pills */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
           <div className="flex gap-1 justify-center w-full">
-            {[1].map((num) => {
+            {[1, 2].map((num) => {
+              const stars = exerciseStars[num] || 0;
               const isCurrent = num === exercise;
-              const isDone = earnedStars > 0;
+              const isDone = stars > 0;
               return (
                 <button
                   key={num}
+                  onClick={() => switchExercise(num as 1 | 2)}
                   className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } cursor-pointer`}
                 >
                   <div className="flex gap-0.5">
                     {[1, 2, 3].map(s => (
-                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                      <StarPng key={s} filled={stars > 0 && s <= stars} size={12} />
                     ))}
                   </div>
+                  <span className="ml-0.5 font-medium">{num}</span>
                 </button>
               );
             })}
