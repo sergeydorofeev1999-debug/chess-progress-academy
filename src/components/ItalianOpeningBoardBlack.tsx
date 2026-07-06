@@ -626,7 +626,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setPostMoveHint('Слон забирает ферзя на d8! Дырокол! Делайте Bxd8!');
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'c4', to: 'd8' });
+              g.move({ from: 'h4', to: 'd8' });
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
