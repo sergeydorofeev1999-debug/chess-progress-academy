@@ -113,6 +113,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const isFailRef = useRef(false);
   const mountedRef = useRef(true);
   const autoStartedRef = useRef(false);
+  const justDraggedRef = useRef(false);
 
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -705,9 +706,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     if (!game) return;
 
     // Ignore click that immediately follows a drag gesture
-    const start = pointerStartRef.current;
-    if (start && start.moved) {
-      pointerStartRef.current = null;
+    if (justDraggedRef.current) {
       return;
     }
 
@@ -781,6 +780,8 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           processBlackMove(start.square, targetSquare);
         }
         setDragPiece(null);
+        justDraggedRef.current = true;
+        setTimeout(() => { justDraggedRef.current = false; }, 50);
       }
       pointerStartRef.current = null;
     };
