@@ -1070,12 +1070,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
                 Урок завершён ✓
               </button>
             )}
-            <button
-              onClick={onComplete}
-              className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
-            >
-              Урок завершён ✓
-            </button>
           </div>
         )}
       </div>
