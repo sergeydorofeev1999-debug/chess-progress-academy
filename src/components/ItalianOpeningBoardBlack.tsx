@@ -440,7 +440,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       } else if (exercise === 3) {
         // Exercise 3: Dyrakol (дырокол) — student plays black in a full game leading to Rxg5#
         // Sequence: e5, Nc6, Bc5, d6, Nf6, Bg4, Nd4, Nxf3, Bh3, gxf6, f5, Rg8+, Bg2+, Bxf3+, Rxg5#
-        // White moves: e4 Nf3 Bc4 d3 Nc3 Bg5 O-O Nd5 Nxf6+ Bh4 Bxd8 Kh1 Kg1 Bg5
+        // White moves: e4 Nf3 Bc4 d3 Nc3 O-O Bg5 Nd5 Nxf6+ Bh4 Bxd8 Kh1 Kg1 Bg5
         if (blackMoves === 0) {
           if (from === 'e7' && to === 'e5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -514,10 +514,10 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setBlackMoves(nextBlackMoves);
-            setPostMoveHint('Слон g5 связывает коня f6 — начало дырокола! Сделайте Bg5!');
+            setPostMoveHint('Белые рокировались — король в безопасности. Сыграйте Bg4 — нападение на коня f3!');
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'c1', to: 'g5' });
+              g.move({ from: 'e1', to: 'g1' });
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
@@ -534,7 +534,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setPostMoveHint('Чёрные рокировались! Это ключевой момент — мы НЕ рокировали и можем атаковать. Конь d5!');
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'e1', to: 'g1' });
+              g.move({ from: 'c1', to: 'g5' });
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
