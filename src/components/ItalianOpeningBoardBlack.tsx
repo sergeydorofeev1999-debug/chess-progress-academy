@@ -719,9 +719,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         return;
       }
       processBlackMove(selectedSquare, square);
-      if (piece && piece.color === 'b') {
-        setSelectedSquare(square);
-      }
+      setSelectedSquare(null);
     } else {
       if (piece && piece.color === 'b') {
         setSelectedSquare(square);
