@@ -113,6 +113,8 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   const isFailRef = useRef(false);
   const mountedRef = useRef(true);
   const autoStartedRef = useRef(false);
+  const processingMoveRef = useRef(false);
+  const lastMoveTimeRef = useRef(0);
 
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -198,16 +200,21 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
   }, [storageKey]);
 
   const processBlackMove = useCallback((from: string, to: string) => {
-    if (!game) return;
-    const g = game;
-    if (g.turn() !== 'b') return;
-    // Guard: ensure a black piece exists on the source square
-    const fromPiece = g.get(from as any);
-    if (!fromPiece || fromPiece.color !== 'b') return;
+    if (processingMoveRef.current) return;
+    processingMoveRef.current = true;
 
     try {
+      if (!game) return;
+      const g = game;
+      if (g.turn() !== 'b') return;
+      // Guard: ensure a black piece exists on the source square
+      const fromPiece = g.get(from as any);
+      if (!fromPiece || fromPiece.color !== 'b') return;
+
       const move = g.move({ from, to });
       if (!move) return;
+
+      lastMoveTimeRef.current = Date.now();
 
       const nextBlackMoves = blackMoves + 1;
 
@@ -698,12 +705,18 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       }
     } catch {
       // Invalid move
+    } finally {
+      processingMoveRef.current = false;
     }
   }, [game, blackMoves, saveStars, exercise]);
 
   const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
     if (!game) return;
+
+    // Ignore duplicate click within 200ms of a processed move (prevents drag+click double-fire)
+    if (Date.now() - lastMoveTimeRef.current < 200) return;
+
     const g = game;
     if (g.turn() !== 'b') return;
 
