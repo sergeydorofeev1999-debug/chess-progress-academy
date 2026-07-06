@@ -286,11 +286,6 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'c1', to: 'g5' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
           return;
         } else {
           handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -298,32 +293,13 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         }
       }
       if (blackMoves === 6) {
-        if (from === 'd8' && to === 'e7' && move.piece === 'q') {
+        if (move.piece === 'k' && (to === 'g8' || to === 'h8')) {
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            g.move({ from: 'f1', to: 'e1' });
-            setGame(new Chess(g.fen()));
-          }, 1000);
-          return;
-        } else {
-          handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
-        }
-      }
-      if (blackMoves === 7) {
-        if (move.piece === 'k' && (to === 'c8' || to === 'a8')) {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setBlackMoves(nextBlackMoves);
-          setTimeout(() => {
-            if (!mountedRef.current) return;
-            setIsComplete(true);
-            setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
-            saveStars(1, 3);
-          }, 1000);
+          setIsComplete(true);
+          setMessage('Отлично! Итальянская партия за чёрных завершена. Вы ответили на ходы белых правильно!');
+          saveStars(1, 3);
           return;
         } else {
           handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -449,8 +425,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
                    blackMoves === 3 ? 'Сыграйте d7-d6 — защитите пешку e5.' :
                    blackMoves === 4 ? 'Сыграйте Kg8-f6 — развейте коня.' :
                    blackMoves === 5 ? 'Сыграйте Bc8-g4 — нападайте на коня f3.' :
-                   blackMoves === 6 ? 'Сыграйте Фd8-e7 — укрепите центр.' :
-                   blackMoves === 7 ? 'Сделайте длинную рокировку (O-O-O) — уберите короля в безопасность!' :
+                   blackMoves === 6 ? 'Сделайте короткую рокировку (O-O) — уберите короля в безопасность!' :
                    'Смотрите, как завершается партия.';
 
   const earnedStars = exerciseStars[1] || 0;
