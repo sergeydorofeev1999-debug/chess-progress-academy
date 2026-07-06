@@ -286,6 +286,11 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           setGame(new Chess(g.fen()));
           setSelectedSquare(null);
           setBlackMoves(nextBlackMoves);
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            g.move({ from: 'c1', to: 'g5' });
+            setGame(new Chess(g.fen()));
+          }, 1000);
           return;
         } else {
           handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
