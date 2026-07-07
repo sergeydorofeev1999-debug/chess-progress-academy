@@ -194,7 +194,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
       const nextWhiteMoves = whiteMoves + 1;
 
       if (exercise === 1) {
-        // Сценарий: Детский мат — 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 4.Qxf7#
+        // Сценарий: 1.e4 e5 2.Nf3 Nc6 3.Bc4 Bc5 4.d3 Nf6 5.Bg5 0-0 6.Nc3 d6 7.0-0
         if (whiteMoves === 0) {
           if (from === 'e2' && to === 'e4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -212,7 +212,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
         if (whiteMoves === 1) {
-          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
+          if (from === 'g1' && to === 'f3' && move.piece === 'n') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
@@ -228,7 +228,23 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
         }
         if (whiteMoves === 2) {
-          if (from === 'd1' && to === 'h5' && move.piece === 'q') {
+          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f8', to: 'c5' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 3) {
+          if (from === 'd2' && to === 'd3' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
@@ -243,12 +259,44 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        if (whiteMoves === 3) {
-          if (from === 'h5' && to === 'f7' && move.piece === 'q') {
+        if (whiteMoves === 4) {
+          if (from === 'c1' && to === 'g5' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e8', to: 'g8' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 5) {
+          if (from === 'b1' && to === 'c3' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd7', to: 'd6' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 6) {
+          if (move.piece === 'k' && (to === 'g1' || to === 'h1')) {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsComplete(true);
-            setMessage('Мат! Детский мат выполнен! Ферзь забрал пешку на f7, король не может выбраться из-под шаха. Самый быстрый путь к победе — атака на пункт f7!');
+            setMessage('Отлично! Итальянская партия завершена. Белые захватили центр пешкой, вывели коней и слонов и сделали рокировку!');
             saveStars(1, 3);
             return;
           } else {
@@ -1669,9 +1717,12 @@ const handleSquareClick = useCallback((square: string) => {
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
           {exercise === 1 && whiteMoves === 0 ? 'Сыграйте e2-e4 — захватите центр пешкой.' :
-           exercise === 1 && whiteMoves === 1 ? 'Сыграйте Bf1-c4 — направьте слона на поле f7.' :
-           exercise === 1 && whiteMoves === 2 ? 'Выведите ферзя на h5 — угрожайте матом на f7.' :
-           exercise === 1 && whiteMoves === 3 ? 'Заберите пешку на f7 — мат!' :
+           exercise === 1 && whiteMoves === 1 ? 'Конь выходит на f3 — ближе к центру и нападает на чёрную пешку e5.' :
+           exercise === 1 && whiteMoves === 2 ? 'Сыграйте Bf1-c4 — направьте слона на поле f7.' :
+           exercise === 1 && whiteMoves === 3 ? 'Сыграйте d2-d3 — откройте дорогу слону c1.' :
+           exercise === 1 && whiteMoves === 4 ? 'Сыграйте Bc1-g5 — свяжите коня f6.' :
+           exercise === 1 && whiteMoves === 5 ? 'Сыграйте Nb1-c3 — развейте второго коня.' :
+           exercise === 1 && whiteMoves === 6 ? 'Сделайте рокировку — уберите короля в безопасность.' :
            exercise === 2 ? 'Сыграйте итальянскую партию: e4, затем Nf3, затем Bc4.' :
            exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
            exercise === 4 ? 'Самостоятельный дырокол — повторите все ходы!' :
@@ -1806,7 +1857,7 @@ const handleSquareClick = useCallback((square: string) => {
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1 ? 'Поставьте детский мат: e4, Bc4, Qh5, Qxf7#' :
+          <p>{exercise === 1 ? 'Пройдите всю итальянскую партию: e4, Nf3, Bc4, d3, Bg5, Nc3, 0-0' :
           exercise === 2 ? 'Сыграйте e4, Nf3, Bc4 — развейте фигуры в центр.' :
           exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
           exercise === 4 ? 'Повторите дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :

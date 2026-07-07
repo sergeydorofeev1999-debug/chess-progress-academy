@@ -23,6 +23,7 @@ import DiscoveredAttackBoard from './DiscoveredAttackBoard';
 import MixedTacticsBoard from './MixedTacticsBoard';
 import ItalianOpeningBoard from './ItalianOpeningBoard';
 import ItalianOpeningBoardBlack from './ItalianOpeningBoardBlack';
+import ScholarMateBoard from './ScholarMateBoard';
 import SquareRuleBoard from './SquareRuleBoard';
 
 interface Lesson {
@@ -1549,6 +1550,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_italian_opening_black' ? (
           <div className="mb-8">
             <ItalianOpeningBoardBlack
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_scholar_mate' ? (
+          <div className="mb-8">
+            <ScholarMateBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
