@@ -98,7 +98,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -185,7 +185,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
     }, 1000);
   }, []);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5) => {
     setExercise(num);
     reset();
   }, [reset]);
@@ -945,6 +945,181 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
+      } else if (exercise === 5) {
+        // Exercise 5: Пешечный штурм — hints BEFORE each black move
+        if (blackMoves === 0) {
+          if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g1', to: 'f3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 1) {
+          if (from === 'b8' && to === 'c6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f1', to: 'c4' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 2) {
+          if (from === 'f8' && to === 'c5' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd2', to: 'd3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 3) {
+          if (from === 'd7' && to === 'd6' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'h2', to: 'h3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 4) {
+          if (from === 'h7' && to === 'h6' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e1', to: 'g1' }); // O-O
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 5) {
+          if (from === 'g7' && to === 'g5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b1', to: 'd2' }); // Nbd2
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 6) {
+          if (from === 'g5' && to === 'g4' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'h3', to: 'h4' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 7) {
+          if (from === 'g4' && to === 'g3' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g1', to: 'h1' }); // Kh1
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 8) {
+          if (from === 'c5' && to === 'f2' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd2', to: 'f3' }); // Ndf3
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 9) {
+          if (from === 'd8' && to === 'h4' && move.piece === 'q') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f3', to: 'h2' }); // Nh2
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 10) {
+          if (from === 'h4' && to === 'h2' && move.piece === 'q') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setIsComplete(true);
+            setMessage('Мат! Пешечный штурм успешен! Чёрные прорвались через королевский фланг и поставили мат ферзём на h2!');
+            saveStars(5, 3);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
       }
     } catch {
       // Invalid move
@@ -1096,6 +1271,19 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
        blackMoves === 13 ? 'Слон g2-f3 — нападение! Сделайте Bxf3!' :
        blackMoves === 14 ? 'Ладья g8-g5 — мат! Сделайте Rxg5!' :
        'Смотрите, как завершается партия.')
+    : exercise === 5
+    ? (blackMoves === 0 ? 'В дебюте главное — захватить центр. Чёрные начинают с e5.' :
+       blackMoves === 1 ? 'Конь выходит на c6 — защищает пешку e5 и готовит развитие.' :
+       blackMoves === 2 ? 'Слон выходит на c5 — классическая итальянская партия.' :
+       blackMoves === 3 ? 'Пешка d6 — защищаем пешку e5.' :
+       blackMoves === 4 ? 'Пешка h6 — готовим пешечный штурм.' :
+       blackMoves === 5 ? 'g5 — начинаем пешечный штурм на королевском фланге!' :
+       blackMoves === 6 ? 'g4 — давим пешками!' :
+       blackMoves === 7 ? 'g3 — прорываемся!' :
+       blackMoves === 8 ? 'Слон забирает на f2 — вскрываем позицию!' :
+       blackMoves === 9 ? 'Ферзь h4 — готовим атаку!' :
+       blackMoves === 10 ? 'Ферзь забирает на h2 — мат!' :
+       'Смотрите, как завершается партия.')
     : '';
 
   const earnedStars = exerciseStars[exercise] || 0;
@@ -1105,14 +1293,14 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
         <div className="hidden lg:grid grid-cols-2 gap-1 rounded p-1 border border-gray-200">
-          {[1, 2, 3, 4].map((num) => {
+          {[1, 2, 3, 4, 5].map((num) => {
             const stars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = stars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2 | 3 | 4)}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -1143,7 +1331,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
         <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
-          {exercise === 1 ? hintText : postMoveHint || 'Повторите партию за чёрных!'}
+          {exercise === 1 || exercise === 5 ? hintText : postMoveHint || 'Повторите партию за чёрных!'}
         </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
@@ -1275,20 +1463,20 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>Пройдите итальянскую партию за чёрных: e5, Nc6, Bc5, Nf6, O-O, d6 в ответ на ходы белых.</p>
+          <p>Пройдите итальянскую партию за чёрных: e5, Nc6, Bc5, Nf6, O-O, d6 в ответ на ходы белых.{exercise === 5 ? ' В упражнении 5 — пешечный штурм!' : ''}</p>
         </div>
 
         {/* Mobile exercise pills */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
           <div className="flex gap-1 justify-center w-full">
-            {[1, 2, 3, 4].map((num) => {
+            {[1, 2, 3, 4, 5].map((num) => {
               const stars = exerciseStars[num] || 0;
               const isCurrent = num === exercise;
               const isDone = stars > 0;
               return (
                 <button
                   key={num}
-                  onClick={() => switchExercise(num as 1 | 2 | 3 | 4)}
+                  onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5)}
                   className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } cursor-pointer`}
@@ -1336,6 +1524,14 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
               </button>
             )}
             {exercise === 4 && (
+              <button
+                onClick={() => switchExercise(5)}
+                className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
+              >
+                Перейти к Упражнению 5 →
+              </button>
+            )}
+            {exercise === 5 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
