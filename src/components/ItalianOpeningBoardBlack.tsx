@@ -1051,7 +1051,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setBlackMoves(nextBlackMoves);
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'b1', to: 'd2' }); // Nbd2
+              g.move({ from: 'f3', to: 'd2' }); // Nfd2
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
