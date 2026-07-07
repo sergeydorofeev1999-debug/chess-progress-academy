@@ -289,16 +289,18 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
           }
 
           // Check we don't repeat the same move
-          const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
-          const alreadyHasQh5 = !!g.get('h5') && g.get('h5')?.type === 'q' && g.get('h5')?.color === 'w';
+          if (whiteMoves === 2) {
+            const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
+            const alreadyHasQh5 = !!g.get('h5') && g.get('h5')?.type === 'q' && g.get('h5')?.color === 'w';
 
-          if (isBc4 && alreadyHasBc4) {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
-          }
-          if (isQh5 && alreadyHasQh5) {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
+            if (isBc4 && alreadyHasBc4) {
+              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+              return;
+            }
+            if (isQh5 && alreadyHasQh5) {
+              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+              return;
+            }
           }
 
           setGame(new Chess(g.fen()));
@@ -424,17 +426,19 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
 
-          // Проверка на повтор хода
-          const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
-          const alreadyHasQf3 = !!g.get('f3') && g.get('f3')?.type === 'q' && g.get('f3')?.color === 'w';
+          // На ходе 2 проверяем, что не повторяем уже сделанный ход
+          if (whiteMoves === 2) {
+            const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
+            const alreadyHasQf3 = !!g.get('f3') && g.get('f3')?.type === 'q' && g.get('f3')?.color === 'w';
 
-          if (isBc4 && alreadyHasBc4) {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
-          }
-          if (isQf3 && alreadyHasQf3) {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
+            if (isBc4 && alreadyHasBc4) {
+              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+              return;
+            }
+            if (isQf3 && alreadyHasQf3) {
+              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+              return;
+            }
           }
 
           setGame(new Chess(g.fen()));
