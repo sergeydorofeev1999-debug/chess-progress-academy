@@ -947,7 +947,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         }
       } else if (exercise === 5) {
         // Exercise 5: Пешечный штурм — hints BEFORE each black move
-        // After d6: white plays Nc3, then black plays Nf6
+        // Full sequence: e4 e5 Nf3 Nc6 Bc4 Bc5 d3 d6 Nc3 Nf6 h3 h6 O-O g5 Nfd2 g4 h4 g3 Kh1 Bxf2 Nf3 Ng4 Ne2 Nh2 Nxh2 Qxh4 Nxg3 Bxg3 Qf3 Qxh2#
         if (blackMoves === 0) {
           if (from === 'e7' && to === 'e5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -1109,13 +1109,13 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           }
         }
         if (blackMoves === 10) {
-          if (from === 'd8' && to === 'h4' && move.piece === 'q') {
+          if (from === 'f6' && to === 'g4' && move.piece === 'n') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setBlackMoves(nextBlackMoves);
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'f3', to: 'h2' }); // Nh2
+              g.move({ from: 'c3', to: 'e2' }); // Ne2
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
@@ -1125,6 +1125,54 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           }
         }
         if (blackMoves === 11) {
+          if (from === 'g4' && to === 'h2' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f3', to: 'h2' }); // Nxh2
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 12) {
+          if (from === 'd8' && to === 'h4' && move.piece === 'q') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e2', to: 'g3' }); // Nxg3
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 13) {
+          if (from === 'f2' && to === 'g3' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd1', to: 'f3' }); // Qf3
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 14) {
           if (from === 'h4' && to === 'h2' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1299,8 +1347,11 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
        blackMoves === 7 ? 'g4 — давим пешками!' :
        blackMoves === 8 ? 'g3 — прорываемся!' :
        blackMoves === 9 ? 'Слон забирает на f2 — вскрываем позицию!' :
-       blackMoves === 10 ? 'Ферзь h4 — готовим атаку!' :
-       blackMoves === 11 ? 'Ферзь забирает на h2 — мат!' :
+       blackMoves === 10 ? 'Конь f6-g4 — прорываемся!' :
+       blackMoves === 11 ? 'Конь g4-h2 — атака!' :
+       blackMoves === 12 ? 'Ферзь d8-h4 — готовим удар!' :
+       blackMoves === 13 ? 'Слон забирает на g3 — вскрываем!' :
+       blackMoves === 14 ? 'Ферзь h4xh2 — мат!' :
        'Смотрите, как завершается партия.')
     : '';
 
