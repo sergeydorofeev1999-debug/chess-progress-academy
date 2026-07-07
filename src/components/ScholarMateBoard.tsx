@@ -259,7 +259,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
 
       } else if (exercise === 2) {
-        // Exercise 2: Scholar's Mate free-play — 4 moves: e4, Bc4, Qh5, Qxf7#
+        // Exercise 2: Scholar's Mate — moves 2 and 3 (Bc4/Qh5) in ANY order
         if (whiteMoves === 0) {
           if (from === 'e2' && to === 'e4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -276,44 +276,54 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
         }
-        if (whiteMoves === 1) {
-          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setWhiteMoves(nextWhiteMoves);
-            setTimeout(() => {
-              if (!mountedRef.current) return;
+
+        // Moves 1-2: Bc4 and Qh5 in any order
+        if (whiteMoves >= 1 && whiteMoves <= 2) {
+          const isBc4 = from === 'f1' && to === 'c4' && move.piece === 'b';
+          const isQh5 = from === 'd1' && to === 'h5' && move.piece === 'q';
+
+          if (!isBc4 && !isQh5) {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+
+          // Check we don't repeat the same move
+          const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
+          const alreadyHasQh5 = !!g.get('h5') && g.get('h5')?.type === 'q' && g.get('h5')?.color === 'w';
+
+          if (isBc4 && alreadyHasBc4) {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+          if (isQh5 && alreadyHasQh5) {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+
+          setGame(new Chess(g.fen()));
+          setSelectedSquare(null);
+          setWhiteMoves(nextWhiteMoves);
+
+          setTimeout(() => {
+            if (!mountedRef.current) return;
+            if (whiteMoves === 1) {
+              // After first development move, black plays Nc6
               g.move({ from: 'b8', to: 'c6' });
-              setGame(new Chess(g.fen()));
-            }, 1000);
-            return;
-          } else {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
-          }
-        }
-        if (whiteMoves === 2) {
-          if (from === 'd1' && to === 'h5' && move.piece === 'q') {
-            setGame(new Chess(g.fen()));
-            setSelectedSquare(null);
-            setWhiteMoves(nextWhiteMoves);
-            setTimeout(() => {
-              if (!mountedRef.current) return;
+            } else if (whiteMoves === 2) {
+              // After second development move, black plays Nf6
               g.move({ from: 'g8', to: 'f6' });
-              setGame(new Chess(g.fen()));
-            }, 1000);
-            return;
-          } else {
-            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-            return;
-          }
+            }
+            setGame(new Chess(g.fen()));
+          }, 1000);
+          return;
         }
+
         if (whiteMoves === 3) {
           if (from === 'h5' && to === 'f7' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setIsComplete(true);
-            setMessage('Мат! Детский мат выполнен! Вы самостоятельно повторили атаку на пункт f7!');
+            setMessage('Мат! Детский mat выполнен! Вы самостоятельно повторили атаку на пункт f7!');
             saveStars(2, 3);
             return;
           } else {
