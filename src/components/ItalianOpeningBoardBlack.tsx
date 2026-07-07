@@ -947,6 +947,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
         }
       } else if (exercise === 5) {
         // Exercise 5: Пешечный штурм — hints BEFORE each black move
+        // After d6: white plays Nc3, then black plays Nf6
         if (blackMoves === 0) {
           if (from === 'e7' && to === 'e5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
@@ -1002,7 +1003,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             setBlackMoves(nextBlackMoves);
             setTimeout(() => {
               if (!mountedRef.current) return;
-              g.move({ from: 'h2', to: 'h3' });
+              g.move({ from: 'b1', to: 'c3' }); // Nc3
               setGame(new Chess(g.fen()));
             }, 1000);
             return;
@@ -1012,6 +1013,22 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
           }
         }
         if (blackMoves === 4) {
+          if (from === 'g8' && to === 'f6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setBlackMoves(nextBlackMoves);
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'h2', to: 'h3' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithWhiteCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (blackMoves === 5) {
           if (from === 'h7' && to === 'h6' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1027,7 +1044,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 5) {
+        if (blackMoves === 6) {
           if (from === 'g7' && to === 'g5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1043,7 +1060,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 6) {
+        if (blackMoves === 7) {
           if (from === 'g5' && to === 'g4' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1059,7 +1076,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 7) {
+        if (blackMoves === 8) {
           if (from === 'g4' && to === 'g3' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1075,7 +1092,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 8) {
+        if (blackMoves === 9) {
           if (from === 'c5' && to === 'f2' && move.piece === 'b') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1091,7 +1108,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 9) {
+        if (blackMoves === 10) {
           if (from === 'd8' && to === 'h4' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1107,7 +1124,7 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
             return;
           }
         }
-        if (blackMoves === 10) {
+        if (blackMoves === 11) {
           if (from === 'h4' && to === 'h2' && move.piece === 'q') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
@@ -1276,13 +1293,14 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
        blackMoves === 1 ? 'Конь выходит на c6 — защищает пешку e5 и готовит развитие.' :
        blackMoves === 2 ? 'Слон выходит на c5 — классическая итальянская партия.' :
        blackMoves === 3 ? 'Пешка d6 — защищаем пешку e5.' :
-       blackMoves === 4 ? 'Пешка h6 — готовим пешечный штурм.' :
-       blackMoves === 5 ? 'g5 — начинаем пешечный штурм на королевском фланге!' :
-       blackMoves === 6 ? 'g4 — давим пешками!' :
-       blackMoves === 7 ? 'g3 — прорываемся!' :
-       blackMoves === 8 ? 'Слон забирает на f2 — вскрываем позицию!' :
-       blackMoves === 9 ? 'Ферзь h4 — готовим атаку!' :
-       blackMoves === 10 ? 'Ферзь забирает на h2 — мат!' :
+       blackMoves === 4 ? 'Конь выходит на f6 — развиваем фигуры.' :
+       blackMoves === 5 ? 'Пешка h6 — готовим пешечный штурм.' :
+       blackMoves === 6 ? 'g5 — начинаем пешечный штурм на королевском фланге!' :
+       blackMoves === 7 ? 'g4 — давим пешками!' :
+       blackMoves === 8 ? 'g3 — прорываемся!' :
+       blackMoves === 9 ? 'Слон забирает на f2 — вскрываем позицию!' :
+       blackMoves === 10 ? 'Ферзь h4 — готовим атаку!' :
+       blackMoves === 11 ? 'Ферзь забирает на h2 — мат!' :
        'Смотрите, как завершается партия.')
     : '';
 
