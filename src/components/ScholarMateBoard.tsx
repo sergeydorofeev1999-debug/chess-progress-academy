@@ -7,12 +7,13 @@ import { RotateCcw, Trophy } from 'lucide-react';
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
+const REVERSED_DISPLAY_RANKS = ['1','2','3','4','5','6','7','8'];
 
 const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_5 = 'rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 0 3';
+const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
 const START_FEN_6 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_7 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -196,18 +197,38 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
       if (exercise === 5) {
         // Exercise 5: Защита от детского мата — ученик играет за чёрных
-        if (g.turn() === 'w') return; // игнорируем ходы белых (они уже сделаны)
-        if (from === 'g8' && to === 'f6' && move.piece === 'n') {
-          setGame(new Chess(g.fen()));
-          setSelectedSquare(null);
-          setWhiteMoves(nextWhiteMoves);
-          setIsComplete(true);
-          setMessage('Отлично! Конь на f6 защищает пункт h5 — белые больше не могут поставить детский мат через Qh5. Детский мат отражён!');
-          saveStars(5, 3);
-          return;
-        } else {
-          handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-          return;
+        // После g.move() чёрных очередь белых (g.turn() === 'w')
+        if (g.turn() !== 'w') return; // не чёрный ход — игнорируем
+        if (whiteMoves === 0) {
+          if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Белые вывели слона на c4 — теперь сыграйте конём на f6!');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f1', to: 'c4' });
+              setGame(new Chess(g.fen()));
+            }, 1000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 1) {
+          if (from === 'g8' && to === 'f6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setIsComplete(true);
+            setMessage('Отлично! Конь на f6 защищает пункт h5 — белые больше не могут поставить детский мат через Qh5. Детский мат отражён!');
+            saveStars(5, 3);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
         }
       }
 
@@ -689,7 +710,7 @@ const handleSquareClick = useCallback((square: string) => {
               touchAction: 'none',
             }}
           >
-            {DISPLAY_RANKS.map((rank, ri) => (
+            {(exercise === 5 ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) => (
               FILES.map((file, fi) => {
                 const sq = `${file}${rank}`;
                 const pieceObj = getPieceAt(sq);
@@ -706,7 +727,7 @@ const handleSquareClick = useCallback((square: string) => {
                     style={{
                       width: sqSize,
                       height: sqSize,
-                      cursor: pieceObj && pieceObj.color === 'w' && !isFail && !isComplete ? 'grab' : 'default',
+                      cursor: pieceObj && (exercise === 5 ? pieceObj.color === 'b' : pieceObj.color === 'w') && !isFail && !isComplete ? 'grab' : 'default',
                       touchAction: 'none',
                       backgroundColor: light ? '#f0d9b5' : '#b58863',
                       opacity: isDragSource ? 0.3 : 1,
@@ -718,12 +739,12 @@ const handleSquareClick = useCallback((square: string) => {
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
-                    {fi === 0 && (
+                    {(exercise === 5 ? fi === 7 : fi === 0) && (
                       <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {rank}
                       </span>
                     )}
-                    {ri === 7 && (
+                    {(exercise === 5 ? ri === 0 : ri === 7) && (
                       <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {file}
                       </span>
