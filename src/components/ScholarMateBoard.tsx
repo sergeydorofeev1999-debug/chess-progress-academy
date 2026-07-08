@@ -5,6 +5,7 @@ import { Chess } from 'chess.js';
 import { RotateCcw, Trophy } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
+const REVERSED_FILES = ['h','g','f','e','d','c','b','a'];
 const RANKS = ['8','7','6','5','4','3','2','1'];
 const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
 const REVERSED_DISPLAY_RANKS = ['1','2','3','4','5','6','7','8'];
@@ -711,8 +712,8 @@ const handleSquareClick = useCallback((square: string) => {
             }}
           >
             {(exercise === 5 ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) => (
-              FILES.map((file, fi) => {
-                const sq = `${file}${rank}`;
+              (exercise === 5 ? REVERSED_FILES : FILES).map((file, fi) => {
+                const sq = `${exercise === 5 ? FILES[fi] : file}${rank}`;
                 const pieceObj = getPieceAt(sq);
                 const light = isLight(fi, ri);
                 const sel = selectedSquare === sq;
