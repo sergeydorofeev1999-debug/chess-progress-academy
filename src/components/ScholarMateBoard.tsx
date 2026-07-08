@@ -796,7 +796,7 @@ const handleSquareClick = useCallback((square: string) => {
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
                     {(exercise === 5 || exercise === 6 ? fi === 7 : fi === 0) && (
-                      <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                      <span className={`absolute top-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {rank}
                       </span>
                     )}
