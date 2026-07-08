@@ -106,7 +106,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -174,7 +174,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_6;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : START_FEN_7;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -184,7 +184,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     autoStartedRef.current = false;
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -192,9 +192,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_6;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : START_FEN_7;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -282,6 +282,65 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+      }
+
+      if (exercise === 7) {
+        // Exercise 7: Авто-воспроизведение партии с подсказками перед ходами чёрных
+        if (g.turn() !== 'w') return;
+        if (whiteMoves === 0) {
+          if (from === 'e2' && to === 'e4' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Чёрные играют e5, развивая центр и контролируя пункт d4 и f4.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'e7', to: 'e5' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          }
+        }
+        if (whiteMoves === 1) {
+          if (from === 'd1' && to === 'h5' && move.piece === 'q') {
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Конь c6 защищает пешку e5 и развивает лёгкую фигуру.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'b8', to: 'c6' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          }
+        }
+        if (whiteMoves === 2) {
+          if (from === 'f1' && to === 'c4' && move.piece === 'b') {
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('g6 — защита от шаха по диагонали a2-g8, пешка открывает слона.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g7', to: 'g6' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          }
+        }
+        if (whiteMoves === 3) {
+          if (from === 'h5' && to === 'f3' && move.piece === 'q') {
+            setGame(new Chess(g.fen()));
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Конь f6 защищает пункт h5 и развивает фигуру — детский мат отражён!');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'g8', to: 'f6' });
+              setGame(new Chess(g.fen()));
+              setIsComplete(true);
+              saveStars(7, 3);
+            }, 2000);
             return;
           }
         }
@@ -677,15 +736,15 @@ const handleSquareClick = useCallback((square: string) => {
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:grid grid-cols-6 gap-1 rounded p-1 border border-gray-200">
-          {[1, 2, 3, 4, 5, 6].map((num) => {
+        <div className="hidden lg:grid grid-cols-7 gap-1 rounded p-1 border border-gray-200">
+          {[1, 2, 3, 4, 5, 6, 7].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6)}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -859,7 +918,8 @@ const handleSquareClick = useCallback((square: string) => {
           exercise === 3 ? 'Сыграйте детский мат через Qf3: e4, Bc4, Qf3, Qxf7#' :
           exercise === 4 ? 'Самостоятельно: e4, Bc4/Qf3 в любом порядке, Qxf7#' :
           exercise === 5 ? 'Защита от детского мата: сыграйте Nf6 и отражите атаку!' :
-          exercise === 6 ? 'Самостоятельно: сыграйте e5, Nf6 — защититесь от детского мата!' : ''}
+          exercise === 6 ? 'Самостоятельно: сыграйте e5, Nf6 — защититесь от детского мата!' :
+          exercise === 7 ? 'Отработка: e4, Qh5, Bc4, Qf3 — посмотрите защиту чёрных!' : ''}
           </p>
         </div>
 
@@ -896,15 +956,15 @@ const handleSquareClick = useCallback((square: string) => {
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise < 6 && (
+            {exercise < 7 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
                 Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 6 && (exerciseStars[6] || 0) >= 3 && (
+            {exercise === 7 && (exerciseStars[7] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
