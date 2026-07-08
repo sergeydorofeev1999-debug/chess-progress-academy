@@ -578,11 +578,11 @@ const handleSquareClick = useCallback((square: string) => {
         return;
       }
       processWhiteMove(selectedSquare, square);
-      if (piece && piece.color === 'w') {
+      if (piece && ((exercise === 5 || exercise === 6) ? piece.color === 'b' : piece.color === 'w')) {
         setSelectedSquare(square);
       }
     } else {
-      if (piece && piece.color === 'w') {
+      if (piece && ((exercise === 5 || exercise === 6) ? piece.color === 'b' : piece.color === 'w')) {
         setSelectedSquare(square);
       }
     }
@@ -595,8 +595,8 @@ const handleSquareClick = useCallback((square: string) => {
     if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6) return;
     const piece = g.get(square as any);
     if (!piece) return;
-    if (exercise === 5 && piece.color !== 'b') return;
-    if (exercise !== 5 && piece.color !== 'w') return;
+    if ((exercise === 5 || exercise === 6) && piece.color !== 'b') return;
+    if (exercise !== 5 && exercise !== 6 && piece.color !== 'w') return;
     if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
     pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
   }, [game, exercise]);
