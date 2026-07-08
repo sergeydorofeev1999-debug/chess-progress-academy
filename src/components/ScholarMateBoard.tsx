@@ -713,7 +713,7 @@ const handleSquareClick = useCallback((square: string) => {
           >
             {(exercise === 5 ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) => (
               (exercise === 5 ? REVERSED_FILES : FILES).map((file, fi) => {
-                const sq = `${exercise === 5 ? FILES[fi] : file}${rank}`;
+                const sq = `${file}${rank}`;
                 const pieceObj = getPieceAt(sq);
                 const light = isLight(fi, ri);
                 const sel = selectedSquare === sq;
