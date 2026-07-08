@@ -290,14 +290,10 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
           // Check we don't repeat the same move
           if (whiteMoves === 2) {
-            const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
-            const alreadyHasQh5 = !!g.get('h5') && g.get('h5')?.type === 'q' && g.get('h5')?.color === 'w';
-
-            if (isBc4 && alreadyHasBc4) {
-              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-              return;
-            }
-            if (isQh5 && alreadyHasQh5) {
+            const devCount =
+              (!!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w' ? 1 : 0) +
+              (!!g.get('h5') && g.get('h5')?.type === 'q' && g.get('h5')?.color === 'w' ? 1 : 0);
+            if (devCount !== 2) {
               handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
               return;
             }
@@ -426,16 +422,12 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             return;
           }
 
-          // На ходе 2 проверяем, что не повторяем уже сделанный ход
+          // На ходе 2 проверяем, что обе развивающие фигуры на местах
           if (whiteMoves === 2) {
-            const alreadyHasBc4 = !!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w';
-            const alreadyHasQf3 = !!g.get('f3') && g.get('f3')?.type === 'q' && g.get('f3')?.color === 'w';
-
-            if (isBc4 && alreadyHasBc4) {
-              handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
-              return;
-            }
-            if (isQf3 && alreadyHasQf3) {
+            const devCount =
+              (!!g.get('c4') && g.get('c4')?.type === 'b' && g.get('c4')?.color === 'w' ? 1 : 0) +
+              (!!g.get('f3') && g.get('f3')?.type === 'q' && g.get('f3')?.color === 'w' ? 1 : 0);
+            if (devCount !== 2) {
               handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
               return;
             }
