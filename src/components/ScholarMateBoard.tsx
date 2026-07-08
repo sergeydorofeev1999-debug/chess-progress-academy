@@ -119,6 +119,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const isCompleteRef = useRef(false);
   const isFailRef = useRef(false);
   const mountedRef = useRef(true);
+  const autoStartedRef = useRef(false);
 
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
@@ -142,6 +143,22 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-start: white plays e4 on init for exercise 5 and 6
+  useEffect(() => {
+    if (!game) return;
+    if (exercise !== 5 && exercise !== 6) return;
+    if (autoStartedRef.current) return;
+    if (game.turn() === 'w' && whiteMoves === 0) {
+      autoStartedRef.current = true;
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        const g = game;
+        g.move({ from: 'e2', to: 'e4' });
+        setGame(new Chess(g.fen()));
+      }, 1000);
+    }
+  }, [game, exercise, whiteMoves]);
+
   useEffect(() => {
     const update = () => {
       const isMobile = window.innerWidth < 1024;
@@ -158,16 +175,13 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
   const reset = useCallback(() => {
     const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_6;
-    const newGame = new Chess(fen);
-    if (exercise === 5 || exercise === 6) {
-      newGame.move({ from: 'e2', to: 'e4' });
-    }
-    setGame(newGame);
+    setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
+    autoStartedRef.current = false;
   }, [exercise]);
 
   const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6, stars: number) => {
@@ -181,16 +195,13 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
     setExercise(num);
     const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_6;
-    const newGame = new Chess(fen);
-    if (num === 5 || num === 6) {
-      newGame.move({ from: 'e2', to: 'e4' });
-    }
-    setGame(newGame);
+    setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
+    autoStartedRef.current = false;
   }, []);
 
   const processWhiteMove = useCallback((from: string, to: string) => {
