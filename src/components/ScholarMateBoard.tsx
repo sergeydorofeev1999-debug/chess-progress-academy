@@ -14,8 +14,8 @@ const START_FEN_1 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_3 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
-const START_FEN_6 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const START_FEN_6 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_7 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 // Find a black capture that leaves the black piece safe (no white recapture)
@@ -158,7 +158,11 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
 
   const reset = useCallback(() => {
     const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : START_FEN_6;
-    setGame(new Chess(fen));
+    const newGame = new Chess(fen);
+    if (exercise === 5 || exercise === 6) {
+      newGame.move({ from: 'e2', to: 'e4' });
+    }
+    setGame(newGame);
     setSelectedSquare(null);
     setMessage('');
     setIsFail(false);
@@ -177,7 +181,11 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6) => {
     setExercise(num);
     const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : START_FEN_6;
-    setGame(new Chess(fen));
+    const newGame = new Chess(fen);
+    if (num === 5 || num === 6) {
+      newGame.move({ from: 'e2', to: 'e4' });
+    }
+    setGame(newGame);
     setSelectedSquare(null);
     setMessage('');
     setIsFail(false);
@@ -781,7 +789,7 @@ const handleSquareClick = useCallback((square: string) => {
                         {rank}
                       </span>
                     )}
-                    {(exercise === 5 || exercise === 6 ? ri === 0 : ri === 7) && (
+                    {ri === 7 && (
                       <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {file}
                       </span>
