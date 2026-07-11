@@ -699,11 +699,6 @@ function InlineChessBoard({
         )}
         {guideArrows.length > 0 && !selectedSquare && !dragPiece && (
           <svg className="absolute inset-0 pointer-events-none z-30" style={{ width: 8 * sqSize, height: 8 * sqSize }} viewBox={`0 0 ${8 * sqSize} ${8 * sqSize}`}>
-            <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                <polygon points="0 0, 10 3.5, 0 7" fill="rgba(93, 144, 64, 0.45)" />
-              </marker>
-            </defs>
             {guideArrows.map((arrow, i) => {
               const fromF = FILES.indexOf(arrow.from[0]);
               const fromR = RANKS.indexOf(arrow.from[1]);
@@ -713,21 +708,14 @@ function InlineChessBoard({
               const y1 = (fromR + 0.5) * sqSize;
               const x2 = (toF + 0.5) * sqSize;
               const y2 = (toR + 0.5) * sqSize;
-              // Shorten line slightly so arrowhead doesn't overlap center dot
-              const angle = Math.atan2(y2 - y1, x2 - x1);
-              const endX = x2 - Math.cos(angle) * sqSize * 0.35;
-              const endY = y2 - Math.sin(angle) * sqSize * 0.35;
               return (
-                <g key={i}>
-                  <line
-                    x1={x1} y1={y1} x2={endX} y2={endY}
-                    stroke="rgba(93, 144, 64, 0.35)"
-                    strokeWidth={Math.max(6, sqSize * 0.22)}
-                    strokeLinecap="round"
-                    markerEnd="url(#arrowhead)"
-                  />
-                  <circle cx={x2} cy={y2} r={Math.max(3, sqSize * 0.1)} fill="rgba(93, 144, 64, 0.35)" />
-                </g>
+                <line
+                  key={i}
+                  x1={x1} y1={y1} x2={x2} y2={y2}
+                  stroke="rgba(93, 144, 64, 0.55)"
+                  strokeWidth={Math.max(14, sqSize * 0.45)}
+                  strokeLinecap="round"
+                />
               );
             })}
           </svg>
