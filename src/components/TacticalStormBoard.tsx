@@ -198,6 +198,21 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const processMove = useCallback((from: string, to: string) => {
     if (!game || !currentPuzzle) return;
 
+    // Validate move first via chess.js
+    const testGame = new Chess(game.fen());
+    let move;
+    try {
+      move = testGame.move({ from, to });
+    } catch {
+      move = null;
+    }
+
+    if (!move) {
+      // Invalid move — just deselect, no penalty
+      setSelectedSquare(null);
+      return;
+    }
+
     const moveStr = `${from}${to}`;
     const expected = currentPuzzle.moves[0].replace(/[+#]/g, '');
 
