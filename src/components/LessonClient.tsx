@@ -6,31 +6,33 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { CheckCircle, ArrowLeft, ArrowRight, Star, RotateCcw, ChevronRight } from 'lucide-react';
 import { markLessonCompleteAuth } from '@/lib/data';
-import CaptureBoard from './CaptureBoard';
-import PieceValueBoard from './PieceValueBoard';
-import PawnRaceBoard from './PawnRaceBoard';
-import RookPawnBoard from './RookPawnBoard';
-import BishopPawnBoard from './BishopPawnBoard';
-import QueenPawnBoard from './QueenPawnBoard';
-import KnightPawnBoard from './KnightPawnBoard';
-import ChessFootballBoard from './ChessFootballBoard';
-import TwoRooksMateBoard from './TwoRooksMateBoard';
-import QueenMateBoard from './QueenMateBoard';
-import RookMateBoard from './RookMateBoard';
-import ForkBoard from './ForkBoard'; // v4: star progress tracking
-import PinBoard from './PinBoard';
-import DiscoveredAttackBoard from './DiscoveredAttackBoard';
-import MixedTacticsBoard from './MixedTacticsBoard';
-import ItalianOpeningBoard from './ItalianOpeningBoard';
-import ItalianOpeningBoardBlack from './ItalianOpeningBoardBlack';
-import ScholarMateBoard from './ScholarMateBoard';
-import MateInOneBoard from './MateInOneBoard';
-import MateInTwoBoard from './MateInTwoBoard';
-import DefendMateBoard from './DefendMateBoard';
-import SquareRuleBoard from './SquareRuleBoard';
-import CoordinateTrainingBoard from './CoordinateTrainingBoard';
-import ComputerPlayBoard from './ComputerPlayBoard';
-import TacticalStormBoard from './TacticalStormBoard';
+import dynamic from 'next/dynamic';
+
+const CaptureBoard = dynamic(() => import('./CaptureBoard'), { ssr: false });
+const PieceValueBoard = dynamic(() => import('./PieceValueBoard'), { ssr: false });
+const PawnRaceBoard = dynamic(() => import('./PawnRaceBoard'), { ssr: false });
+const RookPawnBoard = dynamic(() => import('./RookPawnBoard'), { ssr: false });
+const BishopPawnBoard = dynamic(() => import('./BishopPawnBoard'), { ssr: false });
+const QueenPawnBoard = dynamic(() => import('./QueenPawnBoard'), { ssr: false });
+const KnightPawnBoard = dynamic(() => import('./KnightPawnBoard'), { ssr: false });
+const ChessFootballBoard = dynamic(() => import('./ChessFootballBoard'), { ssr: false });
+const TwoRooksMateBoard = dynamic(() => import('./TwoRooksMateBoard'), { ssr: false });
+const QueenMateBoard = dynamic(() => import('./QueenMateBoard'), { ssr: false });
+const RookMateBoard = dynamic(() => import('./RookMateBoard'), { ssr: false });
+const ForkBoard = dynamic(() => import('./ForkBoard'), { ssr: false });
+const PinBoard = dynamic(() => import('./PinBoard'), { ssr: false });
+const DiscoveredAttackBoard = dynamic(() => import('./DiscoveredAttackBoard'), { ssr: false });
+const MixedTacticsBoard = dynamic(() => import('./MixedTacticsBoard'), { ssr: false });
+const ItalianOpeningBoard = dynamic(() => import('./ItalianOpeningBoard'), { ssr: false });
+const ItalianOpeningBoardBlack = dynamic(() => import('./ItalianOpeningBoardBlack'), { ssr: false });
+const ScholarMateBoard = dynamic(() => import('./ScholarMateBoard'), { ssr: false });
+const MateInOneBoard = dynamic(() => import('./MateInOneBoard'), { ssr: false });
+const MateInTwoBoard = dynamic(() => import('./MateInTwoBoard'), { ssr: false });
+const DefendMateBoard = dynamic(() => import('./DefendMateBoard'), { ssr: false });
+const SquareRuleBoard = dynamic(() => import('./SquareRuleBoard'), { ssr: false });
+const CoordinateTrainingBoard = dynamic(() => import('./CoordinateTrainingBoard'), { ssr: false });
+const ComputerPlayBoard = dynamic(() => import('./ComputerPlayBoard'), { ssr: false });
+const TacticalStormBoard = dynamic(() => import('./TacticalStormBoard'), { ssr: false });
 
 interface Lesson {
   id: string;
@@ -1438,196 +1440,112 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
 
       {/* Interactive Lesson */}
       {interactiveConfig ? (
-        interactiveConfig.type === 'interactive_capture' ? (
-          <div className="mb-8">
-            <CaptureBoard
-              lessonId={lesson.id}
-              levels={interactiveConfig.levels || []}
-              successMessage={interactiveConfig.successMessage || 'Молодец!'}
-              onAllComplete={handleInteractiveComplete}
-              onLevelComplete={handleLevelComplete}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_piece_value' ? (
-          <div className="mb-8">
-            <PieceValueBoard
-              onComplete={handleInteractiveComplete}
-              onLevelComplete={handleLevelComplete}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_pawn_race' ? (
-          <div className="mb-8">
-            <PawnRaceBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_rook_pawn' ? (
-          <div className="mb-8">
-            <RookPawnBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_bishop_pawn' ? (
-          <div className="mb-8">
-            <BishopPawnBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_queen_pawn' ? (
-          <div className="mb-8">
-            <QueenPawnBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_knight_pawn' ? (
-          <div className="mb-8">
-            <KnightPawnBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_chess_football' ? (
-          <div className="mb-8">
-            <ChessFootballBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_two_rooks_mate' ? (
-          <div className="mb-8">
-            <TwoRooksMateBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_queen_mate' ? (
-          <div className="mb-8">
-            <QueenMateBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_rook_mate' ? (
-          <div className="mb-8">
-            <RookMateBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_fork' ? (
-          <div className="mb-8">
-            <ForkBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_pin' ? (
-          <div className="mb-8">
-            <PinBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_discovered_attack' ? (
-          <div className="mb-8">
-            <DiscoveredAttackBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_mixed_tactics' ? (
-          <div className="mb-8">
-            <MixedTacticsBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_italian_opening' ? (
-          <div className="mb-8">
-            <ItalianOpeningBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_italian_opening_black' ? (
-          <div className="mb-8">
-            <ItalianOpeningBoardBlack
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_scholar_mate' ? (
-          <div className="mb-8">
-            <ScholarMateBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_mate_in_one' ? (
-          <div className="mb-8">
-            <MateInOneBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_mate_in_two' ? (
-          <div className="mb-8">
-            <MateInTwoBoard
-              onComplete={handleInteractiveComplete}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_defend_mate' ? (
-          <div className="mb-8">
-            <DefendMateBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_square_rule' ? (
-          <div className="mb-8">
-            <SquareRuleBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_coordinate_training' ? (
-          <div className="mb-8">
-            <CoordinateTrainingBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_computer_play' ? (
-          <div className="mb-8">
-            <ComputerPlayBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : interactiveConfig.type === 'interactive_tactical_storm' ? (
-          <div className="mb-8">
-            <TacticalStormBoard
-              onComplete={handleInteractiveComplete}
-              lessonId={lesson.id}
-            />
-          </div>
-        ) : (
-          <div className="mb-8">
-            <MultiLevelStarBoard
-              config={interactiveConfig}
-              onAllComplete={handleInteractiveComplete}
-              onLevelComplete={handleLevelComplete}
-              nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
-              allLessons={allLessons}
-              courseId={courseId}
-              currentLessonId={lesson.id}
-            />
-          </div>
-        )
+        <div className="mb-8">
+          {(() => {
+            const type = interactiveConfig.type;
+            if (type === 'interactive_capture') {
+              return (
+                <CaptureBoard
+                  lessonId={lesson.id}
+                  levels={interactiveConfig.levels || []}
+                  successMessage={interactiveConfig.successMessage || 'Молодец!'}
+                  onAllComplete={handleInteractiveComplete}
+                  onLevelComplete={handleLevelComplete}
+                />
+              );
+            }
+            if (type === 'interactive_piece_value') {
+              return (
+                <PieceValueBoard
+                  onComplete={handleInteractiveComplete}
+                  onLevelComplete={handleLevelComplete}
+                />
+              );
+            }
+            if (type === 'interactive_mate_in_two') {
+              return <MateInTwoBoard onComplete={handleInteractiveComplete} />;
+            }
+            if (type === 'interactive_pawn_race') {
+              return <PawnRaceBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_rook_pawn') {
+              return <RookPawnBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_bishop_pawn') {
+              return <BishopPawnBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_queen_pawn') {
+              return <QueenPawnBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_knight_pawn') {
+              return <KnightPawnBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_chess_football') {
+              return <ChessFootballBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_two_rooks_mate') {
+              return <TwoRooksMateBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_queen_mate') {
+              return <QueenMateBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_rook_mate') {
+              return <RookMateBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_fork') {
+              return <ForkBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_pin') {
+              return <PinBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_discovered_attack') {
+              return <DiscoveredAttackBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_mixed_tactics') {
+              return <MixedTacticsBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_italian_opening') {
+              return <ItalianOpeningBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_italian_opening_black') {
+              return <ItalianOpeningBoardBlack onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_scholar_mate') {
+              return <ScholarMateBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_mate_in_one') {
+              return <MateInOneBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_defend_mate') {
+              return <DefendMateBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_square_rule') {
+              return <SquareRuleBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_coordinate_training') {
+              return <CoordinateTrainingBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_computer_play') {
+              return <ComputerPlayBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            if (type === 'interactive_tactical_storm') {
+              return <TacticalStormBoard onComplete={handleInteractiveComplete} lessonId={lesson.id} />;
+            }
+            // Unknown type: warn and fallback
+            console.warn('Unknown interactive type:', type);
+            return (
+              <MultiLevelStarBoard
+                config={interactiveConfig}
+                onAllComplete={handleInteractiveComplete}
+                onLevelComplete={handleLevelComplete}
+                nextLessonUrl={nextLesson ? `/lessons/${nextLesson.id}?course=${courseId}` : undefined}
+                allLessons={allLessons}
+                courseId={courseId}
+                currentLessonId={lesson.id}
+              />
+            );
+          })()}
+        </div>
       ) : (
         /* Regular video placeholder */
         <div className="bg-slate-900 rounded-xl aspect-video flex items-center justify-center mb-6">

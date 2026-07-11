@@ -10,3 +10,8 @@ dist/
 .env*
 extract-puzzles.js
 gen-puzzles.js
+*.bak
+*.bak2
+*.v2
+*.tsbuildinfo
+/1
