@@ -5,7 +5,9 @@ import { Chess } from 'chess.js';
 import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, SkipForward } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
-const RANKS   = ['8','7','6','5','4','3','2','1'];
+const REVERSED_FILES = ['h','g','f','e','d','c','b','a'];
+const DISPLAY_RANKS = ['8','7','6','5','4','3','2','1'];
+const REVERSED_DISPLAY_RANKS = ['1','2','3','4','5','6','7','8'];
 const LIGHT_SQ = '#f0d9b5';
 const DARK_SQ  = '#b58863';
 
@@ -63,6 +65,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [skips, setSkips] = useState(3);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'none' | 'correct' | 'wrong'>('none');
+
+  const [isBlack, setIsBlack] = useState(false);
 
   const [game, setGame] = useState<Chess | null>(null);
   const [currentPuzzle, setCurrentPuzzle] = useState<Puzzle | null>(null);
@@ -122,7 +126,9 @@ export default function TacticalStormBoard({ onComplete }: Props) {
 
     const first = pickPuzzle(0);
     setCurrentPuzzle(first);
-    setGame(new Chess(first.fen));
+    const g = new Chess(first.fen);
+    setIsBlack(g.turn() === 'b');
+    setGame(g);
     setSelectedSquare(null);
     setDragPiece(null);
     setPhase('playing');
@@ -174,7 +180,9 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setPuzzleIndex(idx);
     const next = pickPuzzle(idx);
     setCurrentPuzzle(next);
-    setGame(new Chess(next.fen));
+    const ng = new Chess(next.fen);
+    setIsBlack(ng.turn() === 'b');
+    setGame(ng);
     setSelectedSquare(null);
     setDragPiece(null);
 
@@ -488,11 +496,11 @@ export default function TacticalStormBoard({ onComplete }: Props) {
             touchAction: 'none',
           }}
         >
-          {RANKS.map((rank, ri) =>
-            FILES.map((file, fi) => {
+          {(isBlack ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) =>
+            (isBlack ? REVERSED_FILES : FILES).map((file, fi) => {
               const sq = `${file}${rank}`;
               const pieceObj = getPieceAt(sq);
-              const light = isLight(fi, ri);
+              const light = isLight(isBlack ? 7-fi : fi, isBlack ? 7-ri : ri);
               const sel = selectedSquare === sq || dragPiece?.square === sq;
               const isValidMove = validMoves.includes(sq);
               const isDragSource = dragPiece?.square === sq;
