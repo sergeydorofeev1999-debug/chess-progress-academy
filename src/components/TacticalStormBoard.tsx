@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Chess } from 'chess.js';
-import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, ChevronRight, Flame, SkipForward } from 'lucide-react';
+import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, SkipForward } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const RANKS   = ['8','7','6','5','4','3','2','1'];
@@ -10,18 +10,14 @@ const LIGHT_SQ = '#f0d9b5';
 const DARK_SQ  = '#b58863';
 
 /* ═══ Piece image (cburnett SVGs) ═══ */
-function PieceImg({ type, color, size }: { type: string; color: 'w' | 'b'; size: number }) {
+function PieceImg({ type, color, size }: { type: string; color: 'w' | 'b'; size?: number }) {
   const pieceKey = `${color}${type.toUpperCase()}`;
   return (
     <img
       src={`/pieces/cburnett/${pieceKey}.svg`}
       alt=""
       draggable={false}
-      style={{
-        width: Math.round(size * 0.85),
-        height: Math.round(size * 0.85),
-        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
-      }}
+      style={size ? { width: size, height: size, filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' } : { filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}
     />
   );
 }
@@ -42,6 +38,20 @@ interface Props {
 type Phase = 'settings' | 'playing' | 'result';
 type Mode = 'rush5' | 'rush3' | 'survival';
 
+interface DragState {
+  square: string;
+  type: string;
+  color: 'w' | 'b';
+}
+
+interface PointerStart {
+  x: number;
+  y: number;
+  square: string;
+  moved: boolean;
+  pointerId: number;
+}
+
 /* ═══ Component ═══ */
 export default function TacticalStormBoard({ onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>('settings');
@@ -59,8 +69,11 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [puzzleIndex, setPuzzleIndex] = useState(0);
 
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
-  const [validMoves, setValidMoves] = useState<string[]>([]);
   const [sqSize, setSqSize] = useState(56);
+
+  const [dragPiece, setDragPiece] = useState<DragState | null>(null);
+  const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const pointerStartRef = useRef<PointerStart | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const puzzleListRef = useRef<Puzzle[]>([]);
@@ -111,7 +124,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setCurrentPuzzle(first);
     setGame(new Chess(first.fen));
     setSelectedSquare(null);
-    setValidMoves([]);
+    setDragPiece(null);
     setPhase('playing');
 
     if (timerRef.current) clearInterval(timerRef.current);
@@ -141,7 +154,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       const newStreak = streak + 1;
       setStreak(newStreak);
       setBestStreak(prev => Math.max(prev, newStreak));
-      setScore(s => s + 1 + Math.floor(newStreak / 3)); // bonus every 3 streak
+      setScore(s => s + 1 + Math.floor(newStreak / 3));
       setMessage('Верно!');
       setMessageType('correct');
     } else {
@@ -149,6 +162,12 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       setScore(s => Math.max(0, s - 1));
       setMessage('Неверно!');
       setMessageType('wrong');
+      if (mode === 'survival') {
+        // End immediately in survival
+        if (timerRef.current) clearInterval(timerRef.current);
+        setPhase('result');
+        return;
+      }
     }
 
     const idx = puzzleIndex + 1;
@@ -157,13 +176,13 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setCurrentPuzzle(next);
     setGame(new Chess(next.fen));
     setSelectedSquare(null);
-    setValidMoves([]);
+    setDragPiece(null);
 
     flashTimeoutRef.current = setTimeout(() => {
       setMessage('');
       setMessageType('none');
     }, 800);
-  }, [streak, puzzleIndex, pickPuzzle]);
+  }, [streak, puzzleIndex, pickPuzzle, mode]);
 
   const handleSkip = useCallback(() => {
     if (mode !== 'survival' && skips <= 0) return;
@@ -171,7 +190,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setStreak(0);
     nextPuzzle(false);
     if (mode !== 'survival') {
-      setTimeLeft(t => Math.max(0, t - 5)); // penalty
+      setTimeLeft(t => Math.max(0, t - 5));
     }
   }, [mode, skips, nextPuzzle]);
 
@@ -189,31 +208,100 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     }
   }, [game, currentPuzzle, nextPuzzle]);
 
+  /* ─── CLICK ─── */
   const handleSquareClick = useCallback((square: string) => {
     if (!game) return;
     const piece = game.get(square as any);
 
     if (selectedSquare === square) {
       setSelectedSquare(null);
-      setValidMoves([]);
     } else if (selectedSquare) {
       processMove(selectedSquare, square);
     } else {
       if (piece && piece.color === game.turn()) {
         setSelectedSquare(square);
-        const moves = game.moves({ square: square as any, verbose: true }).map(m => m.to);
-        setValidMoves(moves);
       }
     }
   }, [game, selectedSquare, processMove]);
 
-  const isLight = (fi: number, ri: number) => (fi + ri) % 2 === 0;
+  /* ─── DRAG & DROP ─── */
+  const handlePointerDown = useCallback((e: React.PointerEvent, sq: string) => {
+    if (!game) return;
+    const piece = game.get(sq as any);
+    if (!piece || piece.color !== game.turn()) return;
+    if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
+
+    pointerStartRef.current = { x: e.clientX, y: e.clientY, square: sq, moved: false, pointerId: e.pointerId };
+  }, [game]);
+
+  useEffect(() => {
+    const handleGlobalMove = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!start.moved && (Math.abs(dx) > 20 || Math.abs(dy) > 20)) {
+        start.moved = true;
+        const piece = game?.get(start.square as any);
+        if (piece) {
+          setDragPiece({ square: start.square, type: piece.type.toUpperCase(), color: piece.color as 'w' | 'b' });
+          setSelectedSquare(null);
+        }
+      }
+      if (start.moved) {
+        setDragPos({ x: e.clientX, y: e.clientY });
+      }
+    };
+
+    const handleGlobalUp = (e: PointerEvent) => {
+      const start = pointerStartRef.current;
+      if (!start) return;
+      if (e.pointerId !== start.pointerId) return;
+      if (start.moved) {
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = el?.closest('[data-square]') as HTMLElement | null;
+        const targetSq = cell?.dataset.square || null;
+        if (targetSq && targetSq !== start.square) {
+          processMove(start.square, targetSq);
+        }
+        setDragPiece(null);
+      }
+      pointerStartRef.current = null;
+    };
+
+    const handleGlobalCancel = (e: PointerEvent) => {
+      if (pointerStartRef.current && e.pointerId === pointerStartRef.current.pointerId) {
+        setDragPiece(null);
+        pointerStartRef.current = null;
+      }
+    };
+
+    window.addEventListener('pointermove', handleGlobalMove);
+    window.addEventListener('pointerup', handleGlobalUp);
+    window.addEventListener('pointercancel', handleGlobalCancel);
+    return () => {
+      window.removeEventListener('pointermove', handleGlobalMove);
+      window.removeEventListener('pointerup', handleGlobalUp);
+      window.removeEventListener('pointercancel', handleGlobalCancel);
+    };
+  }, [game, processMove]);
+
+  /* ─── Helpers ─── */
   const getPieceAt = (sq: string) => {
     if (!game) return null;
     const p = game.get(sq as any);
     if (!p) return null;
     return { type: p.type.toUpperCase(), color: p.color as 'w' | 'b' };
   };
+
+  const isLight = (fi: number, ri: number) => (fi + ri) % 2 === 0;
+
+  const validMoves = selectedSquare && game
+    ? (game.moves({ square: selectedSquare as any, verbose: true }).map(m => m.to) as string[])
+    : dragPiece && game
+      ? (game.moves({ square: dragPiece.square as any, verbose: true }).map(m => m.to) as string[])
+      : [];
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -338,7 +426,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         </div>
         <div className="flex flex-col items-end">
           <span className="text-xs text-slate-500 uppercase">Пропуски</span>
-          <span className="text-2xl font-bold text-slate-800">{skips}</span>
+          <span className="text-2xl font-bold text-slate-800">{mode === 'survival' ? '∞' : skips}</span>
         </div>
       </div>
 
@@ -375,21 +463,24 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       )}
 
       {/* Board */}
-      <div className="flex justify-center w-full">
+      <div className="flex justify-center w-full relative">
         <div
+          data-board
           className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
           style={{
             gridTemplateColumns: `repeat(8, ${sqSize}px)`,
             gridTemplateRows: `repeat(8, ${sqSize}px)`,
+            touchAction: 'none',
           }}
         >
           {RANKS.map((rank, ri) =>
             FILES.map((file, fi) => {
               const sq = `${file}${rank}`;
-              const piece = getPieceAt(sq);
+              const pieceObj = getPieceAt(sq);
               const light = isLight(fi, ri);
-              const isSelected = selectedSquare === sq;
-              const isValidTarget = validMoves.includes(sq);
+              const sel = selectedSquare === sq || dragPiece?.square === sq;
+              const isValidMove = validMoves.includes(sq);
+              const isDragSource = dragPiece?.square === sq;
 
               return (
                 <div
@@ -399,17 +490,20 @@ export default function TacticalStormBoard({ onComplete }: Props) {
                   style={{
                     width: sqSize,
                     height: sqSize,
-                    backgroundColor: isSelected
-                      ? 'rgba(234,179,8,0.55)'
-                      : isValidTarget
-                        ? 'rgba(34,197,94,0.35)'
-                        : light
-                          ? LIGHT_SQ
-                          : DARK_SQ,
-                    cursor: 'pointer',
+                    cursor: pieceObj && pieceObj.color === game?.turn() ? 'grab' : 'default',
+                    touchAction: 'none',
+                    backgroundColor: light ? LIGHT_SQ : DARK_SQ,
+                    opacity: isDragSource ? 0.3 : 1,
                   }}
                   onClick={() => handleSquareClick(sq)}
+                  onPointerDown={(e) => handlePointerDown(e, sq)}
+                  onDragStart={(e) => e.preventDefault()}
                 >
+                  {/* Selection highlight */}
+                  {sel && (
+                    <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
+                  )}
+
                   {/* Coordinates */}
                   {fi === 0 && (
                     <span className={`absolute top-0.5 left-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{rank}</span>
@@ -418,10 +512,25 @@ export default function TacticalStormBoard({ onComplete }: Props) {
                     <span className={`absolute bottom-0.5 right-1 text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>{file}</span>
                   )}
 
+                  {/* Valid move indicator */}
+                  {isValidMove && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                      <div
+                        style={{
+                          width: Math.round(sqSize * 0.3),
+                          height: Math.round(sqSize * 0.3),
+                          backgroundColor: pieceObj ? '#c41e3a' : '#5d9040',
+                          borderRadius: pieceObj ? '4px' : '50%',
+                          opacity: 0.85,
+                        }}
+                      />
+                    </div>
+                  )}
+
                   {/* Piece */}
-                  {piece && (
-                    <div className="relative pointer-events-none z-10">
-                      <PieceImg type={piece.type} color={piece.color} size={sqSize} />
+                  {pieceObj && !isDragSource && (
+                    <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <PieceImg type={pieceObj.type} color={pieceObj.color} />
                     </div>
                   )}
                 </div>
@@ -429,6 +538,21 @@ export default function TacticalStormBoard({ onComplete }: Props) {
             })
           )}
         </div>
+
+        {/* Floating dragged piece */}
+        {dragPiece && (
+          <div
+            className="fixed pointer-events-none z-50"
+            style={{
+              left: dragPos.x - Math.round(sqSize * 0.425),
+              top: dragPos.y - Math.round(sqSize * 0.425),
+              width: Math.round(sqSize * 0.85),
+              height: Math.round(sqSize * 0.85),
+            }}
+          >
+            <PieceImg type={dragPiece.type} color={dragPiece.color} size={Math.round(sqSize * 0.85)} />
+          </div>
+        )}
       </div>
 
       {/* Controls */}

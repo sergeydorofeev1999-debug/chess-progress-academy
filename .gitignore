@@ -8,3 +8,5 @@ dist/
 .DS_Store
 .vercel
 .env*
+extract-puzzles.js
+gen-puzzles.js
