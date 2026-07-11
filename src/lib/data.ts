@@ -6,6 +6,27 @@ function isUUID(str: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
 
+async function assertCanManageCourse(supabase: any, userId: string, courseId: string) {
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single();
+  if (profileError) throw profileError;
+
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id, coach_id')
+    .eq('id', courseId)
+    .single();
+  if (courseError) throw courseError;
+
+  if (profile?.role === 'admin') return;
+  if (profile?.role === 'coach' && course?.coach_id === userId) return;
+
+  throw new Error('Unauthorized');
+}
+
 export async function getCourses() {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -119,12 +140,72 @@ export async function getUserProgress(courseId: string) {
   return data || [];
 }
 
+/** Batch-fetch course progress for dashboard — replaces N+1 per-course calls. */
+export async function getCurrentUserCourseProgress(courseIds: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  if (courseIds.length === 0) return {};
+
+  const { data: lessons, error: lessonsError } = await supabase
+    .from('lessons')
+    .select('id, course_id')
+    .in('course_id', courseIds);
+  if (lessonsError) throw lessonsError;
+
+  const progressPerCourse: Record<string, { completed: number; total: number }> = {};
+  courseIds.forEach(courseId => {
+    progressPerCourse[courseId] = {
+      completed: 0,
+      total: (lessons || []).filter((l: any) => l.course_id === courseId).length,
+    };
+  });
+
+  const lessonIds = (lessons || []).map((l: any) => l.id);
+  if (lessonIds.length === 0) return progressPerCourse;
+
+  const { data: progress, error: progressError } = await supabase
+    .from('lesson_progress')
+    .select('lesson_id, is_completed')
+    .eq('user_id', user.id)
+    .in('lesson_id', lessonIds);
+  if (progressError) throw progressError;
+
+  const lessonCourseById = new Map((lessons || []).map((l: any) => [l.id, l.course_id]));
+  (progress || []).forEach((item: any) => {
+    if (!item.is_completed) return;
+    const courseId = lessonCourseById.get(item.lesson_id);
+    if (courseId && progressPerCourse[courseId]) {
+      progressPerCourse[courseId].completed += 1;
+    }
+  });
+
+  return progressPerCourse;
+}
+
 /** Auth-safe version — userId taken from session, never from client params. */
 export async function markLessonCompleteAuth(lessonId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
   const userId = user.id;
+
+  const { data: lesson, error: lessonError } = await supabase
+    .from('lessons')
+    .select('id, course_id')
+    .eq('id', lessonId)
+    .single();
+  if (lessonError) throw lessonError;
+
+  const { data: enrollment, error: enrollmentError } = await supabase
+    .from('course_enrollments')
+    .select('course_id')
+    .eq('user_id', userId)
+    .eq('course_id', lesson.course_id)
+    .maybeSingle();
+  if (enrollmentError) throw enrollmentError;
+  if (!enrollment) throw new Error('Not enrolled in this course');
 
   const { error: profileError } = await supabase
     .from('profiles')

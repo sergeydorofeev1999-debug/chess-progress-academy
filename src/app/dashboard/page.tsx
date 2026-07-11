@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getCurrentUserEnrollments, getUserProgress, getCourseLessons } from '@/lib/data';
+import { getCurrentUserEnrollments, getCurrentUserCourseProgress } from '@/lib/data';
 import { createClient } from '@/lib/supabase/server';
 import { BookOpen, CheckCircle, Clock } from 'lucide-react';
 
@@ -31,23 +31,18 @@ export default async function DashboardPage() {
     );
   }
 
-  const enrollments = await getCurrentUserEnrollments();
-  const courseIds = enrollments.map((e: any) => e.course_id);
+  let enrollments: any[] = [];
+  let progressPerCourse: Record<string, { completed: number; total: number }> = {};
+  let dashboardError: string | null = null;
 
-  // Fetch total lessons per course
-  const lessonsPerCourse: Record<string, number> = {};
-  await Promise.all(courseIds.map(async (courseId: string) => {
-    const lessons = await getCourseLessons(courseId);
-    lessonsPerCourse[courseId] = lessons.length;
-  }));
-
-  // Fetch progress per course
-  const progressPerCourse: Record<string, { completed: number; total: number }> = {};
-  await Promise.all(courseIds.map(async (courseId: string) => {
-    const progress = await getUserProgress(courseId);
-    const completed = progress.filter((p: any) => p.is_completed).length;
-    progressPerCourse[courseId] = { completed, total: lessonsPerCourse[courseId] || 0 };
-  }));
+  try {
+    enrollments = await getCurrentUserEnrollments();
+    const courseIds = enrollments.map((e: any) => e.course_id);
+    progressPerCourse = await getCurrentUserCourseProgress(courseIds);
+  } catch (error) {
+    console.error('Dashboard data error:', error);
+    dashboardError = 'Не удалось загрузить данные кабинета. Попробуйте обновить страницу.';
+  }
 
   const totalCourses = enrollments.length;
   const totalCompleted = Object.values(progressPerCourse).reduce((sum, p) => sum + p.completed, 0);
@@ -57,6 +52,12 @@ export default async function DashboardPage() {
     <div className="max-w-6xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-2">Мой кабинет</h1>
       <p className="text-slate-600 mb-8">Отслеживай свой прогресс обучения</p>
+
+      {dashboardError && (
+        <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {dashboardError}
+        </div>
+      )}
 
       {isAdmin && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
