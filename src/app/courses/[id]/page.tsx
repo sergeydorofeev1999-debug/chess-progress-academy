@@ -37,7 +37,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const prepLevelLessons = allLessons.slice(17, 23);
   const endgameLevelLessons = allLessons.slice(23, 27);
   const midegameLevelLessons = allLessons.slice(27, 31);
-  const openingLevelLessons = allLessons.slice(31);
+  const openingLevelLessons = allLessons.slice(31, 34);
+  const tasksLevelLessons = allLessons.slice(34, 37);
+  const trainingLevelLessons = allLessons.slice(37);
 
   const basicLevelDescriptions = [
     'Съешь чёрную фигуру',
@@ -215,6 +217,42 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             progressMap={serverProgressMap}
             courseId={course.id}
             descriptions={['Итальянская партия за белых']}
+          />
+        </div>
+
+        {/* ЗАДАЧИ */}
+        <div className="mb-4">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Задачи</h2>
+          <PieceCards
+            lessons={tasksLevelLessons.map((l: any, idx: number) => {
+              let levelsCount = 1;
+              try {
+                const config = JSON.parse(l.video_url || '{}');
+                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+              } catch {}
+              return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
+            })}
+            progressMap={serverProgressMap}
+            courseId={course.id}
+            descriptions={['Мат в 1 ход']}
+          />
+        </div>
+
+        {/* ТРЕНИРОВКА */}
+        <div className="mb-4">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Тренировка</h2>
+          <PieceCards
+            lessons={trainingLevelLessons.map((l: any, idx: number) => {
+              let levelsCount = 1;
+              try {
+                const config = JSON.parse(l.video_url || '{}');
+                if (config.levels && Array.isArray(config.levels)) levelsCount = config.levels.length;
+              } catch {}
+              return { id: l.id, title: l.title, order: l.order, duration_minutes: l.duration_minutes, levelsCount };
+            })}
+            progressMap={serverProgressMap}
+            courseId={course.id}
+            descriptions={['Игра против компьютера']}
           />
         </div>
       </div>

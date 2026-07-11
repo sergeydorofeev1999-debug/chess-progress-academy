@@ -24,7 +24,12 @@ import MixedTacticsBoard from './MixedTacticsBoard';
 import ItalianOpeningBoard from './ItalianOpeningBoard';
 import ItalianOpeningBoardBlack from './ItalianOpeningBoardBlack';
 import ScholarMateBoard from './ScholarMateBoard';
+import MateInOneBoard from './MateInOneBoard';
+import MateInTwoBoard from './MateInTwoBoard';
+import DefendMateBoard from './DefendMateBoard';
 import SquareRuleBoard from './SquareRuleBoard';
+import ComputerPlayBoard from './ComputerPlayBoard';
+import CoordinateTrainingBoard from './CoordinateTrainingBoard';
 
 interface Lesson {
   id: string;
@@ -1561,9 +1566,43 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
               lessonId={lesson.id}
             />
           </div>
+        ) : interactiveConfig.type === 'interactive_mate_in_one' ? (
+          <div className="mb-8">
+            <MateInOneBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_mate_in_two' ? (
+          <div className="mb-8">
+            <MateInTwoBoard
+              onComplete={handleInteractiveComplete}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_defend_mate' ? (
+          <div className="mb-8">
+            <DefendMateBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
         ) : interactiveConfig.type === 'interactive_square_rule' ? (
           <div className="mb-8">
             <SquareRuleBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_coordinate_training' ? (
+          <div className="mb-8">
+            <CoordinateTrainingBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_computer_play' ? (
+          <div className="mb-8">
+            <ComputerPlayBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />

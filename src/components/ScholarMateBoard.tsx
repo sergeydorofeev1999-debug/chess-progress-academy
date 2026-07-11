@@ -17,6 +17,7 @@ const START_FEN_4 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_5 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_6 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const START_FEN_7 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const START_FEN_8 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 // Find a black capture that leaves the black piece safe (no white recapture)
 function findSafeBlackCapture(currentGame: Chess): { from: string; to: string } | null {
@@ -106,7 +107,7 @@ interface PointerStart {
 }
 
 export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComplete: () => void; lessonId?: string }) {
-  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
+  const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -146,7 +147,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   // Auto-start: white plays e4 on init for exercise 5, 6 and 7
   useEffect(() => {
     if (!game) return;
-    if (exercise !== 5 && exercise !== 6 && exercise !== 7) return;
+    if (exercise !== 5 && exercise !== 6 && exercise !== 7 && exercise !== 8) return;
     if (autoStartedRef.current) return;
     if (game.turn() === 'w' && whiteMoves === 0) {
       autoStartedRef.current = true;
@@ -177,7 +178,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   }, []);
 
   const reset = useCallback(() => {
-    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : START_FEN_7;
+    const fen = exercise === 1 ? START_FEN_1 : exercise === 2 ? START_FEN_2 : exercise === 3 ? START_FEN_3 : exercise === 4 ? START_FEN_4 : exercise === 5 ? START_FEN_5 : exercise === 6 ? START_FEN_6 : exercise === 7 ? START_FEN_7 : START_FEN_8;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -187,7 +188,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     autoStartedRef.current = false;
   }, [exercise]);
 
-  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7, stars: number) => {
+  const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, stars: number) => {
     setExerciseStars(prev => {
       const next = { ...prev, [ex]: Math.max(prev[ex] || 0, stars) };
       try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
@@ -195,9 +196,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     });
   }, [storageKey]);
 
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7) => {
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8) => {
     setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : START_FEN_7;
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : START_FEN_8;
     setGame(new Chess(fen));
     setSelectedSquare(null);
     setMessage('');
@@ -210,7 +211,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const processWhiteMove = useCallback((from: string, to: string) => {
     if (!game) return;
     const g = game;
-    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6 && exercise !== 7) return;
+    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6 && exercise !== 7 && exercise !== 8) return;
 
     try {
       const move = g.move({ from, to });
@@ -290,14 +291,16 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
         }
       }
 
-      if (exercise === 7) {
-        // Exercise 7: Ученик играет за чёрных, белые ходят автоматически
+      if (exercise === 8) {
+        // Exercise 8: Ученик играет за чёрных самостоятельно, без подсказок до хода
+        // Подсказки появляются ПОСЛЕ ходов чёрных (жёлтая плашка)
+        if (g.turn() !== 'w') return; // не чёрный ход — игнорируем
         if (whiteMoves === 0) {
           if (from === 'e7' && to === 'e5' && move.piece === 'p') {
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
-            setMessage('Белые атакуют короля. Как защититься — развивая фигуры и создавая пешечный щит?');
+            setMessage('Отлично! Пешка захватила центр и открыла диагональ для слона.');
             setTimeout(() => {
               if (!mountedRef.current) return;
               g.move({ from: 'd1', to: 'h5' });
@@ -314,7 +317,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
-            setMessage('Слон c4 готовит опасную диагональ. Как закрыть угрозу шаха?');
+            setMessage('Отлично! Конь вышел ближе к центру и защитил пешку e5.');
             setTimeout(() => {
               if (!mountedRef.current) return;
               g.move({ from: 'f1', to: 'c4' });
@@ -331,7 +334,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setGame(new Chess(g.fen()));
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
-            setMessage('Ферзь отступил, но атака продолжается. Как защитить пункт h5?');
+            setMessage('Отлично! Пешка защитила короля от мата и напала на ферзя.');
             setTimeout(() => {
               if (!mountedRef.current) return;
               g.move({ from: 'h5', to: 'f3' });
@@ -349,7 +352,78 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setSelectedSquare(null);
             setWhiteMoves(nextWhiteMoves);
             setIsComplete(true);
-            setMessage('Отлично! Конь на f6 защищает пункт h5 — детский мат отражён!');
+            setMessage('Отлично! Конь на f6 защищает пункт f7 — детский мат отражён!');
+            saveStars(8, 3);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+      }
+
+      if (exercise === 7) {
+        // Exercise 7: Ученик играет за чёрных, белые ходят автоматически
+        // Подсказки появляются ПОСЛЕ ходов чёрных (жёлтая плашка)
+        if (g.turn() !== 'w') return;
+        if (whiteMoves === 0) {
+          if (from === 'e7' && to === 'e5' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Отлично! Пешка захватила центр и открыла диагональ для слона.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'd1', to: 'h5' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 1) {
+          if (from === 'b8' && to === 'c6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Отлично! Конь вышел ближе к центру и защитил пешку e5.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'f1', to: 'c4' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 2) {
+          if (from === 'g7' && to === 'g6' && move.piece === 'p') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setMessage('Отлично! Пешка защитила короля от мата и напала на ферзя.');
+            setTimeout(() => {
+              if (!mountedRef.current) return;
+              g.move({ from: 'h5', to: 'f3' });
+              setGame(new Chess(g.fen()));
+            }, 2000);
+            return;
+          } else {
+            handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
+            return;
+          }
+        }
+        if (whiteMoves === 3) {
+          if (from === 'g8' && to === 'f6' && move.piece === 'n') {
+            setGame(new Chess(g.fen()));
+            setSelectedSquare(null);
+            setWhiteMoves(nextWhiteMoves);
+            setIsComplete(true);
+            setMessage('Отлично! Конь на f6 защищает пункт f7 — детский мат отражён!');
             saveStars(7, 3);
             return;
           } else {
@@ -640,7 +714,7 @@ const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
     if (!game) return;
     const g = game;
-    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6) return;
+    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6 && exercise !== 7 && exercise !== 8) return;
 
     const piece = g.get(square as any);
 
@@ -650,11 +724,11 @@ const handleSquareClick = useCallback((square: string) => {
         return;
       }
       processWhiteMove(selectedSquare, square);
-      if (piece && ((exercise === 5 || exercise === 6) ? piece.color === 'b' : piece.color === 'w')) {
+      if (piece && ((exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8) ? piece.color === 'b' : piece.color === 'w')) {
         setSelectedSquare(square);
       }
     } else {
-      if (piece && ((exercise === 5 || exercise === 6) ? piece.color === 'b' : piece.color === 'w')) {
+      if (piece && ((exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8) ? piece.color === 'b' : piece.color === 'w')) {
         setSelectedSquare(square);
       }
     }
@@ -664,11 +738,11 @@ const handleSquareClick = useCallback((square: string) => {
     if (isCompleteRef.current || isFailRef.current) return;
     if (!game) return;
     const g = game;
-    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6) return;
+    if (g.turn() !== 'w' && exercise !== 5 && exercise !== 6 && exercise !== 7 && exercise !== 8) return;
     const piece = g.get(square as any);
     if (!piece) return;
-    if ((exercise === 5 || exercise === 6) && piece.color !== 'b') return;
-    if (exercise !== 5 && exercise !== 6 && piece.color !== 'w') return;
+    if ((exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8) && piece.color !== 'b') return;
+    if (exercise !== 5 && exercise !== 6 && exercise !== 7 && exercise !== 8 && piece.color !== 'w') return;
     if (e.pointerType === 'touch' && !(e as any).isPrimary) return;
     pointerStartRef.current = { x: e.clientX, y: e.clientY, square, moved: false, pointerId: e.pointerId };
   }, [game, exercise]);
@@ -749,15 +823,15 @@ const handleSquareClick = useCallback((square: string) => {
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:grid grid-cols-7 gap-1 rounded p-1 border border-gray-200">
-          {[1, 2, 3, 4, 5, 6, 7].map((num) => {
+        <div className="hidden lg:grid grid-cols-8 gap-1 rounded p-1 border border-gray-200">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
             const isDone = earnedStars > 0;
             return (
               <button
                 key={num}
-                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
+                onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)}
                 className={`flex items-center justify-center px-1 py-1 rounded transition ${
                   isCurrent
                     ? 'bg-blue-500 text-white'
@@ -821,7 +895,7 @@ const handleSquareClick = useCallback((square: string) => {
         {/* Success message */}
         {message && !isFail && (
           <div className={`px-6 py-3 rounded-xl text-center font-bold text-white ${
-            message.includes('Отлично') ? 'bg-green-500' : 'bg-yellow-500'
+            (exercise === 7 || exercise === 8) ? 'bg-yellow-500' : message.includes('Отлично') ? 'bg-green-500' : 'bg-yellow-500'
           }`}>
             {message.includes('Отлично') && <Trophy className="w-5 h-5 inline-block mr-2" />}
             {message}
@@ -838,8 +912,8 @@ const handleSquareClick = useCallback((square: string) => {
               touchAction: 'none',
             }}
           >
-            {(exercise === 5 || exercise === 6 ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) => (
-              (exercise === 5 || exercise === 6 ? REVERSED_FILES : FILES).map((file, fi) => {
+            {(exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8 ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS).map((rank, ri) => (
+              (exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8 ? REVERSED_FILES : FILES).map((file, fi) => {
                 const sq = `${file}${rank}`;
                 const pieceObj = getPieceAt(sq);
                 const light = isLight(fi, ri);
@@ -855,7 +929,7 @@ const handleSquareClick = useCallback((square: string) => {
                     style={{
                       width: sqSize,
                       height: sqSize,
-                      cursor: pieceObj && (exercise === 5 || exercise === 6 ? pieceObj.color === 'b' : pieceObj.color === 'w') && !isFail && !isComplete ? 'grab' : 'default',
+                      cursor: pieceObj && (exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8 ? pieceObj.color === 'b' : pieceObj.color === 'w') && !isFail && !isComplete ? 'grab' : 'default',
                       touchAction: 'none',
                       backgroundColor: light ? '#f0d9b5' : '#b58863',
                       opacity: isDragSource ? 0.3 : 1,
@@ -867,8 +941,8 @@ const handleSquareClick = useCallback((square: string) => {
                     {sel && (
                       <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
                     )}
-                    {(exercise === 5 || exercise === 6 ? fi === 7 : fi === 0) && (
-                      <span className={`absolute top-0.5 ${exercise === 5 || exercise === 6 ? 'right-1' : 'left-1'} text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
+                    {(exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8 ? fi === 7 : fi === 0) && (
+                      <span className={`absolute top-0.5 ${exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8 ? 'right-1' : 'left-1'} text-[10px] font-bold ${light ? 'text-[#b58863]' : 'text-[#f0d9b5]'}`}>
                         {rank}
                       </span>
                     )}
@@ -932,21 +1006,44 @@ const handleSquareClick = useCallback((square: string) => {
           exercise === 4 ? 'Самостоятельно: e4, Bc4/Qf3 в любом порядке, Qxf7#' :
           exercise === 5 ? 'Защита от детского мата: сыграйте Nf6 и отражите атаку!' :
           exercise === 6 ? 'Самостоятельно: сыграйте e5, Nf6 — защититесь от детского мата!' :
-          exercise === 7 ? 'Отработка: e4, Qh5, Bc4, Qf3 — посмотрите защиту чёрных!' : ''}
+          exercise === 7 ? 'Отработка: e4, Qh5, Bc4, Qf3 — посмотрите защиту чёрных!' :
+          exercise === 8 ? 'Самостоятельно: повторите защиту чёрных от детского мата!' : ''}
           </p>
         </div>
 
-        {/* Mobile exercise pills — 2 rows of 6 */}
+        {/* Mobile exercise pills — 2 rows of 4 */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
           <div className="flex gap-1 justify-center w-full">
-            {[1, 2, 3, 4, 5, 6].map((num) => {
+            {[1, 2, 3, 4].map((num) => {
               const earnedStars = exerciseStars[num] || 0;
               const isCurrent = num === exercise;
               const isDone = earnedStars > 0;
               return (
                 <button
                   key={num}
-                  onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6)}
+                  onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map(s => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 justify-center w-full">
+            {[5, 6, 7, 8].map((num) => {
+              const earnedStars = exerciseStars[num] || 0;
+              const isCurrent = num === exercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={num}
+                  onClick={() => switchExercise(num as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)}
                   className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
                     isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
                   } cursor-pointer`}
@@ -969,15 +1066,15 @@ const handleSquareClick = useCallback((square: string) => {
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise < 7 && (
+            {exercise < 8 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
                 Перейти к Упражнению {exercise + 1} →
               </button>
             )}
-            {exercise === 7 && (exerciseStars[7] || 0) >= 3 && (
+            {exercise === 8 && (exerciseStars[8] || 0) >= 3 && (
               <button
                 onClick={onComplete}
                 className="bg-emerald-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-emerald-600 transition"
