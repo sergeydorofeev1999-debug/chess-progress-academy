@@ -28,8 +28,9 @@ import MateInOneBoard from './MateInOneBoard';
 import MateInTwoBoard from './MateInTwoBoard';
 import DefendMateBoard from './DefendMateBoard';
 import SquareRuleBoard from './SquareRuleBoard';
-import ComputerPlayBoard from './ComputerPlayBoard';
 import CoordinateTrainingBoard from './CoordinateTrainingBoard';
+import ComputerPlayBoard from './ComputerPlayBoard';
+import TacticalStormBoard from './TacticalStormBoard';
 
 interface Lesson {
   id: string;
@@ -1603,6 +1604,13 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
         ) : interactiveConfig.type === 'interactive_computer_play' ? (
           <div className="mb-8">
             <ComputerPlayBoard
+              onComplete={handleInteractiveComplete}
+              lessonId={lesson.id}
+            />
+          </div>
+        ) : interactiveConfig.type === 'interactive_tactical_storm' ? (
+          <div className="mb-8">
+            <TacticalStormBoard
               onComplete={handleInteractiveComplete}
               lessonId={lesson.id}
             />
