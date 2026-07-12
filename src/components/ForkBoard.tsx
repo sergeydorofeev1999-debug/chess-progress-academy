@@ -143,6 +143,29 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const pointerStartRef = useRef<PointerStart | null>(null);
 
+  useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
+  useEffect(() => { isFailRef.current = isFail; }, [isFail]);
+
+  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
+    setExercise(num);
+    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
+    setGame(new Chess(fen));
+    setSelectedSquare(null);
+    setMessage('');
+    setIsFail(false);
+    setIsComplete(false);
+    setWhiteMoves(0);
+  }, []);
+
+  useEffect(() => {
+    if (isComplete && exercise < 12) {
+      const timer = setTimeout(() => {
+        switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, exercise, switchExercise]);
+
   const storageKey = lessonId ? `fork_progress_${lessonId}` : 'fork_progress';
 
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -192,17 +215,6 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
       return next;
     });
   }, [storageKey]);
-
-  const switchExercise = useCallback((num: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12) => {
-    setExercise(num);
-    const fen = num === 1 ? START_FEN_1 : num === 2 ? START_FEN_2 : num === 3 ? START_FEN_3 : num === 4 ? START_FEN_4 : num === 5 ? START_FEN_5 : num === 6 ? START_FEN_6 : num === 7 ? START_FEN_7 : num === 8 ? START_FEN_8 : num === 9 ? START_FEN_9 : num === 10 ? START_FEN_10 : num === 11 ? START_FEN_11 : START_FEN_12;
-    setGame(new Chess(fen));
-    setSelectedSquare(null);
-    setMessage('');
-    setIsFail(false);
-    setIsComplete(false);
-    setWhiteMoves(0);
-  }, []);
 
   const processWhiteMove = useCallback((from: string, to: string) => {
     if (!game) return;
@@ -538,7 +550,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
           return;
         }
       } else if (exercise === 7) {
-        // EXERCISE 7: Pawn fork from modified starting position — e4-e5 attacks Nf6 and Bd6
+        // EXERCISE 7: Pawn fork — e4-e5 attacks Nf6 and Bd6
         const isCorrectFirst = from === 'e4' && to === 'e5' && move.piece === 'p';
         const isCorrectSecond = (from === 'e5' && to === 'f6' && move.piece === 'p') || (from === 'e5' && to === 'd6' && move.piece === 'p');
 
@@ -558,7 +570,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
           setTimeout(() => {
             if (!mountedRef.current) return;
-            const blackMoves = g.moves({ verbose: true }).filter(m => m.color === 'b');
+            const blackMoves = g.moves({ verbose: true }).filter(m => m.color === 'b' && m.to !== 'e5');
             const nonQueenMoves = blackMoves.filter(m => m.piece !== 'q');
             const blackMove = nonQueenMoves.length > 0 ? nonQueenMoves[Math.floor(Math.random() * nonQueenMoves.length)] : blackMoves[Math.floor(Math.random() * blackMoves.length)];
             if (blackMove) {
@@ -990,33 +1002,6 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {exercise === 1
-            ? 'Двойной удар — поставьте шах ладьёй на d8, затем съешьте коня на b8'
-            : exercise === 2
-            ? 'Двойной удар — съешьте пешку на d5 с шахом, затем съешьте ладью на f7'
-            : exercise === 3
-            ? 'Двойной удар — поставьте шах ферзём на f7, затем съешьте ладью на h5'
-            : exercise === 4
-            ? 'Двойной удар — поставьте шах ферзём на a4, затем съешьте коня на e4'
-            : exercise === 5
-            ? 'Двойной удар — сходите ферзём на d3 или e2, затем съешьте коня на a6 или слона на e3'
-            : exercise === 6
-            ? 'Двойной удар — сходите пешкой e4-e5, затем съешьте ладью на f6'
-            : exercise === 7
-            ? 'Двойной удар — сходите пешкой e4-e5, затем съешьте коня на f6 или слона на d6'
-            : exercise === 8
-            ? 'Двойной удар — сходите конём d5-c7 с шахом, затем съешьте ладью на a8'
-            : exercise === 9
-            ? 'Двойной удар — сходите конём f5-e7 с шахом, затем съешьте ферзя на g6'
-            : exercise === 10
-            ? 'Двойной удар — сходите слоном f4-c7 с шахом, затем съешьте ферзя на b6'
-            : exercise === 11
-            ? 'Двойной удар — сходите королём f3-e4, затем съешьте ладью на d5 или слона на d4'
-            : exercise === 12
-            ? 'Двойной удар — сходите конём g6-e5, затем съешьте ладью на g4'
-            : ''}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1145,31 +1130,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1
-            ? 'Поставьте шах ладьёй на d8, а затем съешьте чёрного коня на b8.'
-            : exercise === 2
-            ? 'Съешьте пешку на d5 с шахом слоном, а затем съешьте чёрную ладью на f7.'
-            : exercise === 3
-            ? 'Поставьте шах ферзём на f7, а затем съешьте чёрную ладью на h5.'
-            : exercise === 4
-            ? 'Поставьте шах ферзём на a4, а затем съешьте чёрного коня на e4.'
-            : exercise === 5
-            ? 'Сходите ферзём на d3 или e2, а затем съешьте коня на a6 или слона на e3.'
-            : exercise === 6
-            ? 'Сходите пешкой e4-e5, а затем съешьте чёрную ладью на f6.'
-            : exercise === 7
-            ? 'Сходите пешкой e4-e5, а затем съешьте коня на f6 или слона на d6.'
-            : exercise === 8
-            ? 'Сходите конём d5-c7 с шахом, а затем съешьте ладью на a8.'
-            : exercise === 9
-            ? 'Сходите конём f5-e7 с шахом, а затем съешьте ферзя на g6.'
-            : exercise === 10
-            ? 'Сходите слоном f4-c7 с шахом, а затем съешьте ферзя на b6.'
-            : exercise === 11
-            ? 'Сходите королём f3-e4, а затем съешьте ладью на d5 или слона на d4.'
-            : exercise === 12
-            ? 'Сходите конём g6-e5, а затем съешьте ладью на g4.'
-            : ''}</p>
+          <p>Поставьте двойной удар, а затем съешьте фигуру соперника.</p>
         </div>
 
         {/* Mobile exercise nav */}
@@ -1203,9 +1164,9 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
               <Trophy className="w-6 h-6" />
               <span>Упражнение {exercise} пройдено!</span>
             </div>
-            {exercise < 9 && (
+            {exercise < 12 && (
               <button
-                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9)}
+                onClick={() => switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12)}
                 className="bg-blue-500 text-white font-bold text-base px-6 py-2 rounded shadow hover:bg-blue-600 transition"
               >
                 Перейти к Упражнению {exercise + 1} →
