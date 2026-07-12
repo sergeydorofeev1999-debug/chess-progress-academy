@@ -1202,7 +1202,8 @@ export default function CaptureBoard({
           else if (m <= max + 1) earned = 2;
           else earned = 1;
           setLevelStars((prevStars) => {
-            const nextStars = { ...prevStars, [currentLevel]: earned };
+            const prev = prevStars[currentLevel] || 0;
+            const nextStars = { ...prevStars, [currentLevel]: Math.max(prev, earned) };
             localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
             return nextStars;
           });
@@ -1301,7 +1302,8 @@ export default function CaptureBoard({
         else if (m <= max + 1) earned = 2;
         else earned = 1;
         setLevelStars((prevStars) => {
-          const nextStars = { ...prevStars, [currentLevel]: earned };
+          const prev = prevStars[currentLevel] || 0;
+          const nextStars = { ...prevStars, [currentLevel]: Math.max(prev, earned) };
           localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
           return nextStars;
         });
@@ -1351,7 +1353,8 @@ export default function CaptureBoard({
         else if (m <= max + 1) earned = 2;
         else earned = 1;
         setLevelStars((prevStars) => {
-          const nextStars = { ...prevStars, [currentLevel]: earned };
+          const prev = prevStars[currentLevel] || 0;
+          const nextStars = { ...prevStars, [currentLevel]: Math.max(prev, earned) };
           localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
           return nextStars;
         });
@@ -1384,7 +1387,8 @@ export default function CaptureBoard({
             else if (m <= max + 1) earned = 2;
             else earned = 1;
             setLevelStars((prevStars) => {
-              const nextStars = { ...prevStars, [currentLevel]: earned };
+              const prev = prevStars[currentLevel] || 0;
+              const nextStars = { ...prevStars, [currentLevel]: Math.max(prev, earned) };
               localStorage.setItem(savedKey, JSON.stringify({ levelStars: nextStars, currentLevel }));
               return nextStars;
             });
