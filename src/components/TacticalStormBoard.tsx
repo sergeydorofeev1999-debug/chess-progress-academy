@@ -106,6 +106,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const puzzleStartTimeRef = useRef(Date.now());
   const currentPuzzleRef = useRef<Puzzle | null>(null);
   const timeLeftRef = useRef(300);
+  const timerStartRef = useRef(0);
   const scoreRef = useRef(0);
 
   /* ── Resize ── */
@@ -226,14 +227,18 @@ export default function TacticalStormBoard({ onComplete }: Props) {
 
     if (timerRef.current) clearInterval(timerRef.current);
     if (mode !== 'survival') {
+      timerStartRef.current = Date.now();
+      timeLeftRef.current = totalTime;
+      setTimeLeft(totalTime);
       timerRef.current = setInterval(() => {
-        timeLeftRef.current -= 1;
+        const elapsed = Math.floor((Date.now() - timerStartRef.current) / 1000);
+        timeLeftRef.current = totalTime - elapsed;
         setTimeLeft(timeLeftRef.current);
         if (timeLeftRef.current <= 0) {
           clearInterval(timerRef.current!);
           setPhase('result');
         }
-      }, 1000);
+      }, 500); // 500ms for smoother updates after tab switch
     }
   }, [mode, pickPuzzle, loadPuzzle]);
 
