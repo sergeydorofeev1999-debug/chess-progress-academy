@@ -308,6 +308,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       setGame(ng);
       setSelectedSquare(null);
       setDragPiece(null);
+      setMoveIndex(0);
+      moveIndexRef.current = 0;
       puzzleStartTimeRef.current = Date.now();
     }, delay);
   }, [streak, puzzleIndex, pickPuzzle, mode]);
