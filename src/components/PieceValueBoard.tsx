@@ -61,7 +61,7 @@ const LEVELS: LevelConfig[] = [
   {
     id: 1,
     title: 'Уравнение 1',
-    instructions: 'Расставь фигуры так, чтобы равенство выполнялось.',
+    instructions: 'Расставь фигуры так, чтобы суммы с обеих сторон были равны.',
     pieces: [
       { id: 'rook', type: 'r', label: 'Ладья', value: 5 },
       { id: 'bishop', type: 'b', label: 'Слон', value: 3 },
