@@ -677,21 +677,6 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {exercise === 1
-            ? 'Вскрытое нападение — сходите конём с f3 на d4 (шах!), затем заберите ферзя ладьёй'
-            : exercise === 2
-            ? 'Вскрытое нападение — сходите конём с f3 на e5 (шах!), затем заберите ферзя'
-            : exercise === 3
-            ? 'Вскрытое нападение — сходите пешкой на e6, затем заберите ладью слоном'
-            : exercise === 4
-            ? 'Вскрытое нападение — сходите конём на g5 (шах!) или на f6, затем заберите ладью'
-            : exercise === 5
-            ? 'Вскрытое нападение — сходите ладьёй на f8 (шах!), затем заберите ферзя'
-            : exercise === 6
-            ? 'Вскрытое нападение — сходите ладьёй на e3, затем заберите слона'
-            : ''}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -820,19 +805,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1
-          ? 'Сходите конём на d4, чтобы открыть ладью и поставить шах. Затем заберите ферзя ладьёй.'
-          : exercise === 2
-          ? 'Сходите конём на e5, чтобы открыть ладью и поставить шах. Затем заберите ферзя конём.'
-          : exercise === 3
-          ? 'Сходите пешкой на e6, чтобы открыть слона. Затем заберите ладью на h8 слоном.'
-          : exercise === 4
-          ? 'Сходите конём на g5 (шах!) или на f6, чтобы открыть ладью. Затем заберите ладью на e7.'
-          : exercise === 5
-          ? 'Сходите ладьёй на f8, чтобы поставить шах. После того как чёрная ладья заберёт вашу, ферзь заберёт чёрного ферзя на d7.'
-          : exercise === 6
-          ? 'Сходите ладьёй на e3, чтобы атаковать слона. После того как чёрная ладья отойдёт, заберите слона.'
-          : ''}</p>
+          <p>Используйте вскрытое нападение, чтобы выиграть фигуру соперника.</p>
         </div>
 
         {/* Mobile exercise pills */}
