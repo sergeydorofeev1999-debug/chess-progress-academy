@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 /* ====== SVG Chess Piece ====== */
@@ -252,25 +252,27 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
     [selectedPiece]
   );
 
-  const checkSolution = useCallback(() => {
+  // Автоматическая проверка при заполнении всех слотов
+  useEffect(() => {
+    if (currentLevel === 0 || success) return;
     const leftPieces = leftSlots.filter(Boolean) as EquationPiece[];
     const rightPieces = rightSlots.filter(Boolean) as EquationPiece[];
-
-    if (leftPieces.length !== level.leftSlots || rightPieces.length !== level.rightSlots) return;
-
-    const leftSum = leftPieces.reduce((s, p) => s + p.value, 0);
-    const rightSum = rightPieces.reduce((s, p) => s + p.value, 0);
-
-    if (leftSum === rightSum) {
-      setSuccess(true);
-      const newStars = { ...levelStars, [currentLevel]: 3 };
-      setLevelStars(newStars);
-      if (onLevelComplete) onLevelComplete(currentLevel, 3);
-      setTimeout(() => goToLevel(currentLevel + 1), 1500);
-    } else {
-      setError(true);
+    if (leftPieces.length === LEVELS[currentLevel].leftSlots && rightPieces.length === LEVELS[currentLevel].rightSlots) {
+      const leftSum = leftPieces.reduce((s, p) => s + p.value, 0);
+      const rightSum = rightPieces.reduce((s, p) => s + p.value, 0);
+      if (leftSum === rightSum) {
+        setSuccess(true);
+        setError(false);
+        const newStars = { ...levelStars, [currentLevel]: 3 };
+        setLevelStars(newStars);
+        if (onLevelComplete) onLevelComplete(currentLevel, 3);
+        setTimeout(() => goToLevel(currentLevel + 1), 1500);
+      } else {
+        setError(true);
+      }
     }
-  }, [leftSlots, rightSlots, level, currentLevel, levelStars, goToLevel, onLevelComplete]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leftSlots, rightSlots]);
 
   const reset = useCallback(() => {
     initLevel(currentLevel);
@@ -439,18 +441,8 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
           </div>
         </div>
 
-        {/* Actions: Check + Reset (above) */}
+        {/* Actions: Reset (above) */}
         <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={checkSolution}
-            disabled={success}
-            className={`px-8 py-3 rounded-xl font-semibold text-white transition
-              ${success ? 'bg-green-500 cursor-default' : 'bg-slate-900 hover:bg-slate-800'}
-            `}
-          >
-            {success ? 'Правильно! 🎉' : 'Проверить'}
-          </button>
-
           <button
             onClick={reset}
             className="px-4 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-2"
