@@ -875,6 +875,22 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         )}
       </div>
 
+      {/* Error indicators — 3 squares showing mistakes */}
+      <div className="flex gap-1 mt-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={`w-6 h-6 rounded flex items-center justify-center ${
+              i < (3 - lives)
+                ? 'bg-red-500 text-white'
+                : 'bg-slate-200 text-slate-400'
+            }`}
+          >
+            <X className="w-3.5 h-3.5" />
+          </div>
+        ))}
+      </div>
+
       {/* Controls */}
       <div className="flex w-full gap-2 mt-1">
         <button onClick={() => setPhase('idle')} className="w-full py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm transition">
