@@ -266,7 +266,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
         const newStars = { ...levelStars, [currentLevel]: 3 };
         setLevelStars(newStars);
         if (onLevelComplete) onLevelComplete(currentLevel, 3);
-        setTimeout(() => goToLevel(currentLevel + 1), 1500);
+        setTimeout(() => goToLevel(currentLevel + 1), 4000);
       } else {
         setError(true);
       }
@@ -451,6 +451,13 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
             Сначала
           </button>
         </div>
+
+        {/* Success message */}
+        {success && (
+          <div className="px-6 py-3 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium">
+            Правильно! 🎉
+          </div>
+        )}
 
         {/* Navigation: Back + Forward (below) */}
         <div className="flex items-center justify-center gap-3">
