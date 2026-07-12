@@ -729,6 +729,13 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
+        {/* Mat-in-1 label for exercises 4-7 */}
+        {ex.matIn1 && (
+          <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+            Мат в 1 ход
+          </div>
+        )}
+
         {/* Timer for exercise 8 */}
         {ex.timeLimit && !isComplete && !isStalemate && (
           <div className={`text-2xl font-bold font-mono ${timerStarted && timeLeft !== null && timeLeft <= 10 ? 'text-red-500' : 'text-slate-700'}`}>
