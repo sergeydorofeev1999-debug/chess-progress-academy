@@ -266,7 +266,7 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
         const newStars = { ...levelStars, [currentLevel]: 3 };
         setLevelStars(newStars);
         if (onLevelComplete) onLevelComplete(currentLevel, 3);
-        setTimeout(() => goToLevel(currentLevel + 1), 4000);
+        setTimeout(() => goToLevel(currentLevel + 1), 3000);
       } else {
         setError(true);
       }
