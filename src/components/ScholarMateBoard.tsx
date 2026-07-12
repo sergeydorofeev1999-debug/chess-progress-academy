@@ -861,17 +861,6 @@ const handleSquareClick = useCallback((square: string) => {
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
-          {exercise === 1 && whiteMoves === 0 ? 'Сыграйте e2-e4 — захватите центр пешкой.' :
-           exercise === 1 && whiteMoves === 1 ? 'Сыграйте Bf1-c4 — направьте слона на поле f7.' :
-           exercise === 1 && whiteMoves === 2 ? 'Выведите ферзя на h5 — угрожайте матом на f7.' :
-           exercise === 1 && whiteMoves === 3 ? 'Заберите пешку на f7 — мат!' :
-           exercise === 2 ? 'Повторите детский мат: e4, Bc4, Qh5, Qxf7#' :
-           exercise === 3 ? 'Сыграйте: e4, Bc4, Qf3, Qxf7#' :
-           exercise === 4 ? 'Самостоятельно: e4, Bc4/Qf3 в любом порядке, Qxf7#' :
-           exercise === 5 ? 'Сыграйте конём на f6 — защитите пункт h5 от детского мата!' :
-           exercise === 6 ? 'Самостоятельно: сыграйте e5, Nf6 — защититесь от детского мата!' : ''}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1000,15 +989,8 @@ const handleSquareClick = useCallback((square: string) => {
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1 ? 'Поставьте детский мат: e4, Bc4, Qh5, Qxf7#' :
-          exercise === 2 ? 'Повторите детский мат: e4, Bc4, Qh5, Qxf7#' :
-          exercise === 3 ? 'Сыграйте детский мат через Qf3: e4, Bc4, Qf3, Qxf7#' :
-          exercise === 4 ? 'Самостоятельно: e4, Bc4/Qf3 в любом порядке, Qxf7#' :
-          exercise === 5 ? 'Защита от детского мата: сыграйте Nf6 и отражите атаку!' :
-          exercise === 6 ? 'Самостоятельно: сыграйте e5, Nf6 — защититесь от детского мата!' :
-          exercise === 7 ? 'Отработка: e4, Qh5, Bc4, Qf3 — посмотрите защиту чёрных!' :
-          exercise === 8 ? 'Самостоятельно: повторите защиту чёрных от детского мата!' : ''}
-          </p>
+          <p>{exercise <= 4 ? 'Поставьте детский мат.' :
+          exercise >= 5 ? 'Защититесь от детского мата.' : ''}</p>
         </div>
 
         {/* Mobile exercise pills — 2 rows of 4 */}
