@@ -57,6 +57,9 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [bestStreak, setBestStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(300);
   const [showCorrect, setShowCorrect] = useState(false);
+  const [moveIndex, setMoveIndex] = useState(0);
+
+  const moveIndexRef = useRef(0);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'none' | 'correct' | 'wrong'>('none');
   const [lives, setLives] = useState(3);
@@ -96,6 +99,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const puzzleListRef = useRef<Puzzle[]>([]);
   const usedPuzzlesRef = useRef<Set<number>>(new Set());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const opponentTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const livesRef = useRef(3);
   const streakRef = useRef(0);
   const puzzleIndexRef = useRef(0);
@@ -138,6 +142,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+      if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
     };
   }, []);
 
@@ -179,6 +184,9 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   }, []);
 
   const loadPuzzle = useCallback((puzzle: Puzzle) => {
+    if (opponentTimeoutRef.current) clearTimeout(opponentTimeoutRef.current);
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    
     currentPuzzleRef.current = puzzle;
     setCurrentPuzzle(puzzle);
     const ng = new Chess(puzzle.fen);
@@ -186,6 +194,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setGame(ng);
     setSelectedSquare(null);
     setDragPiece(null);
+    setMoveIndex(0);
+    moveIndexRef.current = 0;
     puzzleStartTimeRef.current = Date.now();
   }, []);
 
@@ -234,8 +244,6 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       setBestStreak(s => Math.max(s, streakRef.current));
       scoreRef.current += 1;
       setScore(scoreRef.current);
-      // Show "Правильно" overlay with smooth transition
-      setShowCorrect(true);
     } else {
       streakRef.current = 0;
       setStreak(0);
@@ -277,8 +285,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       }
     }
 
-    // Smooth transition: show correct for 1200ms, then load next
-    const delay = wasCorrect ? 1200 : 800;
+    // Load next puzzle after brief delay
+    const delay = wasCorrect ? 0 : 800;
     
     flashTimeoutRef.current = setTimeout(() => {
       setShowCorrect(false);
@@ -306,7 +314,6 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     const testGame = new Chess(game.fen());
     let move;
     try {
-      // Always try queen promotion first; chess.js ignores it for non-promotion moves
       move = testGame.move({ from, to, promotion: 'q' });
     } catch {
       move = null;
@@ -320,17 +327,52 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     // Apply the move to the actual game state so the piece stays on target square
     const newGame = new Chess(game.fen());
     newGame.move({ from, to, promotion: 'q' });
-    setGame(newGame);
 
     // Build UCI from move result (handles promotions correctly)
     const userUci = move.from + move.to + (move.promotion || '');
-    const expected = currentPuzzleRef.current.moves[0].replace(/[+#]/g, '');
+    const expected = currentPuzzleRef.current.moves[moveIndexRef.current]?.replace(/[+#]/g, '');
 
-    if (userUci === expected) {
-      nextPuzzle(true);
-    } else {
+    if (userUci !== expected) {
+      // Wrong move — puzzle failed
+      setGame(newGame);
       nextPuzzle(false);
+      return;
     }
+
+    // Correct move
+    moveIndexRef.current += 1;
+    setMoveIndex(moveIndexRef.current);
+
+    if (moveIndexRef.current >= currentPuzzleRef.current.moves.length) {
+      // All moves solved — puzzle complete
+      setGame(newGame);
+      setShowCorrect(true);
+      flashTimeoutRef.current = setTimeout(() => {
+        setShowCorrect(false);
+        nextPuzzle(true);
+      }, 1200);
+      return;
+    }
+
+    // More moves needed — apply opponent's move after delay
+    setGame(newGame);
+    setSelectedSquare(null);
+
+    opponentTimeoutRef.current = setTimeout(() => {
+      if (!currentPuzzleRef.current || moveIndexRef.current >= currentPuzzleRef.current.moves.length) return;
+      
+      const oppMove = currentPuzzleRef.current.moves[moveIndexRef.current];
+      const oppFrom = oppMove.slice(0, 2);
+      const oppTo = oppMove.slice(2, 4);
+      
+      const afterOpp = new Chess(newGame.fen());
+      afterOpp.move({ from: oppFrom, to: oppTo, promotion: 'q' });
+      
+      moveIndexRef.current += 1;
+      setMoveIndex(moveIndexRef.current);
+      setGame(afterOpp);
+      setIsBlack(afterOpp.turn() === 'b');
+    }, 800);
   }, [game, nextPuzzle]);
 
   /* ─── CLICK ─── */
