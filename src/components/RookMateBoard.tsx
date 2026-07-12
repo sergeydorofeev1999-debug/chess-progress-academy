@@ -438,7 +438,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
         setMessage(`Мат чёрному королю! ${earned} ★`);
         setIsComplete(true);
         saveStars(currentExercise, earned);
-        onComplete();
+        if (currentExercise === 7) onComplete();
         return;
       }
 
@@ -485,7 +485,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 7) onComplete();
           } else if (ex.matIn1) {
             setIsStalemate(true);
             setMessage('Провалено');
@@ -500,7 +500,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 7) onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Провалено.');
@@ -676,9 +676,6 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
 
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {currentEx.description}
-        </div>
 
         {currentExercise === 1 && !demoMode && !isComplete && (
           <button
@@ -821,28 +818,52 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
           )}
         </div>
 
-        {/* Mobile exercise pills */}
-        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
-          {EXERCISES.map((ex) => {
-            const earnedStars = exerciseStars[ex.id] || 0;
-            const isCurrent = ex.id === currentExercise;
-            const isDone = earnedStars > 0;
-            return (
-              <button
-                key={ex.id}
-                onClick={() => switchExercise(ex.id)}
-                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-[#e6e0ec] text-[#6b5b7d]'
-                } cursor-pointer`}
-              >
-                <div className="flex gap-0.5">
-                  {[1, 2, 3].map((s) => (
-                    <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
-                  ))}
-                </div>
-              </button>
-            );
-          })}
+        {/* Mobile exercise pills — 2 rows (4+3) */}
+        <div className="flex lg:hidden flex-col gap-1 items-center w-full">
+          <div className="flex gap-1 justify-center w-full">
+            {EXERCISES.slice(0, 4).map((ex) => {
+              const earnedStars = exerciseStars[ex.id] || 0;
+              const isCurrent = ex.id === currentExercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={ex.id}
+                  onClick={() => switchExercise(ex.id)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-[#e6e0ec] text-[#6b5b7d]'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex gap-1 justify-center w-full">
+            {EXERCISES.slice(4).map((ex) => {
+              const earnedStars = exerciseStars[ex.id] || 0;
+              const isCurrent = ex.id === currentExercise;
+              const isDone = earnedStars > 0;
+              return (
+                <button
+                  key={ex.id}
+                  onClick={() => switchExercise(ex.id)}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-[#e6e0ec] text-[#6b5b7d]'
+                  } cursor-pointer`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <StarPng key={s} filled={earnedStars > 0 && s <= earnedStars} size={12} />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <button
@@ -854,11 +875,7 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          {currentExercise === 1 ? (
-            <p>Поставьте мат чёрному королю ладьёй при поддержке своего короля.</p>
-          ) : (
-            <p>Поставьте мат чёрному королю ладьёй не более чем за 10 ходов.</p>
-          )}
+          <p>Поставьте мат чёрному королю ладьёй при поддержке своего короля.</p>
         </div>
       </div>
     </div>
