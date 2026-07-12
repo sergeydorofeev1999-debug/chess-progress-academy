@@ -1352,7 +1352,7 @@ function MultiLevelStarBoard({
         </div>
 
         {/* Instructions — single clean block */}
-        <div className="bg-white rounded-b-lg p-3 text-sm text-gray-800 leading-relaxed">
+        <div className="bg-white rounded-b-lg p-3 text-sm text-gray-800 leading-relaxed" style={{ whiteSpace: 'pre-line' }}>
           {level.instructions}
         </div>
 

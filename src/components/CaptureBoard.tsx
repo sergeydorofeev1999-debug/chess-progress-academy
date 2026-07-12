@@ -1548,7 +1548,7 @@ export default function CaptureBoard({
         </div>
 
         {/* Instructions под звёздами */}
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full" style={{ whiteSpace: 'pre-line' }}>
           {level.instructions}
         </div>
 
