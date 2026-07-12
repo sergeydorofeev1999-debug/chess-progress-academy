@@ -736,7 +736,7 @@ function InlineChessBoard({
   const preventDrag = (e: React.DragEvent) => e.preventDefault();
 
   return (
-    <div className="flex flex-col items-center gap-2 select-none" style={{ touchAction: 'none' }}>
+    <div className="flex flex-col items-center gap-2 select-none">
       <div
         className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
         style={{
