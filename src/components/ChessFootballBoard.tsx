@@ -389,7 +389,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     return count >= 2;
   }, []);
 
-  const resetKings = useCallback(() => {
+  const resetKings = useCallback((preserveScore = false) => {
     setWKing(START_W_KING);
     wKingRef.current = START_W_KING;
     setBKing(START_B_KING);
@@ -399,6 +399,12 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     setSelectedSquare(null);
     setValidSquares([]);
     selectedSquareRef.current = null;
+    if (!preserveScore) {
+      setWScore(0);
+      wScoreRef.current = 0;
+      setBScore(0);
+      bScoreRef.current = 0;
+    }
     setWinner(null);
     winnerRef.current = null;
     setDrawMessage(null);
@@ -424,7 +430,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
     if (goalScored) {
       setTimeout(() => {
         if (!mountedRef.current) return;
-        resetKings();
+        resetKings(true);
         setTurn('w');
         turnRef.current = 'w';
       }, 3000);
@@ -529,7 +535,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
       if (bGoalScored) {
         setTimeout(() => {
           if (!mountedRef.current) return;
-          resetKings();
+          resetKings(true);
           setComputerThinking(false);
           setTurn('w');
           turnRef.current = 'w';
@@ -896,18 +902,6 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
         >
           Сменить уровень
         </button>
-      </div>
-
-      {/* Stars */}
-      <div className="flex gap-1">
-        {LEVELS.map(lvl => (
-          <div key={lvl.id} className="flex flex-col items-center">
-            <Star
-              className={`w-5 h-5 ${completedLevels[lvl.id] ? 'text-yellow-500 fill-current' : 'text-slate-300'}`}
-            />
-            <span className="text-[10px] text-slate-500">{lvl.label}</span>
-          </div>
-        ))}
       </div>
 
       {/* Info */}
