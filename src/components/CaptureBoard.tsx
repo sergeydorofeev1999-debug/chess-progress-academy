@@ -1506,11 +1506,6 @@ export default function CaptureBoard({
           </div>
         )}
 
-        {/* Instructions под доской */}
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {level.instructions}
-        </div>
-
         {/* Mobile level stars bar */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
           {levels.map((_l: any, i: number) => {
@@ -1552,7 +1547,10 @@ export default function CaptureBoard({
           })}
         </div>
 
-
+        {/* Instructions под звёздами */}
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+          {level.instructions}
+        </div>
 
         {allDone && (
           <div className="mt-2 text-emerald-700 font-bold text-lg">{successMessage}</div>
