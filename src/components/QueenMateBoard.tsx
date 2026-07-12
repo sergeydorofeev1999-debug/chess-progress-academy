@@ -496,7 +496,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         setMessage(`Мат чёрному королю! ${earned} ★`);
         setIsComplete(true);
         saveStars(currentExercise, earned);
-        onComplete();
+        if (currentExercise === 8) onComplete();
         return;
       }
 
@@ -543,7 +543,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 8) onComplete();
           } else if (ex.matIn1) {
             setIsStalemate(true);
             setMessage('Провалено');
@@ -554,7 +554,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 8) onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Провалено.');
@@ -729,10 +729,6 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {ex.description}
-        </div>
-
         {/* Timer for exercise 8 */}
         {ex.timeLimit && !isComplete && !isStalemate && (
           <div className={`text-2xl font-bold font-mono ${timerStarted && timeLeft !== null && timeLeft <= 10 ? 'text-red-500' : 'text-slate-700'}`}>
@@ -909,7 +905,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>Поставьте мат чёрному королю ферзём. Используйте ферзя для ограничения пространства, а короля — для поддержки.</p>
+          <p>Поставьте мат чёрному королю ферзём.</p>
         </div>
       </div>
     </div>
