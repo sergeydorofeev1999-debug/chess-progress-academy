@@ -1128,9 +1128,11 @@ function MultiLevelStarBoard({
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
-        {/* Stars progress — Lichess style vertical list with numbers (desktop only) */}
-        {totalLevels === 8 ? (
-          <div className="hidden lg:grid grid-cols-2 gap-1 rounded overflow-hidden border border-gray-200 p-1">
+        {/* Stars progress — desktop */}
+        {totalLevels >= 7 ? (
+          <div className={`hidden lg:grid gap-1 rounded overflow-hidden border border-gray-200 p-1 ${
+            totalLevels === 9 ? 'grid-cols-5' : 'grid-cols-4'
+          }`}>
             {levels.map((_l: any, i: number) => {
               const earned = levelStars[i];
               const isCurrent = i === currentLevel;
@@ -1338,9 +1340,11 @@ function MultiLevelStarBoard({
         )}
 
 
-        {/* Mobile stars — horizontal bar under board */}
-        {totalLevels === 8 ? (
-          <div className="lg:hidden grid grid-cols-4 gap-1 w-full">
+        {/* Mobile stars */}
+        {totalLevels >= 7 ? (
+          <div className={`lg:hidden grid gap-1 w-full ${
+            totalLevels === 9 ? 'grid-cols-5' : 'grid-cols-4'
+          }`}>
             {levels.map((_l: any, i: number) => {
               const earned = levelStars[i];
               const isCurrent = i === currentLevel;
