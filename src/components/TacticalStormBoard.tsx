@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, SkipForward } from 'lucide-react';
+import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, SkipForward, Heart, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const REVERSED_FILES = ['h','g','f','e','d','c','b','a'];
@@ -32,31 +32,25 @@ interface Puzzle {
   rating: number;
 }
 
+interface PuzzleResult {
+  puzzle: Puzzle;
+  status: 'correct' | 'wrong';
+  index: number;
+  timeSpent: number;
+}
+
 interface Props {
   onComplete?: () => void;
   lessonId?: string;
 }
 
-type Phase = 'settings' | 'playing' | 'result';
+type Phase = 'idle' | 'playing' | 'result' | 'review';
 type Mode = 'rush5' | 'rush3' | 'survival';
-
-interface DragState {
-  square: string;
-  type: string;
-  color: 'w' | 'b';
-}
-
-interface PointerStart {
-  x: number;
-  y: number;
-  square: string;
-  moved: boolean;
-  pointerId: number;
-}
 
 /* ═══ Component ═══ */
 export default function TacticalStormBoard({ onComplete }: Props) {
-  const [phase, setPhase] = useState<Phase>('settings');
+  /* ── State ── */
+  const [phase, setPhase] = useState<Phase>('idle');
   const [mode, setMode] = useState<Mode>('rush5');
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -65,6 +59,10 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [skips, setSkips] = useState(3);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'none' | 'correct' | 'wrong'>('none');
+  const [lives, setLives] = useState(3);
+  const [puzzleHistory, setPuzzleHistory] = useState<PuzzleResult[]>([]);
+  const [activeTab, setActiveTab] = useState<'summary' | 'tasks'>('tasks');
+  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
 
   const [isBlack, setIsBlack] = useState(false);
 
@@ -75,15 +73,38 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [sqSize, setSqSize] = useState(56);
 
+  interface DragState {
+    square: string;
+    type: string;
+    color: 'w' | 'b';
+  }
+
+  interface PointerStart {
+    x: number;
+    y: number;
+    square: string;
+    moved: boolean;
+    pointerId: number;
+  }
+
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
   const pointerStartRef = useRef<PointerStart | null>(null);
 
+  /* ── Refs ── */
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const puzzleListRef = useRef<Puzzle[]>([]);
+  const usedPuzzlesRef = useRef<Set<number>>(new Set());
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const livesRef = useRef(3);
+  const streakRef = useRef(0);
+  const puzzleIndexRef = useRef(0);
+  const puzzleStartTimeRef = useRef(Date.now());
+  const currentPuzzleRef = useRef<Puzzle | null>(null);
+  const timeLeftRef = useRef(300);
+  const scoreRef = useRef(0);
 
-  /* ─── Resize ─── */
+  /* ── Resize ── */
   useEffect(() => {
     const upd = () => {
       const mob = window.innerWidth < 1024;
@@ -97,94 +118,176 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     return () => window.removeEventListener('resize', upd);
   }, []);
 
-  /* ─── Load puzzle DB ─── */
+  /* ── Load puzzle DB ── */
   useEffect(() => {
     if (puzzleListRef.current.length > 0) return;
-    fetch('/puzzles/tactical-storm.json')
+    fetch('/puzzles/tactical-storm.json?v=2')
       .then(r => r.json())
-      .then(data => { puzzleListRef.current = (data.puzzles || []) as Puzzle[]; })
-      .catch(() => { puzzleListRef.current = getFallbackPuzzles(); });
+      .then(data => {
+        const puzzles = (data.puzzles || []) as Puzzle[];
+        puzzles.sort((a, b) => a.rating - b.rating);
+        puzzleListRef.current = puzzles;
+      })
+      .catch(() => {
+        puzzleListRef.current = getFallbackPuzzles().sort((a, b) => a.rating - b.rating);
+      });
   }, []);
 
-  /* ─── Helpers ─── */
-  const pickPuzzle = useCallback((index: number): Puzzle => {
+  /* ── Cleanup on unmount ── */
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    };
+  }, []);
+
+  /* ── Helpers ── */
+  const BIN_SIZE = 50;
+  const BIN_COUNT = 20;
+
+  const pickPuzzle = useCallback((score: number): Puzzle => {
     const list = puzzleListRef.current;
     if (!list.length) return getFallbackPuzzles()[0];
-    return list[index % list.length];
+
+    const bin = Math.min(Math.floor(score / 5), BIN_COUNT - 1);
+    const binStart = bin * BIN_SIZE;
+    const binEnd = Math.min(binStart + BIN_SIZE, list.length);
+
+    const candidates: number[] = [];
+    for (let i = binStart; i < binEnd; i++) {
+      if (!usedPuzzlesRef.current.has(i)) candidates.push(i);
+    }
+
+    let searchBin = bin + 1;
+    while (candidates.length === 0 && searchBin < BIN_COUNT) {
+      const s = searchBin * BIN_SIZE;
+      const e = Math.min(s + BIN_SIZE, list.length);
+      for (let i = s; i < e; i++) {
+        if (!usedPuzzlesRef.current.has(i)) candidates.push(i);
+      }
+      searchBin++;
+    }
+
+    if (candidates.length === 0) {
+      usedPuzzlesRef.current.clear();
+      for (let i = binStart; i < binEnd; i++) candidates.push(i);
+    }
+
+    const idx = candidates[Math.floor(Math.random() * candidates.length)];
+    usedPuzzlesRef.current.add(idx);
+    return list[idx];
+  }, []);
+
+  const loadPuzzle = useCallback((puzzle: Puzzle) => {
+    currentPuzzleRef.current = puzzle;
+    setCurrentPuzzle(puzzle);
+    const ng = new Chess(puzzle.fen);
+    setIsBlack(ng.turn() === 'b');
+    setGame(ng);
+    setSelectedSquare(null);
+    setDragPiece(null);
+    puzzleStartTimeRef.current = Date.now();
   }, []);
 
   const startGame = useCallback(() => {
     const totalTime = mode === 'rush3' ? 180 : mode === 'rush5' ? 300 : 0;
     setScore(0);
+    scoreRef.current = 0;
     setStreak(0);
+    streakRef.current = 0;
     setBestStreak(0);
+    setLives(3);
+    livesRef.current = 3;
+    setPuzzleIndex(0);
+    puzzleIndexRef.current = 0;
+    setSkips(3);
     setTimeLeft(totalTime);
-    setSkips(mode === 'survival' ? 999 : 3);
+    timeLeftRef.current = totalTime;
     setMessage('');
     setMessageType('none');
-    setPuzzleIndex(0);
+    setPuzzleHistory([]);
+    setActiveTab('tasks');
+    setReviewIndex(null);
+    usedPuzzlesRef.current.clear();
 
     const first = pickPuzzle(0);
-    setCurrentPuzzle(first);
-    const g = new Chess(first.fen);
-    setIsBlack(g.turn() === 'b');
-    setGame(g);
-    setSelectedSquare(null);
-    setDragPiece(null);
+    loadPuzzle(first);
     setPhase('playing');
 
     if (timerRef.current) clearInterval(timerRef.current);
     if (mode !== 'survival') {
       timerRef.current = setInterval(() => {
-        setTimeLeft(t => {
-          if (t <= 0.5) {
-            if (timerRef.current) clearInterval(timerRef.current);
-            setPhase('result');
-            return 0;
-          }
-          return Math.max(0, t - 1);
-        });
+        timeLeftRef.current -= 1;
+        setTimeLeft(timeLeftRef.current);
+        if (timeLeftRef.current <= 0) {
+          clearInterval(timerRef.current!);
+          setPhase('result');
+        }
       }, 1000);
     }
-  }, [mode, pickPuzzle]);
-
-  const stopGame = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPhase('result');
-  }, []);
+  }, [mode, pickPuzzle, loadPuzzle]);
 
   const nextPuzzle = useCallback((wasCorrect: boolean) => {
-    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
-
     if (wasCorrect) {
-      const newStreak = streak + 1;
-      setStreak(newStreak);
-      setBestStreak(prev => Math.max(prev, newStreak));
-      setScore(s => s + 1 + Math.floor(newStreak / 3));
-      setMessage('Верно!');
+      streakRef.current += 1;
+      setStreak(streakRef.current);
+      setBestStreak(s => Math.max(s, streakRef.current));
+      scoreRef.current += 1;
+      setScore(scoreRef.current);
       setMessageType('correct');
+      setMessage('Верно!');
     } else {
+      streakRef.current = 0;
       setStreak(0);
-      setScore(s => Math.max(0, s - 1));
-      setMessage('Неверно!');
       setMessageType('wrong');
-      if (mode === 'survival') {
-        // End immediately in survival
+      setMessage('Неверно!');
+    }
+
+    if (currentPuzzleRef.current) {
+      const timeSpent = Math.round((Date.now() - puzzleStartTimeRef.current) / 1000);
+      setPuzzleHistory(prev => [...prev, {
+        puzzle: currentPuzzleRef.current!,
+        status: wasCorrect ? 'correct' : 'wrong',
+        index: prev.length,
+        timeSpent
+      }]);
+    }
+
+    if (!wasCorrect && mode === 'survival') {
+      if (timerRef.current) clearInterval(timerRef.current);
+      setPhase('result');
+      flashTimeoutRef.current = setTimeout(() => {
+        setMessage('');
+        setMessageType('none');
+      }, 800);
+      return;
+    }
+
+    if (!wasCorrect) {
+      livesRef.current -= 1;
+      setLives(livesRef.current);
+      if (livesRef.current <= 0 && mode !== 'survival') {
         if (timerRef.current) clearInterval(timerRef.current);
         setPhase('result');
+        flashTimeoutRef.current = setTimeout(() => {
+          setMessage('');
+          setMessageType('none');
+        }, 800);
         return;
       }
     }
 
-    const idx = puzzleIndex + 1;
-    setPuzzleIndex(idx);
-    const next = pickPuzzle(idx);
+    puzzleIndexRef.current += 1;
+    setPuzzleIndex(puzzleIndexRef.current);
+    const next = pickPuzzle(wasCorrect ? scoreRef.current : scoreRef.current);
+    currentPuzzleRef.current = next;
     setCurrentPuzzle(next);
     const ng = new Chess(next.fen);
     setIsBlack(ng.turn() === 'b');
     setGame(ng);
     setSelectedSquare(null);
     setDragPiece(null);
+    puzzleStartTimeRef.current = Date.now();
 
     flashTimeoutRef.current = setTimeout(() => {
       setMessage('');
@@ -196,40 +299,64 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     if (mode !== 'survival' && skips <= 0) return;
     if (mode !== 'survival') setSkips(s => s - 1);
     setStreak(0);
-    nextPuzzle(false);
+    streakRef.current = 0;
+    if (currentPuzzleRef.current) {
+      const timeSpent = Math.round((Date.now() - puzzleStartTimeRef.current) / 1000);
+      setPuzzleHistory(prev => [...prev, {
+        puzzle: currentPuzzleRef.current!,
+        status: 'wrong',
+        index: prev.length,
+        timeSpent
+      }]);
+    }
+    puzzleIndexRef.current += 1;
+    setPuzzleIndex(puzzleIndexRef.current);
+    const next = pickPuzzle(scoreRef.current);
+    currentPuzzleRef.current = next;
+    setCurrentPuzzle(next);
+    const ng = new Chess(next.fen);
+    setIsBlack(ng.turn() === 'b');
+    setGame(ng);
+    setSelectedSquare(null);
+    setDragPiece(null);
+    puzzleStartTimeRef.current = Date.now();
     if (mode !== 'survival') {
       setTimeLeft(t => Math.max(0, t - 5));
     }
-  }, [mode, skips, nextPuzzle]);
+    flashTimeoutRef.current = setTimeout(() => {
+      setMessage('');
+      setMessageType('none');
+    }, 800);
+  }, [mode, skips, pickPuzzle]);
 
   /* ─── Move logic ─── */
   const processMove = useCallback((from: string, to: string) => {
-    if (!game || !currentPuzzle) return;
+    if (!game || !currentPuzzleRef.current) return;
 
-    // Validate move first via chess.js
     const testGame = new Chess(game.fen());
     let move;
     try {
-      move = testGame.move({ from, to });
+      // Always try queen promotion first; chess.js ignores it for non-promotion moves
+      move = testGame.move({ from, to, promotion: 'q' });
     } catch {
       move = null;
     }
 
     if (!move) {
-      // Invalid move — just deselect, no penalty
       setSelectedSquare(null);
       return;
     }
 
-    const moveStr = `${from}${to}`;
-    const expected = currentPuzzle.moves[0].replace(/[+#]/g, '');
+    // Build UCI from move result (handles promotions correctly)
+    const userUci = move.from + move.to + (move.promotion || '');
+    const expected = currentPuzzleRef.current.moves[0].replace(/[+#]/g, '');
 
-    if (moveStr === expected) {
+    if (userUci === expected) {
       nextPuzzle(true);
     } else {
       nextPuzzle(false);
     }
-  }, [game, currentPuzzle, nextPuzzle]);
+  }, [game, nextPuzzle]);
 
   /* ─── CLICK ─── */
   const handleSquareClick = useCallback((square: string) => {
@@ -332,97 +459,237 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  /* ═══════════════════════════ SETTINGS ═══════════════════════════ */
-  if (phase === 'settings') {
+
+  /* ═══════════════════════════ IDLE ═══════════════════════════ */
+  if (phase === 'idle') {
     return (
       <div className="flex flex-col items-center gap-5 w-full max-w-lg mx-auto">
-        <div className="bg-white rounded-xl shadow p-5 w-full text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Zap className="w-8 h-8 text-yellow-500" />
-            <h2 className="text-2xl font-bold text-slate-800">Тактический штурм</h2>
-          </div>
-          <p className="text-sm text-slate-600">
-            Решайте тактические задачи на скорость. Чем быстрее и точнее — тем выше результат!
+        <div className="rounded-xl p-6 w-full text-center" style={{ background: '#312e2b' }}>
+          <h2 className="text-2xl font-bold text-white mb-2">Тактический штурм</h2>
+          <p className="text-sm text-gray-400">
+            Решайте задачи на скорость. 3 жизни — нарастающая сложность!
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 w-full">
-          <button onClick={() => setMode('rush5')} className={`flex items-center gap-3 p-4 rounded-xl border-2 transition ${mode==='rush5'?'border-[#c75b2a] bg-orange-50':'border-slate-200 bg-white hover:bg-slate-50'}`}>
-            <Timer className={`w-6 h-6 ${mode==='rush5'?'text-[#c75b2a]':'text-slate-400'}`} />
-            <div className="text-left">
-              <div className="font-bold text-slate-800">Штурм — 5 минут</div>
-              <div className="text-xs text-slate-500">Решайте задачи за 5 минут. 3 пропуска.</div>
-            </div>
+        <div className="grid grid-cols-3 gap-3 w-full">
+          <button onClick={() => setMode('rush5')} className={`p-4 rounded-xl border-2 transition ${mode==='rush5'?'border-[#81b64c] bg-[#3a3a3a]':'border-[#555] bg-[#2b2b2b] hover:bg-[#333]'}`}>
+            <div className="font-bold text-white">5 мин</div>
+            <div className="text-xs text-gray-400">Классика</div>
           </button>
-
-          <button onClick={() => setMode('rush3')} className={`flex items-center gap-3 p-4 rounded-xl border-2 transition ${mode==='rush3'?'border-[#c75b2a] bg-orange-50':'border-slate-200 bg-white hover:bg-slate-50'}`}>
-            <Zap className={`w-6 h-6 ${mode==='rush3'?'text-[#c75b2a]':'text-slate-400'}`} />
-            <div className="text-left">
-              <div className="font-bold text-slate-800">Блиц — 3 минуты</div>
-              <div className="text-xs text-slate-500">Экстремальная скорость. 3 пропуска.</div>
-            </div>
+          <button onClick={() => setMode('rush3')} className={`p-4 rounded-xl border-2 transition ${mode==='rush3'?'border-[#81b64c] bg-[#3a3a3a]':'border-[#555] bg-[#2b2b2b] hover:bg-[#333]'}`}>
+            <div className="font-bold text-white">3 мин</div>
+            <div className="text-xs text-gray-400">Блиц</div>
           </button>
-
-          <button onClick={() => setMode('survival')} className={`flex items-center gap-3 p-4 rounded-xl border-2 transition ${mode==='survival'?'border-[#c75b2a] bg-orange-50':'border-slate-200 bg-white hover:bg-slate-50'}`}>
-            <Flame className={`w-6 h-6 ${mode==='survival'?'text-[#c75b2a]':'text-slate-400'}`} />
-            <div className="text-left">
-              <div className="font-bold text-slate-800">Выживание</div>
-              <div className="text-xs text-slate-500">Без ограничения времени. Ошибка — конец.</div>
-            </div>
+          <button onClick={() => setMode('survival')} className={`p-4 rounded-xl border-2 transition ${mode==='survival'?'border-[#81b64c] bg-[#3a3a3a]':'border-[#555] bg-[#2b2b2b] hover:bg-[#333]'}`}>
+            <div className="font-bold text-white">Выживание</div>
+            <div className="text-xs text-gray-400">1 ошибка = конец</div>
           </button>
         </div>
 
-        <button onClick={startGame} className="w-full py-4 bg-[#c75b2a] hover:bg-[#a84a22] text-white font-bold rounded-xl text-lg uppercase tracking-wide transition shadow-lg">
+        <button onClick={startGame} className="w-full py-4 bg-[#81b64c] hover:bg-[#6a9a3d] text-white font-bold rounded-xl text-lg uppercase tracking-wide transition shadow-lg">
           Начать штурм
         </button>
       </div>
     );
   }
 
+
   /* ═══════════════════════════ RESULT ═══════════════════════════ */
   if (phase === 'result') {
-    return (
-      <div className="flex flex-col items-center gap-5 w-full max-w-lg mx-auto">
-        <div className="bg-white rounded-xl shadow p-6 w-full text-center">
-          <Trophy className="w-14 h-14 text-yellow-500 mx-auto mb-3" />
-          <h2 className="text-3xl font-bold text-slate-800 mb-1">Результат</h2>
-          <div className="text-6xl font-mono font-bold text-[#c75b2a] mb-2">{score}</div>
-          <div className="text-sm text-slate-500 mb-4">очков</div>
+    const correctCount = puzzleHistory.filter(p => p.status === 'correct').length;
+    const wrongCount = puzzleHistory.filter(p => p.status === 'wrong').length;
+    const avgTime = correctCount > 0
+      ? Math.round(puzzleHistory.filter(p => p.status === 'correct').reduce((a, b) => a + b.timeSpent, 0) / correctCount)
+      : 0;
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-slate-50 rounded-lg p-3">
-              <div className="text-xs text-slate-500 uppercase">Лучшая серия</div>
-              <div className="text-xl font-bold text-slate-800 flex items-center justify-center gap-1">
-                <Flame className="w-4 h-4 text-orange-500" /> {bestStreak}
+    return (
+      <div className="flex flex-col items-center gap-4 w-full max-w-lg mx-auto">
+        {/* Score */}
+        <div className="w-full bg-[#312e2b] rounded-xl p-6 text-center">
+          <div className="text-6xl font-bold text-white mb-1">{score}</div>
+          <div className="text-sm text-gray-400">задач решено</div>
+        </div>
+
+        {/* Tabs */}
+        <div className="w-full flex bg-[#312e2b] rounded-xl overflow-hidden">
+          <button onClick={() => setActiveTab('summary')} className={`flex-1 py-3 text-sm font-bold transition ${activeTab==='summary'?'text-white border-b-2 border-[#81b64c]':'text-gray-500 hover:text-gray-300'}`}>
+            Краткое описание
+          </button>
+          <button onClick={() => setActiveTab('tasks')} className={`flex-1 py-3 text-sm font-bold transition ${activeTab==='tasks'?'text-white border-b-2 border-[#81b64c]':'text-gray-500 hover:text-gray-300'}`}>
+            Задачи
+          </button>
+        </div>
+
+        {activeTab === 'summary' && (
+          <div className="w-full bg-[#312e2b] rounded-xl p-5 text-sm">
+            <div className="flex items-center justify-between py-2 border-b border-[#444]">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Flame className="w-4 h-4" /> Рекордная серия
+              </div>
+              <div className="text-white font-bold">{bestStreak}</div>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-[#444]">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Trophy className="w-4 h-4" /> Труднейшая задача
+              </div>
+              <div className="text-white font-bold">
+                {puzzleHistory.length > 0 ? Math.max(...puzzleHistory.map(p => p.puzzle.rating)) : 0}
               </div>
             </div>
-            <div className="bg-slate-50 rounded-lg p-3">
-              <div className="text-xs text-slate-500 uppercase">Решено</div>
-              <div className="text-xl font-bold text-slate-800">{puzzleIndex}</div>
+            <div className="flex items-center justify-between py-2 border-b border-[#444]">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Timer className="w-4 h-4" /> В среднем на задачу
+              </div>
+              <div className="text-white font-bold">{avgTime}s</div>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-[#444]">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Check className="w-4 h-4" /> Верно
+              </div>
+              <div className="text-[#81b64c] font-bold">{correctCount}</div>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2 text-gray-400">
+                <X className="w-4 h-4" /> Ошибок
+              </div>
+              <div className="text-red-500 font-bold">{wrongCount}</div>
             </div>
           </div>
+        )}
 
-          {score >= 5 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-              <p className="text-green-700 font-bold">Отличный результат!</p>
+        {activeTab === 'tasks' && (
+          <div className="grid grid-cols-5 gap-2">
+            {puzzleHistory.map((r, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setReviewIndex(i);
+                  setPhase('review');
+                }}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition hover:scale-105 ${
+                  r.status === 'correct'
+                    ? 'bg-[#2d4a1e] hover:bg-[#3a5c26]'
+                    : 'bg-[#4a1e1e] hover:bg-[#5c2626]'
+                }`}
+              >
+                {r.status === 'correct' ? (
+                  <Check className="w-4 h-4 text-[#81b64c]" />
+                ) : (
+                  <X className="w-4 h-4 text-red-400" />
+                )}
+                <span className="text-[10px] text-gray-300">{r.puzzle.rating}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex w-full gap-3">
+          <button onClick={() => setPhase('idle')} className="flex-1 py-3 bg-[#444] hover:bg-[#555] text-white rounded-xl font-bold flex items-center justify-center gap-1">
+            <ArrowLeft className="w-4 h-4" /> Назад
+          </button>
+          <button onClick={startGame} className="flex-1 py-3 bg-[#81b64c] hover:bg-[#6a9a3d] text-white rounded-xl font-bold flex items-center justify-center gap-1">
+            <RotateCcw className="w-4 h-4" /> Играть снова
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
+  /* ═══════════════════════════ REVIEW ═══════════════════════════ */
+  if (phase === 'review' && reviewIndex !== null && puzzleHistory[reviewIndex]) {
+    const result = puzzleHistory[reviewIndex];
+    const reviewGame = new Chess(result.puzzle.fen);
+    const moveFrom = result.puzzle.moves[0]?.substring(0, 2);
+    const moveTo = result.puzzle.moves[0]?.substring(2, 4);
+    const reviewIsBlack = reviewGame.turn() === 'b';
+
+    const rFiles = reviewIsBlack ? REVERSED_FILES : FILES;
+    const rRanks = reviewIsBlack ? REVERSED_DISPLAY_RANKS : DISPLAY_RANKS;
+
+    return (
+      <div className="flex flex-col items-center gap-4 w-full max-w-lg mx-auto">
+        <div className="w-full bg-[#312e2b] rounded-xl p-4 flex items-center justify-between">
+          <button
+            onClick={() => {
+              setReviewIndex(null);
+              setPhase('result');
+            }}
+            className="text-white hover:text-gray-300 flex items-center gap-1 text-sm"
+          >
+            <ChevronLeft className="w-4 h-4" /> К результатам
+          </button>
+          <span className="text-white font-bold text-sm">
+            Задача {reviewIndex + 1} / {puzzleHistory.length}
+          </span>
+        </div>
+
+        <div className="w-full bg-[#312e2b] rounded-xl p-3 text-center">
+          <div className={`text-sm font-bold mb-1 ${result.status === 'correct' ? 'text-[#81b64c]' : 'text-red-400'}`}>
+            {result.status === 'correct' ? '✓ Верно' : '✗ Ошибка'}
+          </div>
+          <div className="text-gray-400 text-xs">
+            Рейтинг: {result.puzzle.rating} | Время: {result.timeSpent}с
+          </div>
+          {result.puzzle.moves[0] && (
+            <div className="text-white text-sm mt-1">
+              Правильный ход: <span className="font-bold text-[#81b64c]">{moveFrom} → {moveTo}</span>
             </div>
           )}
+        </div>
 
-          <div className="flex gap-3 justify-center">
-            <button onClick={() => setPhase('settings')} className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-medium text-sm flex items-center gap-1">
-              <ArrowLeft className="w-4 h-4" /> Настройки
-            </button>
-            <button onClick={startGame} className="px-5 py-2.5 bg-[#c75b2a] hover:bg-[#a84a22] text-white rounded-lg font-medium text-sm flex items-center gap-1">
-              <RotateCcw className="w-4 h-4" /> Заново
-            </button>
+        <div className="flex justify-center w-full">
+          <div className="relative select-none" style={{ width: sqSize * 8, height: sqSize * 8 }}>
+            {rRanks.map((rank, ri) =>
+              rFiles.map((file, fi) => {
+                const sq = file + rank;
+                const pieceObj = reviewGame.get(sq as any);
+                const isLight = (ri + fi) % 2 === 0;
+                const isFrom = sq === moveFrom;
+                const isTo = sq === moveTo;
+
+                return (
+                  <div
+                    key={sq}
+                    data-square={sq}
+                    className="absolute flex items-center justify-center"
+                    style={{
+                      left: fi * sqSize,
+                      top: ri * sqSize,
+                      width: sqSize,
+                      height: sqSize,
+                      backgroundColor: isFrom || isTo ? '#7ed321' : (isLight ? LIGHT_SQ : DARK_SQ),
+                      opacity: isFrom ? 0.5 : 1,
+                    }}
+                  >
+                    {pieceObj && (
+                      <div style={{ width: sqSize * 0.82, height: sqSize * 0.82 }}>
+                        <PieceImg type={pieceObj.type.toUpperCase()} color={pieceObj.color as 'w' | 'b'} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {onComplete && score >= 3 && (
-          <button onClick={onComplete} className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg uppercase transition">
-            Урок пройден ✓
+        <div className="flex w-full gap-3">
+          <button
+            onClick={() => setReviewIndex(prev => (prev !== null && prev > 0 ? prev - 1 : prev))}
+            disabled={reviewIndex === 0}
+            className={`flex-1 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition ${reviewIndex > 0 ? 'bg-[#444] text-white hover:bg-[#555]' : 'bg-[#333] text-gray-600 cursor-not-allowed'}`}
+          >
+            <ChevronLeft className="w-4 h-4" /> Предыдущая
           </button>
-        )}
+          <button
+            onClick={() => setReviewIndex(prev => (prev !== null && prev < puzzleHistory.length - 1 ? prev + 1 : prev))}
+            disabled={reviewIndex >= puzzleHistory.length - 1}
+            className={`flex-1 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition ${reviewIndex < puzzleHistory.length - 1 ? 'bg-[#444] text-white hover:bg-[#555]' : 'bg-[#333] text-gray-600 cursor-not-allowed'}`}
+          >
+            Следующая <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -593,7 +860,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
             <SkipForward className="w-4 h-4" /> Пропуск ({skips})
           </button>
         )}
-        <button onClick={stopGame} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm transition">
+        <button onClick={() => setPhase('idle')} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm transition">
           Стоп
         </button>
       </div>

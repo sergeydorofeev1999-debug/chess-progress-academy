@@ -199,7 +199,6 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
           setIsComplete(true);
           setMessage('Отлично! Вы защитились от мата!');
           saveStars(exercise, 3);
-          onComplete();
           return;
         }
         // Wrong move in sequence — fall through to fail logic
@@ -214,7 +213,7 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
         setIsComplete(true);
         setMessage('Отлично! Вы защитились от мата!');
         saveStars(exercise, 3);
-        onComplete();
+        if (exercise === 8) onComplete();
         return;
       }
 
@@ -560,11 +559,6 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
         >
           <RotateCcw size={14} /> Заново
         </button>
-
-        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-          <p className="font-medium mb-1">Цель:</p>
-          <p>Найдите ход, который не даёт сопернику поставить мат.</p>
-        </div>
 
         {/* Mobile exercise pills — 2 rows of 4 */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">

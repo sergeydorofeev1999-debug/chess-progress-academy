@@ -23,8 +23,8 @@ const EXERCISE_KEYS: Record<1|2|3|4|5|6|7|8, { from: string; to: string }> = {
   2: { from: 'a5', to: 'a2' },
   3: { from: 'd6', to: 'd8' },
   4: { from: 'h4', to: 'e1' },
-  5: { from: 'd7', to: 'f6' },
-  6: { from: 'd6', to: 'h2' },
+  5: { from: 'd7', to: 'd5' },
+  6: { from: 'e4', to: 'd2' },
   7: { from: 'e8', to: 'e1' },
   8: { from: 'c7', to: 'c8' },
 };
@@ -218,7 +218,7 @@ export default function MateInTwoBoard({ onComplete, lessonId }: { onComplete: (
           setStage('complete');
           setMessage('Браво! Мат в 2 хода!');
           saveStars(exercise, 3);
-          onComplete();
+          if (exercise === 8) onComplete();
           return;
         } else {
           setGame(new Chess(g.fen()));
@@ -509,11 +509,6 @@ export default function MateInTwoBoard({ onComplete, lessonId }: { onComplete: (
         >
           <RotateCcw size={14} /> Заново
         </button>
-
-        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-          <p className="font-medium mb-1">Цель:</p>
-          <p>Поставьте мат в 2 хода. Белые начинают.</p>
-        </div>
 
         {/* Mobile exercise pills — 2 rows of 4 */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">

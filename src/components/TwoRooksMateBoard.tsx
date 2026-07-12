@@ -641,11 +641,6 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
 
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        {/* Board */}
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full" style={{ whiteSpace: 'pre-line' }}>
-          Цель:
-Поставьте мат чёрному королю двумя ладьями.
-        </div>
 
         {/* Timer for exercise 5 */}
         {currentEx.timeLimit && !isComplete && !isStalemate && (

@@ -13,7 +13,7 @@ const START_FEN_2 = 'k7/8/2n5/8/1P6/8/4B3/1K6 w - - 0 1';
 const START_FEN_3 = 'r4rk1/pp3p1p/1n2q1p1/4p3/2P1P3/P6P/BP2QPP1/R2R2K1 w - - 0 1';
 const START_FEN_4 = '3R1bk1/5ppp/1N6/pp2P3/8/1P2r2P/P5PK/8 w - - 0 1';
 const START_FEN_5 = '2r3k1/5ppp/8/8/8/7P/2B1nPP1/2R4K w - - 0 1';
-const START_FEN_6 = '5k2/1q5p/p5p1/4b3/1P2p3/P3P3/2Q1BPPP/6K1 w - - 0 1';
+const START_FEN_6 = '5k2/1q5p/p3p1p1/4bp2/1P2p3/P3P3/2Q1BPPP/6K1 w - - 0 1';
 const START_FEN_7 = 'r4k1r/pp1b1ppp/3P4/q7/1nPNQ3/4P2P/3N1PP1/4KB1R w K - 0 1';
 const START_FEN_8 = '6k1/p5pp/1pq1pp2/8/4N3/4P1P1/PP3PBP/6K1 w - - 0 1';
 const START_FEN_9 = '3r3r/pp3Rpk/4p1p1/6Q1/2q1N1P1/3nP2P/8/3R2K1 w - - 0 1';
@@ -992,9 +992,6 @@ const getExerciseGoal = (ex: number) => {
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {getExerciseHint(exercise)}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1123,7 +1120,7 @@ const getExerciseGoal = (ex: number) => {
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{getExerciseGoal(exercise)}</p>
+          <p>Найдите лучший ход!</p>
         </div>
 
         {/* Mobile exercise pills — 2 rows of 6 */}
