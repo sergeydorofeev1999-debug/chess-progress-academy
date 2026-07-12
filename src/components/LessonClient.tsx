@@ -1397,7 +1397,8 @@ export default function LessonClient({ lesson, allLessons, courseId, isCompleted
   const handleLevelComplete = (levelIndex: number, stars: number) => {
     const key = `lesson_progress_${lesson.id}`;
     const existing = JSON.parse(localStorage.getItem(key) || '{}');
-    existing[levelIndex] = stars;
+    const prev = existing[levelIndex] || 0;
+    existing[levelIndex] = Math.max(prev, stars);
     localStorage.setItem(key, JSON.stringify(existing));
   };
 
