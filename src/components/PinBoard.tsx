@@ -1152,33 +1152,6 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {exercise === 1
-            ? 'Связка — сходите ладьёй с d2 на e2 (связка слона), затем заберите слона'
-            : exercise === 2
-            ? 'Связка — сходите ферзём с a4 на f4 (связка ладьи), затем заберите ладью'
-            : exercise === 3
-            ? 'Связка — сходите слоном с f1 на c4 (связка ферзя), затем заберите ферзя'
-            : exercise === 4
-            ? 'Связка + нажим — пешка f4 надавливает на связанного коня, затем заберите коня'
-            : exercise === 5
-            ? 'Связка — слон d4 связка ладьи, король защищает, пешка f4, заберите ладью'
-            : exercise === 6
-            ? 'Связка — ферзь c4 связка ладьи, король защищает, пешка f5, заберите ладью'
-            : exercise === 7
-            ? 'Нажим — пешка d4-d5, затем заберите коня пешкой'
-            : exercise === 8
-            ? 'Связка — ферзь e4 связывает ладью, ладья h8 защищает, пешка c4, король уходит, пешка ест ладью'
-            : exercise === 9
-            ? 'Связка — слон b5 связка ферзя, ферзь забирает слона, конь забирает ферзя'
-            : exercise === 10
-            ? 'Мат связкой — конь e4 съедает коня f6, пешка e7 связана'
-            : exercise === 11
-            ? 'Мат связкой — ладья f1-f8, ферзь g7 связан'
-            : exercise === 12
-            ? 'Мат связкой — ладья g6 съедает коня a6, пешка b7 связана'
-            : ''}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1305,34 +1278,12 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
           <RotateCcw size={14} /> Заново
         </button>
 
-        <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-          <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1
-          ? 'Сходите ладьёй на e2, чтобы связать чёрного слона. Затем заберите слона.'
-          : exercise === 2
-          ? 'Сходите ферзём на f4, чтобы связать чёрную ладью. Затем заберите ладью.'
-          : exercise === 3
-          ? 'Сходите слоном на c4, чтобы связать чёрного ферзя. Затем заберите ферзя.'
-          : exercise === 4
-          ? 'Связка + нажим: пешка f4 надавливает на связанного коня. Затем заберите коня.'
-          : exercise === 5
-          ? 'Слон d4 связывает ладью. Король защищает. Пешка f4, затем заберите ладью.'
-          : exercise === 6
-          ? 'Ферзь c4 связывает ладью. Король защищает. Пешка f5, затем заберите ладью.'
-          : exercise === 7
-          ? 'Пешка d4-d5 нажим. Затем заберите коня на c6 пешкой.'
-          : exercise === 8
-          ? 'Ферзь a4-e4 связывает ладью. Ладья h8-d8 защищает. Пешка c2-c4, король уходит. Пешка c4xd5.'
-          : exercise === 9
-          ? 'Слон f1-b5 связывает ферзя. Ферзь забирает слона. Конь забирает ферзя.'
-          : exercise === 10
-          ? 'Конь e4 съедает коня f6 — мат! Пешка e7 связана ферзём e2.'
-          : exercise === 11
-          ? 'Ладья f1-f8 — мат! Ферзь g7 связан слоном c3.'
-          : exercise === 12
-          ? 'Ладья g6 съедает коня a6 — мат! Пешка b7 связана слоном f3.'
-          : ''}</p>
-        </div>
+        {(exercise === 1 || exercise === 2 || exercise === 3 || exercise === 9) && (
+          <div className="text-center text-sm text-slate-600 max-w-sm px-4">
+            <p className="font-medium mb-1">Цель:</p>
+            <p>Используйте связку, чтобы выиграть фигуру соперника.</p>
+          </div>
+        )}
 
         {/* Mobile exercise pills — 2 rows of 6 */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
