@@ -61,7 +61,7 @@ const LEVELS: LevelConfig[] = [
   {
     id: 1,
     title: 'Уравнение 1',
-    instructions: 'Расставь фигуры так, чтобы суммы с обеих сторон были равны.',
+    instructions: 'Расставь фигуры так, чтобы равенство выполнялось.',
     pieces: [
       { id: 'rook', type: 'r', label: 'Ладья', value: 5 },
       { id: 'bishop', type: 'b', label: 'Слон', value: 3 },
@@ -123,8 +123,7 @@ const LEVELS: LevelConfig[] = [
   {
     id: 5,
     title: 'Упражнение 6',
-    instructions:
-      'Ладья + Слон + Пешка = Слон + Конь + Конь. Или Ладья + Конь + Пешка = Слон + Слон + Конь. Расставь фигуры так, чтобы равенство выполнялось.',
+    instructions: 'Расставь фигуры так, чтобы равенство выполнялось.',
     pieces: [
       { id: 'rook', type: 'r', label: 'Ладья', value: 5 },
       { id: 'bishop1', type: 'b', label: 'Слон', value: 3 },
@@ -370,13 +369,6 @@ export default function PieceValueBoard({ onComplete, onLevelComplete }: Props) 
             );
           })}
         </div>
-
-        <button
-          onClick={reset}
-          className="flex items-center gap-1 px-3 py-1.5 text-xs text-gray-600 bg-gray-100 rounded hover:bg-gray-200 transition w-full justify-center"
-        >
-          <RotateCcw size={14} /> Заново
-        </button>
       </div>
 
       {/* CENTER: Equation */}
