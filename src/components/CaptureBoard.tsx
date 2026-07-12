@@ -1489,10 +1489,6 @@ export default function CaptureBoard({
 
       {/* CENTER COLUMN: Chess board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {level.instructions}
-        </div>
-
         <InlineChessBoard fen={position} onMove={handleMove} msg={msg} setMsg={setMsg} forbiddenSquares={level.forbiddenSquares || []} />
 
         {/* Red fail banner */}
@@ -1509,6 +1505,11 @@ export default function CaptureBoard({
             </div>
           </div>
         )}
+
+        {/* Instructions под доской */}
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
+          {level.instructions}
+        </div>
 
         {/* Mobile level stars bar */}
         <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
