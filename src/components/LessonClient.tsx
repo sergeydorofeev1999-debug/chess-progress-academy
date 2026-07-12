@@ -1129,44 +1129,85 @@ function MultiLevelStarBoard({
       {/* LEFT COLUMN: Stars + Figure menu + reset */}
       <div className="w-full lg:w-[140px] flex-shrink-0 space-y-2">
         {/* Stars progress — Lichess style vertical list with numbers (desktop only) */}
-        <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
-          {levels.map((_l: any, i: number) => {
-            const earned = levelStars[i];
-            const isCurrent = i === currentLevel;
-            const isDone = earned != null;
-            const isFuture = !isCurrent && !isDone && i > currentLevel;
-            return (
-              <button
-                key={i}
-                onClick={() => {
-                  if (isFuture) return;
-                  if (i !== currentLevel) {
-                    setCurrentLevel(i);
-                    setAllDone(false);
-                  }
-                }}
-                disabled={isFuture}
-                className={`flex items-center justify-center px-2 py-1.5 transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
-              >
-                <div className="flex gap-0.5">
-                  {[1, 2, 3].map((s) => (
-                    <img
-                      key={s}
-                      src="/images/learn/star.png"
-                      className={`w-3.5 h-3.5 ${
-                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                      }`}
-                      draggable={false}
-                      alt=""
-                    />
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {totalLevels === 8 ? (
+          <div className="hidden lg:grid grid-cols-2 gap-1 rounded overflow-hidden border border-gray-200 p-1">
+            {levels.map((_l: any, i: number) => {
+              const earned = levelStars[i];
+              const isCurrent = i === currentLevel;
+              const isDone = earned != null;
+              const isFuture = !isCurrent && !isDone && i > currentLevel;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isFuture) return;
+                    if (i !== currentLevel) {
+                      setCurrentLevel(i);
+                      setAllDone(false);
+                    }
+                  }}
+                  disabled={isFuture}
+                  className={`flex items-center justify-center px-1 py-2 rounded transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <img
+                        key={s}
+                        src="/images/learn/star.png"
+                        className={`w-3 h-3 ${
+                          isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                        }`}
+                        draggable={false}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="hidden lg:flex flex-col rounded overflow-hidden border border-gray-200">
+            {levels.map((_l: any, i: number) => {
+              const earned = levelStars[i];
+              const isCurrent = i === currentLevel;
+              const isDone = earned != null;
+              const isFuture = !isCurrent && !isDone && i > currentLevel;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isFuture) return;
+                    if (i !== currentLevel) {
+                      setCurrentLevel(i);
+                      setAllDone(false);
+                    }
+                  }}
+                  disabled={isFuture}
+                  className={`flex items-center justify-center px-2 py-1.5 transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer hover:brightness-110'}`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <img
+                        key={s}
+                        src="/images/learn/star.png"
+                        className={`w-3.5 h-3.5 ${
+                          isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                        }`}
+                        draggable={false}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Piece menu — clickable navigation to lessons */}
         {allLessons && allLessons.length > 0 && (
@@ -1298,44 +1339,85 @@ function MultiLevelStarBoard({
 
 
         {/* Mobile stars — horizontal bar under board */}
-        <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
-          {levels.map((_l: any, i: number) => {
-            const earned = levelStars[i];
-            const isCurrent = i === currentLevel;
-            const isDone = earned != null;
-            const isFuture = !isCurrent && !isDone && i > currentLevel;
-            return (
-              <button
-                key={i}
-                onClick={() => {
-                  if (isFuture) return;
-                  if (i !== currentLevel) {
-                    setCurrentLevel(i);
-                    setAllDone(false);
-                  }
-                }}
-                disabled={isFuture}
-                className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
-                  isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
-                } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
-              >
-                <div className="flex gap-0.5">
-                  {[1, 2, 3].map((s) => (
-                    <img
-                      key={s}
-                      src="/images/learn/star.png"
-                      className={`w-3 h-3 ${
-                        isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
-                      }`}
-                      draggable={false}
-                      alt=""
-                    />
-                  ))}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        {totalLevels === 8 ? (
+          <div className="lg:hidden grid grid-cols-4 gap-1 w-full">
+            {levels.map((_l: any, i: number) => {
+              const earned = levelStars[i];
+              const isCurrent = i === currentLevel;
+              const isDone = earned != null;
+              const isFuture = !isCurrent && !isDone && i > currentLevel;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isFuture) return;
+                    if (i !== currentLevel) {
+                      setCurrentLevel(i);
+                      setAllDone(false);
+                    }
+                  }}
+                  disabled={isFuture}
+                  className={`flex items-center justify-center gap-0.5 py-1.5 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <img
+                        key={s}
+                        src="/images/learn/star.png"
+                        className={`w-3 h-3 ${
+                          isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                        }`}
+                        draggable={false}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex lg:hidden gap-1 justify-center w-full overflow-x-auto">
+            {levels.map((_l: any, i: number) => {
+              const earned = levelStars[i];
+              const isCurrent = i === currentLevel;
+              const isDone = earned != null;
+              const isFuture = !isCurrent && !isDone && i > currentLevel;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isFuture) return;
+                    if (i !== currentLevel) {
+                      setCurrentLevel(i);
+                      setAllDone(false);
+                    }
+                  }}
+                  disabled={isFuture}
+                  className={`flex items-center gap-0.5 px-1.5 py-1 rounded text-xs transition ${
+                    isCurrent ? 'bg-blue-500 text-white' : isDone ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'
+                  } ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3].map((s) => (
+                      <img
+                        key={s}
+                        src="/images/learn/star.png"
+                        className={`w-3 h-3 ${
+                          isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
+                        }`}
+                        draggable={false}
+                        alt=""
+                      />
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* RIGHT COLUMN: Exercise info */}
