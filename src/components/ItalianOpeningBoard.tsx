@@ -124,6 +124,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const storageKey = lessonId ? `italian_progress_${lessonId}` : 'italian_progress';
 
   useEffect(() => () => { mountedRef.current = false; }, []);
+
   useEffect(() => { isCompleteRef.current = isComplete; }, [isComplete]);
   useEffect(() => { isFailRef.current = isFail; }, [isFail]);
 
@@ -445,7 +446,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
               if (!mountedRef.current) return;
               g.move({ from: 'b8', to: 'c6' });
               setGame(new Chess(g.fen()));
-              setMessage('Отлично! Разведите слона на c4 — классическая итальянская партия. Сделайте Bc4!');
+              setMessage('Отлично! Конь на f3 развит. Теперь разведите слона на c4 — классическая итальянская партия. Сделайте Bc4!');
             }, 1000);
             return;
           } else {
@@ -462,7 +463,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
               if (!mountedRef.current) return;
               g.move({ from: 'f8', to: 'c5' });
               setGame(new Chess(g.fen()));
-              setMessage('d3 — тихая итальянская, готовим позицию для дырокола. Сделайте d3!');
+              setMessage('Слон на c4 разведён. d3 — тихая итальянская, готовим позицию для дырокола. Сделайте d3!');
             }, 1000);
             return;
           } else {
@@ -479,7 +480,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
               if (!mountedRef.current) return;
               g.move({ from: 'g8', to: 'f6' });
               setGame(new Chess(g.fen()));
-              setMessage('Конь c3 развивает фигуры и готовится к центру. Сделайте Nc3!');
+              setMessage('Пешка d3 защищена. Конь c3 развивает фигуры и готовится к центру. Сделайте Nc3!');
             }, 1000);
             return;
           } else {
@@ -496,7 +497,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
               if (!mountedRef.current) return;
               g.move({ from: 'd7', to: 'd6' });
               setGame(new Chess(g.fen()));
-              setMessage('Слон g5 связывает коня f6 — начало дырокола! Сделайте Bg5!');
+              setMessage('Конь на c3 развит. Слон g5 связывает коня f6 — начало дырокола! Сделайте Bg5!');
             }, 1000);
             return;
           } else {
@@ -1715,20 +1716,6 @@ const handleSquareClick = useCallback((square: string) => {
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
-          {exercise === 1 && whiteMoves === 0 ? 'Сыграйте e2-e4 — захватите центр пешкой.' :
-           exercise === 1 && whiteMoves === 1 ? 'Конь выходит на f3 — ближе к центру и нападает на чёрную пешку e5.' :
-           exercise === 1 && whiteMoves === 2 ? 'Сыграйте Bf1-c4 — направьте слона на поле f7.' :
-           exercise === 1 && whiteMoves === 3 ? 'Сыграйте d2-d3 — откройте дорогу слону c1.' :
-           exercise === 1 && whiteMoves === 4 ? 'Сыграйте Bc1-g5 — свяжите коня f6.' :
-           exercise === 1 && whiteMoves === 5 ? 'Сыграйте Nb1-c3 — развейте второго коня.' :
-           exercise === 1 && whiteMoves === 6 ? 'Сделайте рокировку — уберите короля в безопасность.' :
-           exercise === 2 ? 'Сыграйте итальянскую партию: e4, затем Nf3, затем Bc4.' :
-           exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
-           exercise === 4 ? 'Самостоятельный дырокол — повторите все ходы!' :
-           exercise === 5 ? 'Пешечный штурм — захватите центр, развейтесь и атакуйте короля!' :
-           exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' : ''}
-        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1857,13 +1844,9 @@ const handleSquareClick = useCallback((square: string) => {
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>{exercise === 1 ? 'Пройдите всю итальянскую партию: e4, Nf3, Bc4, d3, Bg5, Nc3, 0-0' :
-          exercise === 2 ? 'Сыграйте e4, Nf3, Bc4 — развейте фигуры в центр.' :
-          exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
-          exercise === 4 ? 'Повторите дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
-          exercise === 5 ? 'Пешечный штурм на королевском фланге — классическая атака в итальянской партии.' :
-          exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' : ''}
-          </p>
+          <p>{exercise === 1 || exercise === 2 ? 'Захватите центр пешкой, выведите коней и слонов и сделайте рокировку.' :
+          exercise === 3 || exercise === 4 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
+          exercise === 5 || exercise === 6 ? 'Пешечный штурм — захватите центр, развейтесь и атакуйте короля!' : ''}</p>
         </div>
 
         {/* Mobile exercise pills — 2 rows of 6 */}
