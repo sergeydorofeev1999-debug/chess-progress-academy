@@ -1284,6 +1284,12 @@ export default function PinBoard({ onComplete, lessonId }: { onComplete: () => v
             <p>Используйте связку, чтобы выиграть фигуру соперника.</p>
           </div>
         )}
+        {(exercise === 4 || exercise === 5 || exercise === 6 || exercise === 7 || exercise === 8) && (
+          <div className="text-center text-sm text-slate-600 max-w-sm px-4">
+            <p className="font-medium mb-1">Цель:</p>
+            <p>Используйте связку и нажим, чтобы выиграть фигуру соперника.</p>
+          </div>
+        )}
 
         {/* Mobile exercise pills — 2 rows of 6 */}
         <div className="flex lg:hidden flex-col items-center gap-1 w-full">
