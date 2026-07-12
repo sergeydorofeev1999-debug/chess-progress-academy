@@ -713,7 +713,7 @@ export default function KnightPawnBoard({ onComplete, lessonId }: { onComplete: 
   const currentLevel = LEVELS.find(l => l.id === difficulty)!;
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
+    <div className="flex flex-col items-center gap-4 w-full select-none" >
       {/* Level badge */}
       <div className="flex items-center gap-2">
         <span className={`px-3 py-1 rounded-full text-white text-sm font-bold ${currentLevel.color}`}>

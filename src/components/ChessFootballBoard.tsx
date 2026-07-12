@@ -733,7 +733,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   }
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full select-none" style={{ touchAction: 'none' }}>
+    <div className="flex flex-col items-center gap-4 w-full select-none" >
       {/* Score */}
       <div className="flex items-center gap-4 text-lg font-bold">
         <div className="flex items-center gap-2">
