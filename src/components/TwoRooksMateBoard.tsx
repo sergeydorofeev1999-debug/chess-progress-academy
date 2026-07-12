@@ -416,7 +416,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         setMessage(`Мат чёрному королю! ${earned} ★`);
         setIsComplete(true);
         saveStars(currentExercise, earned);
-        onComplete();
+        if (currentExercise === 5) onComplete();
         return;
       }
 
@@ -462,7 +462,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 5) onComplete();
           }
         } else {
           if (g.isCheckmate()) {
@@ -470,7 +470,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
             setMessage(`Мат чёрному королю! ${earned} ★`);
             setIsComplete(true);
             saveStars(currentExercise, earned);
-            onComplete();
+            if (currentExercise === 5) onComplete();
           } else if (g.isStalemate()) {
             setIsStalemate(true);
             setMessage('Пат. Провалено.');
@@ -641,8 +641,10 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
 
       {/* CENTER COLUMN: board + stats */}
       <div className="flex-1 flex flex-col items-center gap-3">
-        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full">
-          {currentEx.description}
+        {/* Board */}
+        <div className="text-[#2b2b2b] text-[15px] font-medium mb-2 text-center leading-snug w-full" style={{ whiteSpace: 'pre-line' }}>
+          Цель:
+Поставьте мат чёрному королю двумя ладьями.
         </div>
 
         {/* Timer for exercise 5 */}
@@ -818,10 +820,9 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         >
           <RotateCcw size={14} /> Заново
         </button>
-
+        {/* Info */}
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
-          <p className="font-medium mb-1">Цель:</p>
-          <p>Поставьте мат чёрному королю двумя ладьями. Используйте одну ладью для ограничения пространства, вторую — для шаха и мата.</p>
+          <p>Используйте одну ладью для ограничения пространства, вторую — для шаха и мата.</p>
         </div>
       </div>
     </div>
