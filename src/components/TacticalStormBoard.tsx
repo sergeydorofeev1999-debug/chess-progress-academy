@@ -317,6 +317,11 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       return;
     }
 
+    // Apply the move to the actual game state so the piece stays on target square
+    const newGame = new Chess(game.fen());
+    newGame.move({ from, to, promotion: 'q' });
+    setGame(newGame);
+
     // Build UCI from move result (handles promotions correctly)
     const userUci = move.from + move.to + (move.promotion || '');
     const expected = currentPuzzleRef.current.moves[0].replace(/[+#]/g, '');
@@ -720,6 +725,16 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         </div>
       )}
 
+      {/* Correct answer overlay — над доской */}
+      {showCorrect && (
+        <div className="w-full flex justify-center py-2 z-50">
+          <div className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-xl shadow-lg flex items-center gap-2">
+            <Check className="w-6 h-6" />
+            Правильно
+          </div>
+        </div>
+      )}
+
       {/* Board */}
       <div className="flex justify-center w-full relative">
         <div
@@ -812,16 +827,6 @@ export default function TacticalStormBoard({ onComplete }: Props) {
           </div>
         )}
       </div>
-
-      {/* Correct answer overlay */}
-      {showCorrect && (
-        <div className="absolute inset-x-0 top-[45%] z-50 flex justify-center">
-          <div className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-xl shadow-lg flex items-center gap-2">
-            <Check className="w-6 h-6" />
-            Правильно
-          </div>
-        </div>
-      )}
 
       {/* Controls */}
       <div className="flex w-full gap-2 mt-1">
