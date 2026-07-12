@@ -1279,7 +1279,7 @@ function MultiLevelStarBoard({
             </div>
           </div>
         )}
-        <InlineChessBoard fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} guideArrows={level.guideArrows || []} movedPieces={movedPieces} />
+        <InlineChessBoard key={currentLevel} fen={position} stars={visibleStars} onMove={handleMove} pieceType={pieceType} pieceName={pieceName} guideArrows={level.guideArrows || []} movedPieces={movedPieces} />
 
         {/* Red fail banner (Lichess style) */}
         {failed && (
