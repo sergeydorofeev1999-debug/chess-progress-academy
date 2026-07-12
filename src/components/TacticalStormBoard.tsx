@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
-import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, SkipForward, Heart, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trophy, Zap, Timer, RotateCcw, ArrowLeft, Flame, Heart, X, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const FILES = ['a','b','c','d','e','f','g','h'];
 const REVERSED_FILES = ['h','g','f','e','d','c','b','a'];
@@ -56,7 +56,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(300);
-  const [skips, setSkips] = useState(3);
+  const [showCorrect, setShowCorrect] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'none' | 'correct' | 'wrong'>('none');
   const [lives, setLives] = useState(3);
@@ -200,7 +200,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     livesRef.current = 3;
     setPuzzleIndex(0);
     puzzleIndexRef.current = 0;
-    setSkips(3);
+    setShowCorrect(false);
     setTimeLeft(totalTime);
     timeLeftRef.current = totalTime;
     setMessage('');
@@ -234,8 +234,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       setBestStreak(s => Math.max(s, streakRef.current));
       scoreRef.current += 1;
       setScore(scoreRef.current);
-      setMessageType('correct');
-      setMessage('Верно!');
+      // Show "Правильно" overlay with smooth transition
+      setShowCorrect(true);
     } else {
       streakRef.current = 0;
       setStreak(0);
@@ -277,57 +277,27 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       }
     }
 
-    puzzleIndexRef.current += 1;
-    setPuzzleIndex(puzzleIndexRef.current);
-    const next = pickPuzzle(wasCorrect ? scoreRef.current : scoreRef.current);
-    currentPuzzleRef.current = next;
-    setCurrentPuzzle(next);
-    const ng = new Chess(next.fen);
-    setIsBlack(ng.turn() === 'b');
-    setGame(ng);
-    setSelectedSquare(null);
-    setDragPiece(null);
-    puzzleStartTimeRef.current = Date.now();
-
+    // Smooth transition: show correct for 1200ms, then load next
+    const delay = wasCorrect ? 1200 : 800;
+    
     flashTimeoutRef.current = setTimeout(() => {
+      setShowCorrect(false);
       setMessage('');
       setMessageType('none');
-    }, 800);
+      
+      puzzleIndexRef.current += 1;
+      setPuzzleIndex(puzzleIndexRef.current);
+      const next = pickPuzzle(wasCorrect ? scoreRef.current : scoreRef.current);
+      currentPuzzleRef.current = next;
+      setCurrentPuzzle(next);
+      const ng = new Chess(next.fen);
+      setIsBlack(ng.turn() === 'b');
+      setGame(ng);
+      setSelectedSquare(null);
+      setDragPiece(null);
+      puzzleStartTimeRef.current = Date.now();
+    }, delay);
   }, [streak, puzzleIndex, pickPuzzle, mode]);
-
-  const handleSkip = useCallback(() => {
-    if (mode !== 'survival' && skips <= 0) return;
-    if (mode !== 'survival') setSkips(s => s - 1);
-    setStreak(0);
-    streakRef.current = 0;
-    if (currentPuzzleRef.current) {
-      const timeSpent = Math.round((Date.now() - puzzleStartTimeRef.current) / 1000);
-      setPuzzleHistory(prev => [...prev, {
-        puzzle: currentPuzzleRef.current!,
-        status: 'wrong',
-        index: prev.length,
-        timeSpent
-      }]);
-    }
-    puzzleIndexRef.current += 1;
-    setPuzzleIndex(puzzleIndexRef.current);
-    const next = pickPuzzle(scoreRef.current);
-    currentPuzzleRef.current = next;
-    setCurrentPuzzle(next);
-    const ng = new Chess(next.fen);
-    setIsBlack(ng.turn() === 'b');
-    setGame(ng);
-    setSelectedSquare(null);
-    setDragPiece(null);
-    puzzleStartTimeRef.current = Date.now();
-    if (mode !== 'survival') {
-      setTimeLeft(t => Math.max(0, t - 5));
-    }
-    flashTimeoutRef.current = setTimeout(() => {
-      setMessage('');
-      setMessageType('none');
-    }, 800);
-  }, [mode, skips, pickPuzzle]);
 
   /* ─── Move logic ─── */
   const processMove = useCallback((from: string, to: string) => {
@@ -715,8 +685,8 @@ export default function TacticalStormBoard({ onComplete }: Props) {
           )}
         </div>
         <div className="flex flex-col items-end">
-          <span className="text-xs text-slate-500 uppercase">Пропуски</span>
-          <span className="text-2xl font-bold text-slate-800">{mode === 'survival' ? '∞' : skips}</span>
+          <span className="text-xs text-slate-500 uppercase">Задача</span>
+          <span className="text-2xl font-bold text-slate-800">{puzzleIndex + 1}</span>
         </div>
       </div>
 
@@ -743,11 +713,9 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         )}
       </div>
 
-      {/* Feedback flash */}
-      {messageType !== 'none' && (
-        <div className={`w-full text-center py-2 rounded-lg font-bold text-lg ${
-          messageType === 'correct' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`}>
+      {/* Feedback flash - wrong only */}
+      {messageType === 'wrong' && (
+        <div className="w-full text-center py-2 rounded-lg font-bold text-lg bg-red-500 text-white">
           {message}
         </div>
       )}
@@ -845,22 +813,19 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         )}
       </div>
 
+      {/* Correct answer overlay */}
+      {showCorrect && (
+        <div className="absolute inset-x-0 top-[45%] z-50 flex justify-center">
+          <div className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-xl shadow-lg flex items-center gap-2">
+            <Check className="w-6 h-6" />
+            Правильно
+          </div>
+        </div>
+      )}
+
       {/* Controls */}
       <div className="flex w-full gap-2 mt-1">
-        {mode !== 'survival' && (
-          <button
-            onClick={handleSkip}
-            disabled={skips <= 0}
-            className={`flex-1 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-1 transition ${
-              skips > 0
-                ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                : 'bg-slate-100 text-slate-400 cursor-not-allowed'
-            }`}
-          >
-            <SkipForward className="w-4 h-4" /> Пропуск ({skips})
-          </button>
-        )}
-        <button onClick={() => setPhase('idle')} className="flex-1 py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm transition">
+        <button onClick={() => setPhase('idle')} className="w-full py-2.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg font-medium text-sm transition">
           Стоп
         </button>
       </div>
