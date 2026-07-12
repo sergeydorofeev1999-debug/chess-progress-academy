@@ -1795,7 +1795,9 @@ export default function ItalianOpeningBoardBlack({ onComplete, lessonId }: { onC
 
         <div className="text-center text-sm text-slate-600 max-w-sm px-4">
           <p className="font-medium mb-1">Цель:</p>
-          <p>Пройдите итальянскую партию за чёрных: e5, Nc6, Bc5, Nf6, O-O, d6 в ответ на ходы белых.{exercise === 5 ? ' В упражнении 5 — пешечный штурм!' : ''}</p>
+          <p>{exercise === 1 || exercise === 2 ? 'Захватите центр пешкой, выведите коней и слонов и сделайте рокировку.' :
+          exercise === 3 || exercise === 4 ? 'Используйте дырокол, чтобы разрушить рокировку соперника.' :
+          exercise === 5 || exercise === 6 ? 'Пешечный штурм — захватите центр, выведите коней и слонов и атакуйте рокировку соперника!' : ''}</p>
         </div>
 
         {/* Mobile exercise pills */}

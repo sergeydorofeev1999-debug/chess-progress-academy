@@ -1716,6 +1716,20 @@ const handleSquareClick = useCallback((square: string) => {
 
       {/* CENTER COLUMN */}
       <div className="flex-1 flex flex-col items-center gap-3">
+        <div className="px-6 py-3 rounded-xl text-center font-bold text-white bg-yellow-500 mb-2 w-full">
+          {exercise === 1 && whiteMoves === 0 ? 'Сыграйте e2-e4 — захватите центр пешкой.' :
+           exercise === 1 && whiteMoves === 1 ? 'Конь выходит на f3 — ближе к центру и нападает на чёрную пешку e5.' :
+           exercise === 1 && whiteMoves === 2 ? 'Сыграйте Bf1-c4 — направьте слона на поле f7.' :
+           exercise === 1 && whiteMoves === 3 ? 'Сыграйте d2-d3 — откройте дорогу слону c1.' :
+           exercise === 1 && whiteMoves === 4 ? 'Сыграйте Bc1-g5 — свяжите коня f6.' :
+           exercise === 1 && whiteMoves === 5 ? 'Сыграйте Nb1-c3 — развейте второго коня.' :
+           exercise === 1 && whiteMoves === 6 ? 'Сделайте рокировку — уберите короля в безопасность.' :
+           exercise === 2 ? 'Сыграйте итальянскую партию: e4, затем Nf3, затем Bc4.' :
+           exercise === 3 ? 'Дырокол — разменяйте коня на f6, разрушьте рокировку и заберите ферзя!' :
+           exercise === 4 ? 'Самостоятельный дырокол — повторите все ходы!' :
+           exercise === 5 ? 'Пешечный штурм — захватите центр, развейтесь и атакуйте короля!' :
+           exercise === 6 ? 'Пешечный штурм — повторите атаку на королевском фланге!' : ''}
+        </div>
 
         <div className="text-center font-bold text-slate-700 text-lg">
           {turnText}
@@ -1846,7 +1860,7 @@ const handleSquareClick = useCallback((square: string) => {
           <p className="font-medium mb-1">Цель:</p>
           <p>{exercise === 1 || exercise === 2 ? 'Захватите центр пешкой, выведите коней и слонов и сделайте рокировку.' :
           exercise === 3 || exercise === 4 ? 'Используйте дырокол, чтобы разрушить рокировку соперника.' :
-          exercise === 5 || exercise === 6 ? 'Пешечный штурм — захватите центр, развейтесь и атакуйте короля!' : ''}</p>
+          exercise === 5 || exercise === 6 ? 'Пешечный штурм — захватите центр, выведите коней и слонов и атакуйте рокировку соперника!' : ''}</p>
         </div>
 
         {/* Mobile exercise pills — 2 rows of 6 */}
