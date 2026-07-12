@@ -875,20 +875,28 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         )}
       </div>
 
-      {/* Error indicators — 3 squares showing mistakes */}
-      <div className="flex gap-1 mt-1">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className={`w-6 h-6 rounded flex items-center justify-center ${
-              i < (3 - lives)
-                ? 'bg-red-500 text-white'
-                : 'bg-slate-200 text-slate-400'
-            }`}
-          >
-            <X className="w-3.5 h-3.5" />
+      {/* Error indicators + Difficulty */}
+      <div className="flex w-full justify-between items-center mt-1">
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className={`w-6 h-6 rounded flex items-center justify-center ${
+                i < (3 - lives)
+                  ? 'bg-red-500 text-white'
+                  : 'bg-slate-200 text-slate-400'
+              }`}
+            >
+              <X className="w-3.5 h-3.5" />
+            </div>
+          ))}
+        </div>
+        {currentPuzzle && (
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] text-slate-400 uppercase">Сложность</span>
+            <span className="text-sm font-bold text-slate-600">{currentPuzzle.rating}</span>
           </div>
-        ))}
+        )}
       </div>
 
       {/* Controls */}
