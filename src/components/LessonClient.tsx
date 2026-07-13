@@ -1158,7 +1158,7 @@ function MultiLevelStarBoard({
                       <img
                         key={s}
                         src="/images/learn/star.png"
-                        className={`w-3 h-3 ${
+                        className={`w-3.5 h-3.5 ${
                           isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
                         }`}
                         draggable={false}
@@ -1370,7 +1370,7 @@ function MultiLevelStarBoard({
                       <img
                         key={s}
                         src="/images/learn/star.png"
-                        className={`w-3 h-3 ${
+                        className={`w-3.5 h-3.5 ${
                           isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
                         }`}
                         draggable={false}
@@ -1409,7 +1409,7 @@ function MultiLevelStarBoard({
                       <img
                         key={s}
                         src="/images/learn/star.png"
-                        className={`w-3 h-3 ${
+                        className={`w-3.5 h-3.5 ${
                           isFuture ? 'opacity-30 grayscale' : s <= (earned || 0) ? '' : 'opacity-40 grayscale'
                         }`}
                         draggable={false}
