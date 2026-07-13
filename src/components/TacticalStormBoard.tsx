@@ -774,15 +774,19 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         </div>
       )}
 
-      {/* Fixed toast — top of screen, doesn't affect layout */}
-      {showCorrect && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100]">
+      {/* Toast container — always reserves space, no layout shift */}
+      <div className="h-10 w-full flex justify-center items-start relative">
+        <div
+          className={`absolute top-0 transition-all duration-200 ${
+            showCorrect ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'
+          }`}
+        >
           <div className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold text-base shadow-lg flex items-center gap-2">
             <Check className="w-5 h-5" />
             Правильно
           </div>
         </div>
-      )}
+      </div>
 
       {/* Board */}
       <div className="flex justify-center w-full relative">
