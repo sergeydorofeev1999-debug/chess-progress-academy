@@ -391,7 +391,7 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
     <div className="flex flex-col lg:flex-row gap-4 w-full min-h-[500px]">
       {/* LEFT COLUMN */}
       <div className="w-full lg:w-[300px] flex-shrink-0 space-y-2">
-        <div className="hidden lg:grid grid-cols-4 gap-1 rounded p-1 border border-gray-200" data-grid="2x4">
+        <div className="hidden lg:grid gap-1 rounded p-1 border border-gray-200" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
           {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => {
             const earnedStars = exerciseStars[num] || 0;
             const isCurrent = num === exercise;
