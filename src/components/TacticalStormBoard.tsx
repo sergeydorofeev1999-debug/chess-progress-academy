@@ -58,6 +58,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [timeLeft, setTimeLeft] = useState(300);
   const [showCorrect, setShowCorrect] = useState(false);
   const [moveIndex, setMoveIndex] = useState(0);
+  const [lastCorrectMove, setLastCorrectMove] = useState<{from: string; to: string} | null>(null);
 
   const moveIndexRef = useRef(0);
   const [message, setMessage] = useState('');
@@ -196,6 +197,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     setSelectedSquare(null);
     setDragPiece(null);
     setMoveIndex(0);
+    setLastCorrectMove(null);
     moveIndexRef.current = 0;
     puzzleStartTimeRef.current = Date.now();
   }, []);
@@ -349,6 +351,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     // Correct move
     moveIndexRef.current += 1;
     setMoveIndex(moveIndexRef.current);
+    setLastCorrectMove({ from, to });
 
     if (moveIndexRef.current >= currentPuzzleRef.current.moves.length) {
       // All moves solved — puzzle complete
@@ -774,16 +777,6 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         </div>
       )}
 
-      {/* Fixed toast — top of screen, doesn't affect layout */}
-      {showCorrect && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100]">
-          <div className="bg-green-500 text-white px-6 py-2 rounded-lg font-bold text-base shadow-lg flex items-center gap-2">
-            <Check className="w-5 h-5" />
-            Правильно
-          </div>
-        </div>
-      )}
-
       {/* Board */}
       <div className="flex justify-center w-full relative">
         <div
@@ -821,6 +814,13 @@ export default function TacticalStormBoard({ onComplete }: Props) {
                   onPointerDown={(e) => handlePointerDown(e, sq)}
                   onDragStart={(e) => e.preventDefault()}
                 >
+                  {/* Correct move glow */}
+                  {lastCorrectMove?.to === sq && (
+                    <div className="absolute inset-0 bg-[rgba(100,200,60,0.55)] pointer-events-none z-[15]"
+                      style={{ boxShadow: 'inset 0 0 8px 2px rgba(80,180,50,0.7)' }}
+                    />
+                  )}
+
                   {/* Selection highlight */}
                   {sel && (
                     <div className="absolute inset-[1px] rounded-[5px] bg-[rgba(100,160,60,0.45)] pointer-events-none z-10" />
