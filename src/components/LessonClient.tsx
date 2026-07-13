@@ -1057,9 +1057,12 @@ function MultiLevelStarBoard({
       }
 
       if (stars.length === 0) {
-        // No stars - any valid move completes the level (demo/exploration level)
+        // No stars - complete level only when maxMoves reached (supports multi-move levels like castling)
         const max = level.maxMoves || 1;
         const m = movesRef.current + 1;
+        if (m < max) {
+          return true; // Continue to next move
+        }
         let earned = 3;
         if (m <= max) earned = 3;
         else if (m <= max + 1) earned = 2;
