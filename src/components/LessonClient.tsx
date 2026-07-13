@@ -1057,33 +1057,46 @@ function MultiLevelStarBoard({
       }
 
       if (stars.length === 0) {
-        // No stars - complete level only when maxMoves reached (supports multi-move levels like castling)
         const max = level.maxMoves || 1;
         const m = movesRef.current + 1;
+        // Castling lesson: only complete on actual castling moves (king to g1 or c1)
+        if (fromType === 'k' && (to === 'g1' || to === 'c1')) {
+          // Successful castling - complete level
+          let earned = 3;
+          if (m <= max) earned = 3;
+          else if (m <= max + 1) earned = 2;
+          else earned = 1;
+          setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
+          onLevelComplete?.(currentLevel, earned);
+          setTimeout(() => {
+            if (currentLevel + 1 < totalLevels) {
+              setCurrentLevel((l) => {
+                const next = l + 1;
+                localStorage.setItem(`${savedKey}_level`, String(next));
+                return next;
+              });
+              setMsg('');
+            } else {
+              setAllDone(true);
+              setMsg('🎉 Все позиции пройдены! Урок завершён!');
+              onAllComplete?.();
+            }
+          }, 600);
+          return true;
+        } else if (fromType === 'k') {
+          // King moved but not castling - failure
+          setFailed(true);
+          setGameOver(true);
+          return false;
+        }
+        // Non-king move (e.g., knight before castling in multi-move levels)
         if (m < max) {
           return true; // Continue to next move
         }
-        let earned = 3;
-        if (m <= max) earned = 3;
-        else if (m <= max + 1) earned = 2;
-        else earned = 1;
-        setLevelStars((prev) => ({ ...prev, [currentLevel]: earned }));
-        onLevelComplete?.(currentLevel, earned);
-        setTimeout(() => {
-          if (currentLevel + 1 < totalLevels) {
-            setCurrentLevel((l) => {
-              const next = l + 1;
-              localStorage.setItem(`${savedKey}_level`, String(next));
-              return next;
-            });
-            setMsg('');
-          } else {
-            setAllDone(true);
-            setMsg('🎉 Все позиции пройдены! Урок завершён!');
-            onAllComplete?.();
-          }
-        }, 600);
-        return true;
+        // maxMoves reached but no castling - failure
+        setFailed(true);
+        setGameOver(true);
+        return false;
       }
 
       if (stars.includes(to) && !collected.includes(to)) {
@@ -1702,3 +1715,4 @@ function getAllowedPieceName(piece: string): string {
   return names[piece] || piece;
 }
 
+// cache-bust: 1783912352
