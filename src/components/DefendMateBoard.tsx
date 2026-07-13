@@ -611,3 +611,4 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
     </div>
   );
 }
+
