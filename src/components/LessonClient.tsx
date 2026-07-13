@@ -1698,3 +1698,4 @@ function getAllowedPieceName(piece: string): string {
   };
   return names[piece] || piece;
 }
+
