@@ -774,18 +774,17 @@ export default function TacticalStormBoard({ onComplete }: Props) {
         </div>
       )}
 
-      {/* Correct answer overlay — над доской */}
-      {showCorrect && (
-        <div className="w-full flex justify-center py-2 z-50">
-          <div className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-xl shadow-lg flex items-center gap-2">
-            <Check className="w-6 h-6" />
-            Правильно
-          </div>
-        </div>
-      )}
-
       {/* Board */}
       <div className="flex justify-center w-full relative">
+        {/* Correct answer overlay — inside board, doesn't push layout */}
+        {showCorrect && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="bg-green-500 text-white px-8 py-3 rounded-lg font-bold text-xl shadow-lg flex items-center gap-2">
+              <Check className="w-6 h-6" />
+              Правильно
+            </div>
+          </div>
+        )}
         <div
           data-board
           className="grid border-[3px] border-[#2b2b2b] rounded-sm relative select-none"
