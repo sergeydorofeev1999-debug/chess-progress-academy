@@ -128,6 +128,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
   const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [message, setMessage] = useState('');
   const [isFail, setIsFail] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -224,6 +225,8 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     try {
       const move = g.move({ from, to });
       if (!move) return;
+
+      setLastMove({from: move.from, to: move.to});
 
       const nextWhiteMoves = whiteMoves + 1;
 
@@ -1050,6 +1053,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
+                const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq);
 
                 return (
                   <div
@@ -1094,8 +1098,11 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
                         />
                       </div>
                     )}
+                    {isLastMove && (
+                      <div className="absolute inset-0 bg-[rgba(155,199,0,0.35)] pointer-events-none z-[5]" />
+                    )}
                     {pieceObj && !isDragSource && (
-                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <div className="relative pointer-events-none z-[15]" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
                     )}

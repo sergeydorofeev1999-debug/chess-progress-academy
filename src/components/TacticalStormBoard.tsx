@@ -353,6 +353,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     if (moveIndexRef.current >= currentPuzzleRef.current.moves.length) {
       // All moves solved — puzzle complete
       setGame(newGame);
+      setSelectedSquare(null);
       setShowCorrect(true);
       flashTimeoutRef.current = setTimeout(() => {
         setShowCorrect(false);
