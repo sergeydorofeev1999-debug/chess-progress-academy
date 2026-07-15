@@ -367,6 +367,7 @@ export default function KnightPawnBoard({ onComplete, lessonId }: { onComplete: 
   const [winner, setWinner] = useState<string | null>(null);
   const [computerThinking, setComputerThinking] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [validSquares, setValidSquares] = useState<string[]>([]);
   const [enPassant, setEnPassant] = useState<string | null>(null);
   const [turn, setTurn] = useState<'w' | 'b'>('w');

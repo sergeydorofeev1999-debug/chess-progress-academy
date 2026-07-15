@@ -316,6 +316,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
   const [currentExercise, setCurrentExercise] = useState<ExerciseId>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [message, setMessage] = useState('');
   const [demoMode, setDemoMode] = useState(false);
   const [demoStep, setDemoStep] = useState(0);
@@ -387,6 +388,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
     const ex = EXERCISES.find(e => e.id === currentExercise)!;
     setGame(new Chess(ex.fen));
     setSelectedSquare(null);
+    setLastMove(null);
     setMessage('');
     setDemoMode(false);
     setDemoStep(0);
@@ -406,6 +408,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
     setCurrentExercise(id);
     setGame(new Chess(ex.fen));
     setSelectedSquare(null);
+    setLastMove(null);
     setMessage('');
     setDemoMode(false);
     setDemoStep(0);
@@ -463,6 +466,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
     try {
       const move = g.move({ from, to });
       if (!move) return;
+      setLastMove({from: move.from, to: move.to});
 
       const fenAfter = g.fen();
       const nextWhiteMoves = whiteMoves + 1;
@@ -518,6 +522,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         const blackMove = getBlackKingMove(g);
         if (blackMove) {
           g.move({ from: blackMove.from, to: blackMove.to });
+          setLastMove(blackMove);
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
 
@@ -808,6 +813,7 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
+                const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq);
 
                 return (
                   <div
@@ -852,8 +858,11 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
                         />
                       </div>
                     )}
+                    {isLastMove && (
+                      <div className="absolute inset-0 bg-[rgba(155,199,0,0.35)] pointer-events-none z-[5]" />
+                    )}
                     {pieceObj && !isDragSource && (
-                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <div className="relative pointer-events-none z-[15]" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
                     )}

@@ -295,6 +295,7 @@ export default function ChessFootballBoard({ onComplete, lessonId }: { onComplet
   const [completedLevels, setCompletedLevels] = useState<Record<Difficulty, boolean>>(savedProgress);
   const [computerThinking, setComputerThinking] = useState(false);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [validSquares, setValidSquares] = useState<string[]>([]);
   const [positionHistory, setPositionHistory] = useState<string[]>([]);
   const [sqSize, setSqSize] = useState(44);

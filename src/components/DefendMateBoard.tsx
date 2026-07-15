@@ -143,6 +143,7 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
     setIsComplete(false);
     setDragPiece(null);
     setSequenceStep(0);
+    setLastMove(null);
   }, [exercise]);
 
   const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, stars: number) => {
@@ -162,6 +163,7 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
     setIsComplete(false);
     setDragPiece(null);
     setSequenceStep(0);
+    setLastMove(null);
   }, []);
 
   // ──── DEFEND MATE LOGIC ────

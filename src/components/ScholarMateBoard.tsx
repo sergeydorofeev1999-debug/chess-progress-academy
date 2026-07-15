@@ -110,6 +110,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
   const [exercise, setExercise] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>(1);
   const [game, setGame] = useState<Chess | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [message, setMessage] = useState('');
   const [isFail, setIsFail] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
@@ -216,6 +217,8 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
     try {
       const move = g.move({ from, to });
       if (!move) return;
+
+      setLastMove({from: move.from, to: move.to});
 
       const nextWhiteMoves = whiteMoves + 1;
 
@@ -920,6 +923,7 @@ const handleSquareClick = useCallback((square: string) => {
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
+                const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq);
 
                 return (
                   <div

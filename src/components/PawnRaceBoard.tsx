@@ -402,6 +402,7 @@ export default function PawnRaceBoard({ onComplete, lessonId }: { onComplete: ()
   const [validSquares, setValidSquares] = useState<string[]>([]);
   const [enPassant, setEnPassant] = useState<string | null>(null);
   const [turn, setTurn] = useState<'w' | 'b'>('w');
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [sqSize, setSqSize] = useState(44);
 
   // Drag state

@@ -250,6 +250,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
   const [timerStarted, setTimerStarted] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isStalemateRef = useRef(false);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
 
   // Drag state
   const [dragPiece, setDragPiece] = useState<DragState | null>(null);
@@ -319,6 +320,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     timerIntervalRef.current = null;
     setTimerStarted(false);
     setTimeLeft(null);
+    setLastMove(null);
   }, [currentExercise]);
 
   const switchExercise = useCallback((id: ExerciseId) => {
@@ -338,6 +340,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
     timerIntervalRef.current = null;
     setTimerStarted(false);
     setTimeLeft(null);
+    setLastMove(null);
   }, [currentExercise]);
 
   const saveStars = useCallback((id: ExerciseId, stars: number) => {
@@ -366,6 +369,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         if (!prev) return null;
         const g = new Chess(prev.fen());
         g.move({ from: move.from, to: move.to });
+        setLastMove({ from: move.from, to: move.to });
         return g;
       });
       setDemoStep(s => s + 1);
@@ -388,6 +392,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
       const fenAfter = g.fen();
       const nextWhiteMoves = whiteMoves + 1;
       setGame(new Chess(fenAfter));
+      setLastMove({ from: move.from, to: move.to });
       setSelectedSquare(null);
       setMessage('');
       setWhiteMoves(nextWhiteMoves);
@@ -437,6 +442,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
         const blackMove = getBlackKingMove(g);
         if (blackMove) {
           g.move({ from: blackMove.from, to: blackMove.to });
+          setLastMove({ from: blackMove.from, to: blackMove.to });
           const fenAfterBlack = g.fen();
           setGame(new Chess(fenAfterBlack));
 
@@ -714,6 +720,7 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
                 const sel = selectedSquare === sq;
                 const isValidMove = validMoves.includes(sq);
                 const isDragSource = dragPiece?.square === sq;
+                const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq);
 
                 return (
                   <div
@@ -758,8 +765,11 @@ export default function TwoRooksMateBoard({ onComplete, lessonId }: { onComplete
                         />
                       </div>
                     )}
+                    {isLastMove && (
+                      <div className="absolute inset-0 bg-[rgba(155,199,0,0.35)] pointer-events-none z-[5]" />
+                    )}
                     {pieceObj && !isDragSource && (
-                      <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                      <div className="relative pointer-events-none z-[15]" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                         <PieceImg type={pieceObj.type} color={pieceObj.color} />
                       </div>
                     )}

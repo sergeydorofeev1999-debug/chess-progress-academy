@@ -270,6 +270,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     if (!wasCorrect && mode === 'survival') {
       if (timerRef.current) clearInterval(timerRef.current);
       setPhase('result');
+      setLastMove(null);
       flashTimeoutRef.current = setTimeout(() => {
         setMessage('');
         setMessageType('none');

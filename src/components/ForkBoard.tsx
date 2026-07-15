@@ -156,6 +156,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
+    setLastMove(null);
   }, []);
 
   useEffect(() => {
@@ -207,6 +208,7 @@ export default function ForkBoard({ onComplete, lessonId }: { onComplete: () => 
     setIsFail(false);
     setIsComplete(false);
     setWhiteMoves(0);
+    setLastMove(null);
   }, [exercise]);
 
   const saveStars = useCallback((ex: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12, stars: number) => {

@@ -86,6 +86,7 @@ export default function ComputerPlayBoard({ onComplete, lessonId }: { onComplete
   const [gameOver, setGameOver] = useState<{ result: string; reason: string } | null>(null);
   const [playerColor] = useState<'w' | 'b'>('w');
   const [promotionPending, setPromotionPending] = useState<{from:string; to:string}|null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
 
   const mountedRef = useRef(true);
   const workerRef = useRef<Worker | null>(null);
@@ -223,6 +224,7 @@ export default function ComputerPlayBoard({ onComplete, lessonId }: { onComplete
     setGameOver(null);
     setThinking(false);
     setPromotionPending(null);
+    setLastMove(null);
     openingStepRef.current = 0;
 
     if (playerColor === 'b') {
