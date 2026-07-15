@@ -74,6 +74,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
   const [puzzleIndex, setPuzzleIndex] = useState(0);
 
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{from: string; to: string} | null>(null);
   const [sqSize, setSqSize] = useState(56);
 
   interface DragState {
@@ -349,6 +350,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
     // Correct move
     moveIndexRef.current += 1;
     setMoveIndex(moveIndexRef.current);
+    setLastMove({from: move.from, to: move.to});
 
     if (moveIndexRef.current >= currentPuzzleRef.current.moves.length) {
       // All moves solved — puzzle complete
@@ -375,6 +377,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
       
       const afterOpp = new Chess(newGame.fen());
       afterOpp.move({ from: oppFrom, to: oppTo, promotion: 'q' });
+      setLastMove({from: oppFrom, to: oppTo});
       
       moveIndexRef.current += 1;
       setMoveIndex(moveIndexRef.current);
@@ -808,6 +811,7 @@ export default function TacticalStormBoard({ onComplete }: Props) {
               const sel = selectedSquare === sq || dragPiece?.square === sq;
               const isValidMove = validMoves.includes(sq);
               const isDragSource = dragPiece?.square === sq;
+              const isLastMove = lastMove && (lastMove.from === sq || lastMove.to === sq);
 
               return (
                 <div
@@ -855,8 +859,11 @@ export default function TacticalStormBoard({ onComplete }: Props) {
                   )}
 
                   {/* Piece */}
+                  {isLastMove && (
+                    <div className="absolute inset-0 bg-[rgba(155,199,0,0.35)] pointer-events-none z-[5]" />
+                  )}
                   {pieceObj && !isDragSource && (
-                    <div className="relative pointer-events-none" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
+                    <div className="relative pointer-events-none z-[15]" style={{ width: Math.round(sqSize * 0.85), height: Math.round(sqSize * 0.85) }}>
                       <PieceImg type={pieceObj.type} color={pieceObj.color} />
                     </div>
                   )}
