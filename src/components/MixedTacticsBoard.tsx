@@ -240,6 +240,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(1, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(2);
+          }, 1500);
           return;
         }
       } else if (exercise === 2) {
@@ -325,6 +328,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(2, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(3);
+          }, 1500);
           return;
         }
       } else if (exercise === 3) {
@@ -381,6 +387,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(3, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(4);
+          }, 1500);
           return;
         }
       } else if (exercise === 4) {
@@ -432,6 +441,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(4, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(5);
+          }, 1500);
           return;
         }
       } else if (exercise === 5) {
@@ -483,6 +495,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(5, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(6);
+          }, 1500);
           return;
         }
       } else if (exercise === 6) {
@@ -539,6 +554,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(6, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(7);
+          }, 1500);
           return;
         }
       } else if (exercise === 7) {
@@ -594,6 +612,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(7, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(8);
+          }, 1500);
           return;
         }
       } else if (exercise === 8) {
@@ -645,6 +666,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(8, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(9);
+          }, 1500);
           return;
         }
       } else if (exercise === 9) {
@@ -723,6 +747,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(10, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(11);
+          }, 1500);
           return;
         }
       } else if (exercise === 11) {
@@ -778,6 +805,9 @@ export default function MixedTacticsBoard({ onComplete, lessonId }: { onComplete
           setIsComplete(true);
           setMessage('Отлично! Тактика выполнена.');
           saveStars(11, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(12);
+          }, 1500);
           return;
         }
       } else if (exercise === 12) {

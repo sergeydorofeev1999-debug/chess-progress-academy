@@ -177,6 +177,11 @@ export default function MateInOneBoard({ onComplete, lessonId }: { onComplete: (
         setMessage('Отлично! Мат в 1 ход!');
         saveStars(exercise, 3);
         if (exercise === 8) onComplete();
+        else {
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8);
+          }, 1500);
+        }
         return;
       }
 

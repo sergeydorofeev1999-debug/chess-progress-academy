@@ -220,6 +220,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(1, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(2);
+          }, 1500);
           return;
         }
       } else if (exercise === 2) {
@@ -276,6 +279,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(2, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(3);
+          }, 1500);
           return;
         }
       } else if (exercise === 3) {
@@ -332,6 +338,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(3, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(4);
+          }, 1500);
           return;
         }
       } else if (exercise === 4) {
@@ -402,6 +411,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(4, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(5);
+          }, 1500);
           return;
         }
       } else if (exercise === 5) {
@@ -465,6 +477,9 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(5, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise(6);
+          }, 1500);
           return;
         }
       } else if (exercise === 6) {
@@ -521,6 +536,7 @@ export default function DiscoveredAttackBoard({ onComplete, lessonId }: { onComp
           setIsComplete(true);
           setMessage('Отлично! Вскрытое нападение выполнено.');
           saveStars(6, 3);
+          onComplete();
           return;
         }
       }

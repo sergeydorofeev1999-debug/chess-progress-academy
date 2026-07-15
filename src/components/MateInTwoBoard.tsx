@@ -225,6 +225,11 @@ export default function MateInTwoBoard({ onComplete, lessonId }: { onComplete: (
           setMessage('Браво! Мат в 2 хода!');
           saveStars(exercise, 3);
           if (exercise === 8) onComplete();
+          else {
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8);
+            }, 1500);
+          }
           return;
         } else {
           setGame(new Chess(g.fen()));

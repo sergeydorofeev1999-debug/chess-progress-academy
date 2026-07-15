@@ -202,6 +202,9 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
           setIsComplete(true);
           setMessage('Отлично! Вы защитились от мата!');
           saveStars(exercise, 3);
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8);
+          }, 1500);
           return;
         }
         // Wrong move in sequence — fall through to fail logic
@@ -219,6 +222,11 @@ export default function DefendMateBoard({ onComplete, lessonId }: { onComplete: 
         setMessage('Отлично! Вы защитились от мата!');
         saveStars(exercise, 3);
         if (exercise === 8) onComplete();
+        else {
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise((exercise + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8);
+          }, 1500);
+        }
         return;
       }
 

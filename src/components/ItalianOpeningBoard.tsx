@@ -300,6 +300,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Итальянская партия завершена. Белые захватили центр пешкой, вывели коней и слонов и сделали рокировку!');
             saveStars(1, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(2);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -414,6 +417,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Все фигуры развиты и король в безопасности.');
             saveStars(2, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(3);
+            }, 1500);
           } else {
             setMessage('Отлично! Продолжайте развивать фигуры.');
           }
@@ -666,6 +672,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Дырокол выполнен! Мы разменяли коня на f6, разрушили рокировку и забрали ферзя. Когда рокировка разрушена, чёрного короля легче атаковать!');
             saveStars(3, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(4);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -930,6 +939,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Дырокол выполнен! Разрушили рокировку и забрали ферзя!');
             saveStars(4, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(5);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -1243,6 +1255,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Пешечный штурм успешен! Белые взяли ферзя и получили решающее преимущество!');
             saveStars(5, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(6);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -1556,6 +1571,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Пешечный штурм завершён — ферзь взят и белые получили решающее преимущество!');
             saveStars(6, 3);
+            onComplete();
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);

@@ -443,6 +443,11 @@ export default function RookMateBoard({ onComplete, lessonId }: { onComplete: ()
         setIsComplete(true);
         saveStars(currentExercise, earned);
         if (currentExercise === 7) onComplete();
+        else {
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise((currentExercise + 1) as ExerciseId);
+          }, 1500);
+        }
         return;
       }
 

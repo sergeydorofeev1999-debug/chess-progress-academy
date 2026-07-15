@@ -251,6 +251,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Конь на f6 защищает пункт h5 — белые больше не могут поставить детский мат через Qh5. Детский мат отражён!');
             saveStars(5, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(6);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -286,6 +289,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Конь на f6 защищает пункт h5 — белые больше не могут поставить детский мат через Qh5. Детский мат отражён!');
             saveStars(6, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(7);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -357,6 +363,7 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Конь на f6 защищает пункт f7 — детский мат отражён!');
             saveStars(8, 3);
+            onComplete();
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -428,6 +435,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Отлично! Конь на f6 защищает пункт f7 — детский мат отражён!');
             saveStars(7, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(8);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -493,6 +503,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Мат! Детский мат выполнен! Ферзь забрал пешку на f7, король не может выбраться из-под шаха. Самый быстрый путь к победе — атака на пункт f7!');
             saveStars(1, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(2);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -566,6 +579,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Мат! Детский mat выполнен! Вы самостоятельно повторили атаку на пункт f7!');
             saveStars(2, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(3);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -629,6 +645,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Мат! Ферзь забрал пешку на f7. Детский mat через поле f3 выполнен!');
             saveStars(3, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(4);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);
@@ -700,6 +719,9 @@ export default function ItalianOpeningBoard({ onComplete, lessonId }: { onComple
             setIsComplete(true);
             setMessage('Мат! Детский mat через Qf3 выполнен! Вы сами нашли путь к победе через пункт f7!');
             saveStars(4, 3);
+            setTimeout(() => {
+              if (mountedRef.current) switchExercise(5);
+            }, 1500);
             return;
           } else {
             handleFailWithBlackCapture(g, setGame, setIsFail, setMessage, setSelectedSquare, mountedRef);

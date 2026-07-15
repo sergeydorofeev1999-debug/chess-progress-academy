@@ -501,6 +501,11 @@ export default function QueenMateBoard({ onComplete, lessonId }: { onComplete: (
         setIsComplete(true);
         saveStars(currentExercise, earned);
         if (currentExercise === 8) onComplete();
+        else {
+          setTimeout(() => {
+            if (mountedRef.current) switchExercise((currentExercise + 1) as ExerciseId);
+          }, 1500);
+        }
         return;
       }
 
